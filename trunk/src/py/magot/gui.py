@@ -52,7 +52,8 @@ class Frame(wx.Frame):
     
     def OnEditAccount(self, evt):
         tree = self.panel.tree
-        win = AccountDetail(self, tree, -1, "Account details", size=wx.Size(500, 200),
+        win = AccountDetail(self, tree, -1, "Account details", 
+            size=wx.Size(500, 200), 
             style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
         win.CenterOnScreen()
         if win.ShowModal() == wx.ID_OK:
@@ -249,9 +250,9 @@ class EntryDataTable(gridlib.PyGridTableBase):
             gridlib.GRID_VALUE_STRING,
             gridlib.GRID_VALUE_CHOICE + ':checking,computer,warranty,cash,salary,loan,equity',
             gridlib.GRID_VALUE_BOOL,
-            gridlib.GRID_VALUE_FLOAT,
-            gridlib.GRID_VALUE_FLOAT,
-            gridlib.GRID_VALUE_FLOAT,
+            gridlib.GRID_VALUE_FLOAT + ':6,2',
+            gridlib.GRID_VALUE_FLOAT + ':6,2',
+            gridlib.GRID_VALUE_FLOAT + ':6,2',
         ]
 
         self.data = []
@@ -263,12 +264,15 @@ class EntryDataTable(gridlib.PyGridTableBase):
             if entry.type is MovementType.DEBIT:
                 self.data.append(
                     [str(entry.date), nb, entry.transaction.description, 
-                        oppositeAccount, entry.isReconciled, entry.amount.amount, '', entry.balance.amount]
+                        oppositeAccount, entry.isReconciled, 
+                        entry.amount.amount, '', entry.balance.amount
+                    ]
                 )
             else:
                 self.data.append(
                     [str(entry.date), nb, entry.transaction.description,
-                        oppositeAccount, entry.isReconciled, '', entry.amount.amount, entry.balance.amount]
+                        oppositeAccount, entry.isReconciled, '', 
+                        entry.amount.amount, entry.balance.amount]
                 )
 
 
@@ -373,9 +377,6 @@ class EntryTableGrid(gridlib.Grid):
         self.SetColSize(3, 100)
 
         attr = gridlib.GridCellAttr()
-        renderer = gridlib.GridCellFloatRenderer()
-        renderer.SetPrecision(2)
-        attr.SetRenderer(renderer)
         self.SetColAttr(5, attr)
 
         attr = gridlib.GridCellAttr()
