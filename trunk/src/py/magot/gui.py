@@ -32,10 +32,12 @@ class Frame(wx.Frame):
         menu.Append(wx.ID_OPEN, "E&dit\tAlt-E", "Edit account details")
         menu.Append(wx.ID_SAVE, "&Save\tAlt-S", "Save data")
         menu.Append(wx.ID_EXIT, "E&xit\tAlt-X", "Exit application")
+        menu.Append(1, "&Jump\tAlt-J", "Jump to account")
         
-        wx.EVT_MENU(self, wx.ID_EXIT, self.OnTimeToClose)
         wx.EVT_MENU(self, wx.ID_OPEN, self.OnEditAccount)
         wx.EVT_MENU(self, wx.ID_SAVE, self.OnSave)
+        wx.EVT_MENU(self, wx.ID_EXIT, self.OnTimeToClose)
+        wx.EVT_MENU(self, 1, self.OnJump)
 
         menuBar.Append(menu, "&File") 
         self.SetMenuBar(menuBar) 
@@ -49,10 +51,10 @@ class Frame(wx.Frame):
     
     def OnTimeToClose(self, evt):
         self.Close() 
-    
+
     def OnEditAccount(self, evt):
         tree = self.panel.tree
-        win = AccountDetail(self, tree, -1, "Account details", 
+        win = AccountDetailDialog(self, tree, -1, "Account details", 
             size=wx.Size(500, 200), 
             style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
         win.CenterOnScreen()
@@ -76,6 +78,13 @@ class Frame(wx.Frame):
         self.ctx.Accounts.register(self.accRoot)
         storage.commitTransaction(self.ctx)
         storage.beginTransaction(self.ctx)
+
+    def OnJump(self, event):
+        page = self.nb.GetPage(self.nb.GetSelection())
+        accountName = page.GetCellValue(
+            page.GetGridCursorRow(), page.GetGridCursorCol())
+        account = self.ctx.Accounts.get(accountName)
+        self.nb.openAccount(account)
 
 
 class AccountsPanel(wx.Panel):
@@ -116,7 +125,7 @@ class AccountsPanel(wx.Panel):
         if item:
             account = self.tree.GetPyData(item)
             sys.stdout.write('OnLeftDClick: %s, Col:%s, Text: %s, name %s\n' %
-                           (flags, col, self.tree.GetItemText(item, col), account.name))
+                (flags, col, self.tree.GetItemText(item, col), account.name))
             self.parent.openAccount(account)
 
     def OnSize(self, evt):
@@ -143,7 +152,7 @@ class AccountsPanel(wx.Panel):
                 self._displayLevel(account, child, focus)
 
 
-class AccountDetail(wx.Dialog):
+class AccountDetailDialog(wx.Dialog):
     
     def __init__(self, parent, tree, ID, title, pos=wx.DefaultPosition, 
             size=wx.DefaultSize, style=wx.DEFAULT_DIALOG_STYLE):
@@ -205,7 +214,6 @@ class MainNotebook(wx.Notebook):
         panel.Layout()
         self.AddPage(panel, 'accounts')
         parent.panel = panel
-
         self.mapAccountToPage = {'root':0}
 
         wx.EVT_NOTEBOOK_PAGE_CHANGED(self, self.GetId(), self.OnPageChanged)
