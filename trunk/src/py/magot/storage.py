@@ -14,8 +14,7 @@ class AccountDM(storage.EntityDM):
     file = binding.Make(lambda self: EditableFile(filename=self.filename))
    
     def root(self):
-	file = self.file
-	text = self.file.text
+        text = self.file.text
         root = pickle.loads(text)
         return root
     root = binding.Make(root)
