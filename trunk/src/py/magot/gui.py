@@ -160,7 +160,7 @@ class AccountDetail(wx.Dialog):
         text = wx.TextCtrl(self, -1, name)
         self.name = text.GetValue
         box.Add(text, 1, wx.ALIGN_CENTRE|wx.ALL, 5)
-        sizer.AddSizer(box, 0, wx.GROW|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+        sizer.Add(box, 0, wx.GROW|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
 
         box = wx.BoxSizer(wx.HORIZONTAL)
         label = wx.StaticText(self, -1, "Description :")
@@ -169,7 +169,7 @@ class AccountDetail(wx.Dialog):
         text = wx.TextCtrl(self, -1, desc)
         self.desc = text.GetValue
         box.Add(text, 1, wx.ALIGN_CENTRE|wx.ALL, 5)
-        sizer.AddSizer(box, 0, wx.GROW|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+        sizer.Add(box, 0, wx.GROW|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
 
         box = wx.BoxSizer(wx.HORIZONTAL)
         label = wx.StaticText(self, -1, "Parent :")
@@ -178,7 +178,7 @@ class AccountDetail(wx.Dialog):
         text = wx.TextCtrl(self, -1, parentName)
         self.parent = text.GetValue
         box.Add(text, 1, wx.ALIGN_CENTRE|wx.ALL, 5)
-        sizer.AddSizer(box, 0, wx.GROW|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
+        sizer.Add(box, 0, wx.GROW|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
 
         line = wx.StaticLine(self, -1, size=(20,-1), style=wx.LI_HORIZONTAL)
         sizer.Add(line, 0, wx.GROW|wx.ALIGN_CENTER_VERTICAL|wx.RIGHT|wx.TOP, 5)
@@ -189,7 +189,7 @@ class AccountDetail(wx.Dialog):
         box.Add(btn, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
         btn = wx.Button(self, wx.ID_CANCEL, " Cancel ")
         box.Add(btn, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
-        sizer.AddSizer(box, 0, wx.ALIGN_CENTER_HORIZONTAL|wx.ALL, 5)
+        sizer.Add(box, 0, wx.ALIGN_CENTER_HORIZONTAL|wx.ALL, 5)
 
         self.SetSizer(sizer)
         self.SetAutoLayout(True)
@@ -199,7 +199,7 @@ class MainNotebook(wx.Notebook):
     def __init__(self, parent, id, accRoot):
         #  size=(21,21) is mandatory on windows
         wx.Notebook.__init__(self, parent, id, size=(21,21), style=wx.NB_LEFT)
-	
+
         panel = AccountsPanel(self, accRoot)
         panel.Layout()
         self.AddPage(panel, 'accounts')
@@ -209,7 +209,7 @@ class MainNotebook(wx.Notebook):
 
         wx.EVT_NOTEBOOK_PAGE_CHANGED(self, self.GetId(), self.OnPageChanged)
         wx.EVT_NOTEBOOK_PAGE_CHANGING(self, self.GetId(), self.OnPageChanging)
-	
+
     def OnPageChanged(self, event):
         old = event.GetOldSelection()
         new = event.GetSelection()
@@ -240,7 +240,7 @@ class EntryDataTable(gridlib.PyGridTableBase):
         self.account = account
         self.log = log
         
-        self.colLabels = ['Date', 'Num', 'Description', 'Account', 'Reconciled', 
+        self.colLabels = ['Date', 'Num', 'Description', 'Account', 'Reconciled',
             'Debit', 'Credit', 'Balance']
 
         self.dataTypes = [
@@ -351,17 +351,13 @@ class EntryTableGrid(gridlib.Grid):
         table = EntryDataTable(account, log)
 
         # The second parameter means that the grid is to take ownership of the
-        # table and will destroy it when done.  Otherwise you would need to keep
+        # table and will destroy it when done. Otherwise you would need to keep
         # a reference to it and call it's Destroy method later.
         self.SetTable(table, True)
 
         self.SetRowLabelSize(0)
         self.SetMargins(0,0)
         self.AutoSizeColumns(False)
-
-        attr = gridlib.GridCellAttr()
-        attr.SetReadOnly(True)
-        self.SetColAttr(7, attr)
 
         attr = gridlib.GridCellAttr()
         attr.SetEditor(DateCellEditor(log))
@@ -372,6 +368,19 @@ class EntryTableGrid(gridlib.Grid):
         attr.SetRenderer(gridlib.GridCellNumberRenderer())
         self.SetColAttr(1, attr)
 
+        attr = gridlib.GridCellAttr()
+        self.SetColAttr(3, attr)
+        self.SetColSize(3, 100)
+
+        attr = gridlib.GridCellAttr()
+        renderer = gridlib.GridCellFloatRenderer()
+        renderer.SetPrecision(2)
+        attr.SetRenderer(renderer)
+        self.SetColAttr(5, attr)
+
+        attr = gridlib.GridCellAttr()
+        attr.SetReadOnly(True)
+        self.SetColAttr(7, attr)
 
 class WxApp(wx.App):
    
