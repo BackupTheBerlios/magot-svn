@@ -33,11 +33,13 @@ class Frame(wx.Frame):
         menu.Append(wx.ID_SAVE, "&Save\tAlt-S", "Save data")
         menu.Append(wx.ID_EXIT, "E&xit\tAlt-X", "Exit application")
         menu.Append(1, "&Jump\tAlt-J", "Jump to account")
+        menu.Append(2, "&Sort\tAlt-R", "Sort entries")
         
         wx.EVT_MENU(self, wx.ID_OPEN, self.OnEditAccount)
         wx.EVT_MENU(self, wx.ID_SAVE, self.OnSave)
         wx.EVT_MENU(self, wx.ID_EXIT, self.OnTimeToClose)
         wx.EVT_MENU(self, 1, self.OnJump)
+        wx.EVT_MENU(self, 2, self.OnSort)
 
         menuBar.Append(menu, "&File") 
         self.SetMenuBar(menuBar) 
@@ -81,11 +83,14 @@ class Frame(wx.Frame):
 
     def OnJump(self, event):
         page = self.nb.GetPage(self.nb.GetSelection())
-        accountName = page.GetCellValue(
-            page.GetGridCursorRow(), page.GetGridCursorCol())
-        account = self.ctx.Accounts.get(accountName)
-        self.nb.openAccount(account)
+        table = page.GetTable()
+        key = table.rowkeys[page.GetGridCursorRow()]
+        entry = table.data[key]
+        self.nb.openEntry(entry.siblings[0])
 
+    def OnSort(self, event):
+        table = self.nb.GetPage(self.nb.GetSelection()).GetTable()
+        table.Sort()
 
 class AccountsPanel(wx.Panel):
 
@@ -126,7 +131,7 @@ class AccountsPanel(wx.Panel):
             account = self.tree.GetPyData(item)
             sys.stdout.write('OnLeftDClick: %s, Col:%s, Text: %s, name %s\n' %
                 (flags, col, self.tree.GetItemText(item, col), account.name))
-            self.parent.openAccount(account)
+            self.parent.openEntry(account.entries[0])
 
     def OnSize(self, evt):
         self.tree.SetSize(self.GetSize())
@@ -231,21 +236,25 @@ class MainNotebook(wx.Notebook):
         sel = self.GetSelection()
         event.Skip()
 
-    def openAccount(self, account):
-        if account.name not in self.mapAccountToPage:
-            grid = EntryTableGrid(self, account, sys.stdout)
-            self.AddPage(grid, account.name)
+    def openEntry(self, entry):
+        account = entry.account
+        if  account.name not in self.mapAccountToPage:
+            page = EntryTableGrid(self, account, sys.stdout)
+            self.AddPage(page, account.name)
             self.mapAccountToPage[account.name] = self.GetPageCount() - 1
 
         self.SetSelection(self.mapAccountToPage[account.name])
+        page = self.GetPage(self.GetSelection())
+        page.SetCursorOn(entry)
 
 
 class EntryDataTable(gridlib.PyGridTableBase):
     
-    def __init__(self, account, log):
+    def __init__(self, view, account, log):
         
         gridlib.PyGridTableBase.__init__(self)
         
+        self.view = view
         self.account = account
         self.log = log
         
@@ -263,51 +272,59 @@ class EntryDataTable(gridlib.PyGridTableBase):
             gridlib.GRID_VALUE_FLOAT + ':6,2',
         ]
 
-        self.data = []
+        self.data = {}
         for entry in account.entries:
-            # TODO split
-            oppositeAccount = entry.siblings[0].account.name
-            nb = hasattr(entry.transaction, 'number') or ''
-            
-            if entry.type is MovementType.DEBIT:
-                self.data.append(
-                    [str(entry.date), nb, entry.transaction.description, 
-                        oppositeAccount, entry.isReconciled, 
-                        entry.amount.amount, '', entry.balance.amount
-                    ]
-                )
-            else:
-                self.data.append(
-                    [str(entry.date), nb, entry.transaction.description,
-                        oppositeAccount, entry.isReconciled, '', 
-                        entry.amount.amount, entry.balance.amount]
-                )
+            self.data[id(entry)] = entry
+        self.rowkeys=self.data.keys()
 
 
     #--------------------------------------------------
     # required methods for the wxPyGridTableBase interface
 
     def GetNumberRows(self):
-        return len(self.data) + 1
+        return len(self.rowkeys)
 
     def GetNumberCols(self):
-        return len(self.data[0])
+        return len(self.colLabels)
 
     def IsEmptyCell(self, row, col):
-        try:
-            res = self.data[row][col]
-        except IndexError:
-            return True
-        return not res
+        return False
 
     # Get/Set values in the table.  The Python version of these
     # methods can handle any data-type, (as long as the Editor and
     # Renderer understands the type too,) not just strings as in the C++ version.
     def GetValue(self, row, col):
         try:
-            return self.data[row][col]
-        except IndexError:
+            entry = self.data[self.rowkeys[row]]
+        except:
+            print "bad row", row
             return ''
+        return self.getdata(col, entry, "")
+
+    def getdata(self, col, entry, default=''):
+        # TODO split
+        if col == 0:
+            return str(entry.date)
+        if col == 1:
+            return hasattr(entry.transaction, 'number') or ''
+        if col == 2:
+            return entry.transaction.description
+        if col == 3:
+            return entry.siblings[0].account.name
+        if col == 4:
+            return entry.isReconciled
+        if col == 5:
+            if entry.type is MovementType.DEBIT:
+                return entry.amount.amount
+            else:
+                return default
+        if col == 6:
+            if entry.type is MovementType.DEBIT:
+                return default
+            else:
+                return entry.amount.amount
+        if col == 7:
+            return entry.balance.amount
 
     def SetValue(self, row, col, value):
         try:
@@ -352,15 +369,28 @@ class EntryDataTable(gridlib.PyGridTableBase):
     def CanSetValueAs(self, row, col, typeName):
         return self.CanGetValueAs(row, col, typeName)
 
+    def Sort(self):
+         bycol = 3 # opposite account
+         descending = False
+         ## ::TODO:: this sorting is not stable - it should include the current pos rather than key
+         l=[ (self.getdata(bycol, self.data[key]), key) for key in self.rowkeys]
+         l.sort()
+         if descending:
+             l.reverse()
+         self.rowkeys=[key for val,key in l]
+         msg=wx.grid.GridTableMessage(self, wx.grid.GRIDTABLE_REQUEST_VIEW_GET_VALUES)
+         self.view.ProcessTableMessage(msg)
 
 
 class EntryTableGrid(gridlib.Grid):
-    
+    """ 
+    This grid represents a page of the notebook for one account
+    """
     def __init__(self, parent, account, log):
         
         gridlib.Grid.__init__(self, parent, -1)
 
-        table = EntryDataTable(account, log)
+        table = EntryDataTable(self, account, log)
 
         # The second parameter means that the grid is to take ownership of the
         # table and will destroy it when done. Otherwise you would need to keep
@@ -390,6 +420,11 @@ class EntryTableGrid(gridlib.Grid):
         attr = gridlib.GridCellAttr()
         attr.SetReadOnly(True)
         self.SetColAttr(7, attr)
+
+    def SetCursorOn(self, entry):
+        rowkeys = self.GetTable().rowkeys
+        self.SetGridCursor(rowkeys.index(id(entry)),3)
+
 
 class WxApp(wx.App):
    
