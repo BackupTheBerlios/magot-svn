@@ -1,0 +1,50 @@
+Use case 0:
+----------
+	* persitence avec YAML
+    * searchs
+
+Use case 1:
+----------
+technic:
+    * Accurate calculations, no loss of precision or rounding errors
+    * Atomic Operations
+
+business:
+    * Double-Entry or Single-Entry bookkeeping
+    * Split transactions
+    * Nested Accounts
+    * Account types
+
+
+Use case 2:
+----------
+technic:
+    * Recoverable data afer crash
+    * simple storage (xml ?)
+
+business:
+    * adjusting/closing entries, Capital / Income Summary / Withdrawals accounts
+    * financial statements :
+    	- Balance Sheet of a certain date
+        - Income Statement for a specific period of time reports revenues minus expenses to calculate a net income or net loss.
+        - Capital Statement for a specific period of time reports the beginning balance of Capital, plus any investments during the period, minus any withdrawals during the period, plus net income or minus net loss for the period, and calculates an ending balance of Capital.
+        - Statement of Cash Flows reports the sources and uses of Cash for a specific period of time
+    * QIF files import
+    * GnuCash import (1.8.x and 1.6.x)
+    * Manipulation:
+    	Auto-Completion of account name, date, entries
+    	Cut-Copy-and-Paste transactions
+    * Multiple Currencies (Default and Custom)
+    * Flexible Account/ledger Reporting (More will be added)
+    * Line/Bar/TwoBar/Pie Graphs of accounts
+    * Sortable account registers
+    * Reconciliation support
+    * Scripting support
+    * Scheduled transactions
+    * Update stock prices and currency exchange rates online
+    * Securities, and custom Commodities
+    * Budgeting : Similar to reporting but the user will be able to perform forecasting
+
+
+- a transaction entry must be stored in the debit and credit account
+- this means that the full precision of a calculation is carried through until the value is rounded for final display according to the selected locale
