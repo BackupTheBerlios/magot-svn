@@ -1,71 +1,35 @@
-Lectures:
-	doc/python/*
+Magot TODO:
 
-Consultant:
-	CV en anglais
-    faire un site web pro : Free, Lycos, la poste, Tiscali
-	installer Word/Excel
+- format all columns from entry table (ex: 100.000000000 ==> 100.00)
+- add tool bar with button : Jump between accounts
+- populate account list-box with current account tree
+- fix bug when double-clicking on a summary account (merge summary and detail account)
 
-Magot :
-	formater les colonnes de la table des entries 100.000000000 ==> 100.00
-    jump bewteen account/Tab avec toolbar
-    populer la combo de tous les comptes depuis root account
+- sort entries by date, tx desc, entry amount
+- edit entry (account, date, desc, amount) by redefining 'enter' to validate
+- create/duplicate/delete one tx
+- view entries by range date
+- search tx by criteria
+- create account
 
-    pouvoir fermer un Tab
-    tri des entries par date, tx/entry desc, amount
-	edit entry (account, date, desc, amount) et redéfinir la touche 'entrée' pour valider
-    créer/dupliquer/supprimer une transaction
-    view entries by range date
-    new account
-    rechercher une transaction selon critères
-    chemin des comptes à afficher dans une entry
+- display all account paths in entry/account column
+- can close a Tab account
+- alternate color between entries
+- action/memo for entry vs date/num/description for tx
+- create all standard account types
+- Num column should propose : ATM, Virement, ...
+- set the focus on a moved account 
+- right adjust account amount
+- rapports :
+	perte/profit = compte de résultat = Profit and loss = Income Statement
+    bilan = balance sheet
+- registre général = general ledger
+- imputation budgetaires / exercice / create a budget
+- tiers ?
 
-    créer tous les types de compte
-    log
-    merger summary et detail account
-	mettre focus sur le compte déplacé
-    mettre la colonne montant d'un compte totalement à droite
-    rapports :
-    	perte/profit = compte de résultat = Profit and loss = Income Statement
-    	bilan = balance sheet
-	    registre général = general ledger
-    imputations budgétaires / exercice / create a budget
-    tiers ?
-    unicode + i18n + l10n
-    unit tests avec http://www.access.wvu.edu/class/acctutor/tableofc.htm
-    définir persistence finale : Peak, ZODB, Metakit, Pickle, SQLObject, Roundup
-	finir le module RefData : Money, Date et leurs classes de test
-        les différents constructeurs fromFields
-        les toString() et Normalize()
-        les operator de base
-
-
-System :
--------
-- tester/installer un outil de gestion de projets :
-	Scarab, double chocolate, GnoTime, ReadySET, eclipse
-
-Finance :
-- use cases from MoneyDance + GnuCash + QHAcc 3.1.1
-	- JGnash 1.8.0, KMyMoney2
-	- http://www.compiere.org/product/tour/accounting.html
-	- GNUe General Ledger Package http://www.gnu.org/software/gnue/packages/docs.html
-- conceptuel/domain model with infomodeler ou infagon
-
-Tech :
------
-- GUI : wxpython, Qt, Boa Constructor, Glade
-- framework : PEAK, ZOPE3, Twisted, Chandler
-- persistence : SQLObject, MetaKit, SQLLite
-- web : PEAK, Nevow, Quixote, Webware
-- business rules : PyClips, Drool, Haskell
-- Data : associative database, un/semi-structured data, RDF schema, 4Suite RDF, YAML, BerkleyDB/XML, Chandler
-- web tools : KUPU
-
-- AOP : Spring, AspectJ
-- OpenOffice :
-	Calc
-	Un module de création et de gestion des bases de données,
-	kit de développement qui permet de réaliser des applications métier en Python
-	xhtml, pdf, flash
-	use case template
+- unicode + i18n + l10n
+- unit tests with http://www.access.wvu.edu/class/acctutor/tableofc.htm + doctest
+- make true persistence : SQLlite, ZODB, Metakit, SQLObject, Roundup ?
+- finish RefData : Money, Date et leurs classes de test
+	toString() et Normalize()
+    base operators
