@@ -5,6 +5,7 @@ from datetime import date
 
 from magot.fixedpoint import FixedPoint
 
+
 class Date(Immutable):
 
     def mdl_fromString(klass, value):
