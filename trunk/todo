@@ -1,5 +1,6 @@
 Magot TODO:
 
+- fixe dateCtrl and notebook tab layout that are misplaced
 - populate account list-box with current account tree
 - fixe bug when double-clicking on a summary account (merge summary and detail account)
 
@@ -28,7 +29,7 @@ Magot TODO:
 
 - unicode + i18n + l10n
 - unit tests with http://www.access.wvu.edu/class/acctutor/tableofc.htm + doctest
-- make true persistence : SQLlite, ZODB, Metakit, SQLObject, Roundup ?
+- make true persistence : SQLlite, DURUS/ZODB/Pypersyst, Metakit, SQLObject, Roundup HyperDB ?
 - finish RefData : Money, Date et leurs classes de test
 	toString() et Normalize()
     base operators
