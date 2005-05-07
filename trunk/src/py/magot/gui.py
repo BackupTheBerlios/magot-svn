@@ -1,6 +1,8 @@
 import wx
 import wx.grid as gridlib
 import sys
+import datetime
+import weakref
 
 
 from magot.model import *
@@ -92,7 +94,7 @@ class Frame(wx.Frame):
         table = self.nb.GetPage(self.nb.GetSelection()).GetTable()
         table.Sort()
 
-class AccountsPanel(wx.Panel):
+class AllAccountsPanel(wx.Panel):
 
     def __init__(self, parent, accRoot):
         wx.Panel.__init__(self, parent, -1)
@@ -215,7 +217,7 @@ class MainNotebook(wx.Notebook):
         #  size=(21,21) is mandatory on windows
         wx.Notebook.__init__(self, parent, id, size=(21,21), style=wx.NB_LEFT)
 
-        panel = AccountsPanel(self, accRoot)
+        panel = AllAccountsPanel(self, accRoot)
         panel.Layout()
         self.AddPage(panel, 'accounts')
         parent.panel = panel
@@ -239,7 +241,7 @@ class MainNotebook(wx.Notebook):
     def openEntry(self, entry):
         account = entry.account
         if  account.name not in self.mapAccountToPage:
-            page = EntryTableGrid(self, account, sys.stdout)
+            page = AccountLedger(self, account, sys.stdout)
             self.AddPage(page, account.name)
             self.mapAccountToPage[account.name] = self.GetPageCount() - 1
 
@@ -251,7 +253,6 @@ class MainNotebook(wx.Notebook):
 class EntryDataTable(gridlib.PyGridTableBase):
     
     def __init__(self, view, account, log):
-        
         gridlib.PyGridTableBase.__init__(self)
         
         self.view = view
@@ -259,13 +260,14 @@ class EntryDataTable(gridlib.PyGridTableBase):
         self.log = log
         
         self.colLabels = ['Date', 'Num', 'Description', 'Account', 'Reconciled',
-            'Debit', 'Credit', 'Balance']
+                                'Debit', 'Credit', 'Balance']
 
         self.dataTypes = [
-            gridlib.GRID_VALUE_STRING,
+            gridlib.GRID_VALUE_DATETIME,
             gridlib.GRID_VALUE_NUMBER,
             gridlib.GRID_VALUE_STRING,
-            gridlib.GRID_VALUE_CHOICE + ':checking,computer,warranty,cash,salary,loan,equity',
+            gridlib.GRID_VALUE_CHOICE + 
+                ':checking,computer,warranty,cash,salary,loan,equity',
             gridlib.GRID_VALUE_BOOL,
             gridlib.GRID_VALUE_FLOAT + ':6,2',
             gridlib.GRID_VALUE_FLOAT + ':6,2',
@@ -304,7 +306,7 @@ class EntryDataTable(gridlib.PyGridTableBase):
     def getdata(self, col, entry, default=''):
         # TODO split
         if col == 0:
-            return str(entry.date)
+            return pydate2wxdate(entry.date)
         if col == 1:
             return hasattr(entry.transaction, 'number') or ''
         if col == 2:
@@ -328,7 +330,8 @@ class EntryDataTable(gridlib.PyGridTableBase):
 
     def SetValue(self, row, col, value):
         try:
-            self.data[row][col] = value
+            entry = self.data[self.rowkeys[row]]
+            entry.transaction.date = wxdate2pydate(value)
         except IndexError:
             # add a new row
             self.data.append([''] * self.GetNumberCols())
@@ -339,7 +342,6 @@ class EntryDataTable(gridlib.PyGridTableBase):
                     gridlib.GRIDTABLE_NOTIFY_ROWS_APPENDED, # what we did to it
                     1                                       # how many
                     )
-
             self.GetView().ProcessTableMessage(msg)
 
 
@@ -370,28 +372,31 @@ class EntryDataTable(gridlib.PyGridTableBase):
         return self.CanGetValueAs(row, col, typeName)
 
     def Sort(self):
-         bycol = 3 # opposite account
-         descending = False
-         ## ::TODO:: this sorting is not stable - it should include the current pos rather than key
-         l=[ (self.getdata(bycol, self.data[key]), key) for key in self.rowkeys]
-         l.sort()
-         if descending:
-             l.reverse()
-         self.rowkeys=[key for val,key in l]
-         msg=wx.grid.GridTableMessage(self, wx.grid.GRIDTABLE_REQUEST_VIEW_GET_VALUES)
-         self.view.ProcessTableMessage(msg)
+        bycol = 3 # opposite account
+        descending = False
+        ## ::TODO:: this sorting is not stable - it should include the current pos rather than key
+        l=[ (self.getdata(bycol, self.data[key]), key) for key in self.rowkeys]
+        l.sort()
+        if descending:
+            l.reverse()
+        self.rowkeys=[key for val,key in l]
+        msg=wx.grid.GridTableMessage(self, wx.grid.GRIDTABLE_REQUEST_VIEW_GET_VALUES)
+        self.view.ProcessTableMessage(msg)
 
 
-class EntryTableGrid(gridlib.Grid):
+class AccountLedger(gridlib.Grid):
     """ 
-    This grid represents a page of the notebook for one account
+    This is a page of the notebook and displays all entries for one account.
     """
     def __init__(self, parent, account, log):
-        
-        gridlib.Grid.__init__(self, parent, -1)
+        super(AccountLedger, self).__init__(parent, -1)
+        # todo own renderer
+        renderer = gridlib.GridCellDateTimeRenderer('%c', '%c')
+        self.RegisterDataType(gridlib.GRID_VALUE_DATETIME,
+                                        renderer,
+                                        DateCellEditor(log))
 
         table = EntryDataTable(self, account, log)
-
         # The second parameter means that the grid is to take ownership of the
         # table and will destroy it when done. Otherwise you would need to keep
         # a reference to it and call it's Destroy method later.
@@ -402,7 +407,6 @@ class EntryTableGrid(gridlib.Grid):
         self.AutoSizeColumns(False)
 
         attr = gridlib.GridCellAttr()
-        attr.SetEditor(DateCellEditor(log))
         self.SetColAttr(0, attr)
         self.SetColSize(0, 100)
 
@@ -425,6 +429,13 @@ class EntryTableGrid(gridlib.Grid):
         rowkeys = self.GetTable().rowkeys
         self.SetGridCursor(rowkeys.index(id(entry)),3)
 
+    def GetTable(self):
+        return self.tableRef()
+
+    def SetTable(self, object, *attributes):
+        self.tableRef = weakref.ref(object)
+        return gridlib.Grid.SetTable(self, object, *attributes)
+
 
 class WxApp(wx.App):
    
@@ -439,7 +450,7 @@ class WxApp(wx.App):
         return True
 
 
-class Application(commands.AbstractCommand):
+class MagotGUI(commands.AbstractCommand):
 
     Accounts = binding.Make('magot.storage.AccountDM')
 
@@ -450,5 +461,5 @@ class Application(commands.AbstractCommand):
 
 if __name__ == '__main__':
     root = config.makeRoot()
-    app = Application(root)
+    app = MagotGUI(root)
     app.run()

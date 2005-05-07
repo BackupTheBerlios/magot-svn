@@ -1,7 +1,9 @@
+import datetime
+
 import wx
-import  wx.grid as gridlib
-import  wx.calendar as  cal
-import  wx.lib.popupctl as  pop
+import wx.grid as gridlib
+import wx.calendar as cal
+import wx.lib.popupctl as pop
 from wx.gizmos import TreeListCtrl
 
 
@@ -113,59 +115,6 @@ class AutoWidthTreeListCtrl(TreeListCtrl, ListCtrlAutoWidthMixin):
         ListCtrlAutoWidthMixin.__init__(self)
 
 
-class DatePopUpControl(pop.PopupControl):
-    
-    def __init__(self,*_args,**_kwargs):
-        
-        apply(pop.PopupControl.__init__,(self,) + _args,_kwargs)
-
-        self.win = wx.Window(self,-1,pos = (0,0),style = 0)
-        self.cal = cal.CalendarCtrl(self.win,-1,pos = (0,0))
-
-        bz = self.cal.GetBestSize()
-        self.win.SetSize(bz)
-
-        # This method is needed to set the contents that will be displayed
-        # in the popup
-        self.SetPopupContent(self.win)
-
-        # Event registration for date selection
-        cal.EVT_CALENDAR_DAY(self.cal, self.cal.GetId(), self.OnCalSelected)
-
-    # Method called when a day is selected in the calendar
-    def OnCalSelected(self,evt):
-        self.PopDown()
-        date = self.cal.GetDate()
-
-        # Format the date that was selected for the text part of the control
-        self.SetValue('%02d/%02d/%04d' % (date.GetDay(),
-                                          date.GetMonth()+1,
-                                          date.GetYear()))
-        evt.Skip()
-
-    # Method overridden from wxPopupControl
-    # This method is called just before the popup is displayed
-    # Use this method to format any controls in the popup
-    def FormatContent(self):
-        # I parse the value in the text part to resemble the correct date in
-        # the calendar control
-        txtValue = self.GetValue()
-        dmy = txtValue.split('/')
-        didSet = False
-        if len(dmy) == 3:
-            date = self.cal.GetDate()
-            d = int(dmy[0])
-            m = int(dmy[1]) - 1
-            y = int(dmy[2])
-            if d > 0 and d < 31:
-                if m >= 0 and m < 12:
-                    if y > 1000:
-                        self.cal.SetDate(wx.DateTimeFromDMY(d,m,y))
-                        didSet = True
-        if not didSet:
-            self.cal.SetDate(wx.DateTime_Today())
-
-
 class DateCellEditor(gridlib.PyGridCellEditor):
     """
     This is a sample GridCellEditor that shows you how to make your own custom
@@ -194,8 +143,10 @@ class DateCellEditor(gridlib.PyGridCellEditor):
         *Must Override*
         """
         self.log.write("DateCellEditor: Create\n")
-        self._tc = DatePopUpControl(parent, id, pos=(30,30), size=(100,22))
+        self._tc = wx.DatePickerCtrl(parent, id, size=(120,-1),
+                style=wx.DP_DROPDOWN | wx.DP_SHOWCENTURY)
         self.SetControl(self._tc)
+        
         if evtHandler:
             self._tc.PushEventHandler(evtHandler)
 
@@ -241,9 +192,6 @@ class DateCellEditor(gridlib.PyGridCellEditor):
         self._tc.SetValue(self.startValue)
         self._tc.SetFocus()
 
-        # For this example, select the text
-##~         self._tc.SetSelection(0, self._tc.GetLastPosition())
-
 
     def EndEdit(self, row, col, grid):
         """
@@ -251,16 +199,15 @@ class DateCellEditor(gridlib.PyGridCellEditor):
         has changed.  If necessary, the control may be destroyed.
         *Must Override*
         """
-        self.log.write("DateCellEditor: EndEdit (%d,%d)\n" % (row, col))
         changed = False
-
         val = self._tc.GetValue()
+        
         if val != self.startValue:
             changed = True
             grid.GetTable().SetValue(row, col, val) # update the table
 
         self.startValue = ''
-        self._tc.SetValue('')
+        self.log.write("DateCellEditor: EndEdit (%d,%d) return %s\n" % (row, col, changed))
         return changed
 
 
@@ -298,7 +245,8 @@ class DateCellEditor(gridlib.PyGridCellEditor):
         ch = None
         if key in [wx.WXK_NUMPAD0, wx.WXK_NUMPAD1, wx.WXK_NUMPAD2, 
                       wx.WXK_NUMPAD3, wx.WXK_NUMPAD4, wx.WXK_NUMPAD5, 
-                      wx.WXK_NUMPAD6, wx.WXK_NUMPAD7, wx.WXK_NUMPAD8, wx.WXK_NUMPAD9]:
+                      wx.WXK_NUMPAD6, wx.WXK_NUMPAD7, wx.WXK_NUMPAD8, 
+                      wx.WXK_NUMPAD9]:
             ch = ch = chr(ord('0') + key - wx.WXK_NUMPAD0)
 
         elif key < 256 and key >= 0 and chr(key) in string.printable:
@@ -336,3 +284,18 @@ class DateCellEditor(gridlib.PyGridCellEditor):
         """
         self.log.write("DateCellEditor: Clone\n")
         return DateCellEditor(self.log)
+
+def pydate2wxdate(date):
+    assert isinstance(date, (datetime.datetime, datetime.date))
+    tt = date.timetuple()
+    dmy = (tt[2], tt[1]-1, tt[0])
+    return wx.DateTimeFromDMY(*dmy)
+
+def wxdate2pydate(date):
+    import datetime
+    assert isinstance(date, wx.DateTime)
+    if date.IsValid():
+        ymd = map(int, date.FormatISODate().split('-'))
+        return datetime.date(*ymd)
+    else:
+        return None
