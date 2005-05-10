@@ -1,8 +1,15 @@
 Magot TODO:
 
-- fixe dateCtrl and notebook tab layout that are misplaced
+- sort entries by value date when launching magot
+- sort correctly entries that have same date and check that balances are ok
+- fixe dateCtrl and notebook tab layout that are misplaced according wx 2.6.0
 - populate account list-box with current account tree
 - fixe bug when double-clicking on a summary account (merge summary and detail account)
+- finish RefData module : 
+    integrate currency in Money
+    rounding decimal.getcontext().rounding="ROUND_HALF_UP" for EURO
+    __str__
+    use of locale for each currency
 
 - sort entries by date, tx desc, entry amount
 - edit entry (account, date, desc, amount) by redefining 'enter' to validate
@@ -30,6 +37,3 @@ Magot TODO:
 - unicode + i18n + l10n
 - unit tests with http://www.access.wvu.edu/class/acctutor/tableofc.htm + doctest
 - make true persistence : SQLlite, DURUS/ZODB/Pypersyst, Metakit, SQLObject, Roundup HyperDB ?
-- finish RefData : Money, Date et leurs classes de test
-	toString() et Normalize()
-    base operators

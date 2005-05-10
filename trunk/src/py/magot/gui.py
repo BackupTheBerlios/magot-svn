@@ -331,7 +331,7 @@ class EntryDataTable(gridlib.PyGridTableBase):
     def SetValue(self, row, col, value):
         try:
             entry = self.data[self.rowkeys[row]]
-            entry.transaction.date = wxdate2pydate(value)
+            entry.transaction.update(date=wxdate2pydate(value))
         except IndexError:
             # add a new row
             self.data.append([''] * self.GetNumberCols())
@@ -372,7 +372,7 @@ class EntryDataTable(gridlib.PyGridTableBase):
         return self.CanGetValueAs(row, col, typeName)
 
     def Sort(self):
-        bycol = 3 # opposite account
+        bycol = 0 # value date
         descending = False
         ## ::TODO:: this sorting is not stable - it should include the current pos rather than key
         l=[ (self.getdata(bycol, self.data[key]), key) for key in self.rowkeys]

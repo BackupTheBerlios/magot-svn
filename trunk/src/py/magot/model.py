@@ -146,7 +146,7 @@ class Transaction(model.Element):
         return Entry(MovementType.CREDIT, self, account, amount)
 
     def update(self, date=None, nb=None, desc=None, amount=None):
-
+        """ Always use this method to update a transaction. """
         if date is not None and date != self.date:
             self.date = date
             for e in self.entries:
@@ -190,7 +190,8 @@ class Entry(model.Element):
         defaultValue = False
 
     class balance(model.DerivedFeature):
-        """ Current account balance. TODO improved algorithm """       
+        """ Account balance at the entry update/insert time. 
+            todo : improved algorithm """
         referencedType = Money
         
         def get(feature, element):
@@ -198,6 +199,7 @@ class Entry(model.Element):
             previousBalance = Money.Zero
             i = entries.index(element)
             if i > 0:
+                # recursif
                 previousBalance = entries[i-1].balance
             
             if element.type is element.account.type:
