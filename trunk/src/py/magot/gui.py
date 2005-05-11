@@ -275,9 +275,9 @@ class EntryDataTable(gridlib.PyGridTableBase):
         ]
 
         self.data = {}
-        for entry in account.entries:
-            self.data[id(entry)] = entry
-        self.rowkeys=self.data.keys()
+        for i, entry in enumerate(account.entries):
+            self.data[i] = entry
+        self.rowkeys = self.data.keys()
 
 
     #--------------------------------------------------
@@ -331,7 +331,14 @@ class EntryDataTable(gridlib.PyGridTableBase):
     def SetValue(self, row, col, value):
         try:
             entry = self.data[self.rowkeys[row]]
+            # todo : for other columns different than date
             entry.transaction.update(date=wxdate2pydate(value))
+            
+            for i, entry in enumerate(entry.account.entries):
+                self.data[i] = entry
+            self.rowkeys = self.data.keys()
+            # to not necessary if update of date
+            self.Sort()
         except IndexError:
             # add a new row
             self.data.append([''] * self.GetNumberCols())
@@ -371,16 +378,16 @@ class EntryDataTable(gridlib.PyGridTableBase):
     def CanSetValueAs(self, row, col, typeName):
         return self.CanGetValueAs(row, col, typeName)
 
-    def Sort(self):
-        bycol = 0 # value date
+    def Sort(self, bycol=0):
         descending = False
-        ## ::TODO:: this sorting is not stable - it should include the current pos rather than key
-        l=[ (self.getdata(bycol, self.data[key]), key) for key in self.rowkeys]
+        l = [ (self.getdata(bycol, self.data[key]), key) for key in self.rowkeys]
         l.sort()
         if descending:
             l.reverse()
-        self.rowkeys=[key for val,key in l]
-        msg=wx.grid.GridTableMessage(self, wx.grid.GRIDTABLE_REQUEST_VIEW_GET_VALUES)
+        # new order
+        self.rowkeys = [key for val,key in l]
+        
+        msg = wx.grid.GridTableMessage(self, wx.grid.GRIDTABLE_REQUEST_VIEW_GET_VALUES)
         self.view.ProcessTableMessage(msg)
 
 
@@ -397,6 +404,7 @@ class AccountLedger(gridlib.Grid):
                                         DateCellEditor(log))
 
         table = EntryDataTable(self, account, log)
+        table.Sort()
         # The second parameter means that the grid is to take ownership of the
         # table and will destroy it when done. Otherwise you would need to keep
         # a reference to it and call it's Destroy method later.
@@ -427,7 +435,8 @@ class AccountLedger(gridlib.Grid):
 
     def SetCursorOn(self, entry):
         rowkeys = self.GetTable().rowkeys
-        self.SetGridCursor(rowkeys.index(id(entry)),3)
+        index = entry.account.entries.index(entry)
+        self.SetGridCursor(rowkeys.index(index), 3)
 
     def GetTable(self):
         return self.tableRef()

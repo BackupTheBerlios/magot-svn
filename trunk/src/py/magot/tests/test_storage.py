@@ -27,17 +27,17 @@ def makeDB():
     equity = DetailAccount(parent=root, name='equity', type=MovementType.CREDIT)
     
     # set all initial balances
-    checking.makeInitialTransaction(equity, Money(1))
+    checking.makeInitialTransaction(equity, Money(1), date(2005,2,1))
     assert checking.balance == Money(1)
-    computer.makeInitialTransaction(equity, Money(2))
+    computer.makeInitialTransaction(equity, Money(2), date(2005,1,1))
     assert computer.balance == Money(2)
     assert asset.balance == Money(3)
-    warranty.makeInitialTransaction(equity, Money(3))
+    warranty.makeInitialTransaction(equity, Money(3), date(2005,1,1))
     assert warranty.balance == Money(3)
-    cash.makeInitialTransaction(equity, Money(4))
+    cash.makeInitialTransaction(equity, Money(4), date(2005,2,1))
     assert cash.balance == Money(4)
     assert expense.balance == Money(7)       
-    salary.makeInitialTransaction(equity, Money(100.5))
+    salary.makeInitialTransaction(equity, Money(100.5), date(2005,1,1))
     assert salary.balance == Money(100.5)
     assert equity.balance == Money(-90.5)    
 

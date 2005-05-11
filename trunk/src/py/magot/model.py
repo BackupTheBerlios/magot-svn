@@ -64,7 +64,7 @@ class DetailAccount(Account):
         def add(self, account, entry):
             date = entry.date
             positions = [i for i, e in enumerate(account.entries) if e.date <= date]
-            self._notifyLink(account,entry, len(positions))
+            self._notifyLink(account, entry, len(positions))
 
     class balance(model.DerivedFeature):
         referencedType = Money
@@ -80,12 +80,13 @@ class DetailAccount(Account):
                 balance = Money(-balance.amount, balance.currency)
             return balance
 
-    def makeInitialTransaction(self, equity, amount):
+    def makeInitialTransaction(self, equity, amount, date=None):
         
+        date = date or datetime.date.today()
         if self.type is MovementType.DEBIT:
-            return Transaction(date.today(), 'initial balance', self, equity, amount)
+            return Transaction(date, 'initial balance', self, equity, amount)
         else:
-            return Transaction(date.today(), 'initial balance', equity, self, amount)
+            return Transaction(date, 'initial balance', equity, self, amount)
 
 
 class Transaction(model.Element):
@@ -190,7 +191,7 @@ class Entry(model.Element):
         defaultValue = False
 
     class balance(model.DerivedFeature):
-        """ Account balance at the entry update/insert time. 
+        """ Account balance at the entry update/insert date. 
             todo : improved algorithm """
         referencedType = Money
         

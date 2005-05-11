@@ -1,8 +1,8 @@
 Magot TODO:
 
-- sort entries by value date when launching magot
-- sort correctly entries that have same date and check that balances are ok
+- focus on the updated entry having a new value date
 - fixe dateCtrl and notebook tab layout that are misplaced according wx 2.6.0
+
 - populate account list-box with current account tree
 - fixe bug when double-clicking on a summary account (merge summary and detail account)
 - finish RefData module : 
@@ -11,13 +11,14 @@ Magot TODO:
     __str__
     use of locale for each currency
 
-- sort entries by date, tx desc, entry amount
+- finish sorting entries (by tx desc, entry amount) with menu items
 - edit entry (account, date, desc, amount) by redefining 'enter' to validate
 - create/duplicate/delete one tx
 - view entries by range date
 - search tx by criteria
 - create account
 
+- __repr__ of DetailAccount
 - add tool bar : Jump, Edit, Options, ...
 - display all account paths in entry/account column
 - can close a Tab account
