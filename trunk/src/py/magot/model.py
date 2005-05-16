@@ -4,6 +4,7 @@ from peak.api import *
 from magot.refdata import *
 from peak.util import fmtparse
 
+
 class Account(model.Element):
 
     mdl_isAbstract = True
@@ -27,7 +28,6 @@ class Account(model.Element):
     class balance(model.DerivedFeature):
         referencedType = Money
 
-
     def __str__(self):
         return "%s\t\t%s\t\t%s" % (self.name, self.description, self.balance)
 
@@ -42,9 +42,9 @@ class SummaryAccount(Account):
     class balance(model.DerivedFeature):
         referencedType = Money
 
-        def get(feature, element):
+        def get(self, account):
             balance = Money.Zero
-            for account in element.subAccounts:
+            for account in account.subAccounts:
                 balance += account.balance
             return balance
 
@@ -70,14 +70,14 @@ class DetailAccount(Account):
     class balance(model.DerivedFeature):
         referencedType = Money
 
-        def get(feature, element):
+        def get(self, account):
             balance = Money.Zero
-            for entry in element.entries:
+            for entry in account.entries:
                 if entry.type is MovementType.DEBIT:
                     balance += entry.amount
                 else:
                     balance -= entry.amount
-            if element.type is MovementType.CREDIT:
+            if account.type is MovementType.CREDIT:
                 balance = Money(-balance.amount, balance.currency)
             return balance
 
@@ -110,16 +110,16 @@ class Transaction(model.Element):
     class isSplit(model.DerivedFeature):
         referencedType = model.Boolean
         
-        def get(feature, element):
-            return len(element.entries) > 2
+        def get(self, transaction):
+            return len(transaction.entries) > 2
 
     class isBalanced(model.DerivedFeature):
         referencedType = model.Boolean
 
-        def get(feature, element):
+        def get(self, transaction):
             debit = credit = Money.Zero
-            # TODO use list comprehension
-            for entry in element.entries:
+            # todo use list comprehension
+            for entry in transaction.entries:
                 if entry.type is MovementType.DEBIT:
                     debit += entry.amount
                 else:
@@ -172,17 +172,17 @@ class Entry(model.Element):
         referencedType = model.String
         defaultValue = ''
 
-        def get(description, entry):
+        def get(self, entry):
             if not entry.transaction.isSplit:
                 return entry.transaction.description
             else:
-                return description
+                return self
 
-        def set(description, entry, value):
+        def set(self, entry, value):
             if not entry.transaction.isSplit:
                 entry.transaction.description = value
             else:
-                description = value
+                self = value
 
     class type(model.Attribute):
         referencedType = MovementType
@@ -197,7 +197,7 @@ class Entry(model.Element):
     class transaction(model.Attribute):
         referencedType = Transaction
         referencedEnd = 'entries'
-        # TODO isChangeable = False ???
+        # todo isChangeable = False ???
 
     class isReconciled(model.Attribute):
         referencedType = model.Boolean
@@ -208,7 +208,7 @@ class Entry(model.Element):
             todo : improved algorithm """
         referencedType = Money
         
-        def get(balance, entry):
+        def get(self, entry):
             entries = entry.account.entries
             previousBalance = Money.Zero
             i = entries.index(entry)
@@ -226,13 +226,13 @@ class Entry(model.Element):
     class date(model.DerivedFeature):
         referencedType = Date
         
-        def get(date, entry):
+        def get(self, entry):
             return entry.transaction.date
 
     class number(model.DerivedFeature):
         referencedType = model.Integer
         
-        def get(number, entry):
+        def get(self, entry):
             if hasattr(entry.transaction, 'number'):
                 return entry.transaction.number
             else:
@@ -241,10 +241,16 @@ class Entry(model.Element):
     class siblings(model.DerivedFeature):
         """ List of other entries contained in the same transaction. """
         
-        def get(siblings, entry):
+        def get(self, entry):
             entries = list(entry.transaction.entries)
             entries.remove(entry)
             return entries
+
+    class opposedEntry(model.DerivedFeature):
+        """ The first sibling entry contained in the same transaction. """
+        
+        def get(self, entry):
+            return entry.siblings[0]
 
     def __init__(self, type, transaction, account=None, amount=0):
         super(Entry, self).__init__(type=type, amount=amount, 
@@ -255,12 +261,16 @@ class Entry(model.Element):
         return "%s\t%s\t%s\t%s" % (str(self.date), str(self.type),
                                    str(self.amount), str(self.balance))
 
-    def update(self, account=None, type=None, amount=None, desc=None):
-        if account is not None and account != self.account:
-            self.account = account
+    def update(self, account=None, type=None, amount=None, desc=None, 
+                isReconciled=None):
+        if account is not None and account is not self.account:
+            self.account.removeEntry(self)
+            account.addEntry(self)
         if type is not None and type != self.type:
             self.type = type
         if amount is not None and amount != self.amount:
             self.amount = amount
         if desc is not None and desc != self.description:
             self.description = desc
+        if isReconciled is not None:
+            self.isReconciled = isReconciled

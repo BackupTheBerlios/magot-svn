@@ -173,7 +173,7 @@ class TestTransaction(TestCase):
         assert ed.transaction is ec.transaction is tx
         assert checking.balance == initialCheckingBalance + amount
         assert salary.balance == initialSalaryBalance + amount
-        # change entry account : get salary by cash
+        # change entry account : get salary by cash instead of checking
         ed.update(account=cash)
         assert checking.balance == initialCheckingBalance
         assert cash.balance == initialCashBalance + amount

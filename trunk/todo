@@ -1,7 +1,7 @@
 Magot TODO :
 
 - entry edition :
-    update entry specific fields (account, desc, amount, type)
+    update entry specific fields : type
     intercept "exit modified entry" (mouse clicking or arrows) to Valid/Cancel
 
 - formatting/display :

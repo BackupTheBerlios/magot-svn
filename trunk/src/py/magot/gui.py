@@ -76,7 +76,9 @@ class MainFrame(wx.Frame):
     def OnJump(self, event):
         page = self.nb.GetPage(self.nb.GetSelection())
         entry = page.GetTable().GetEntry(page.GetGridCursorRow())
-        self.nb.OpenEntry(entry.siblings[0])
+        # todo split
+        opposedEntry = entry.opposedEntry
+        self.nb.OpenAccount(opposedEntry.account, opposedEntry)
 
     def OnSort(self, event):
         table = self.nb.GetPage(self.nb.GetSelection()).GetTable()
@@ -125,7 +127,7 @@ class AccountHierarchy(wx.Panel):
             account = self.tree.GetPyData(item)
             sys.stdout.write('OnLeftDClick: %s, Col:%s, Text: %s, name %s\n' %
                 (flags, col, self.tree.GetItemText(item, col), account.name))
-            self.parent.OpenEntry(account.entries[0])
+            self.parent.OpenAccount(account)
 
     def OnSize(self, evt):
         self.tree.SetSize(self.GetSize())
@@ -208,6 +210,7 @@ class MainNotebook(wx.Notebook):
     def __init__(self, parent, id, accRoot):
         #  size=(21,21) is mandatory on windows
         wx.Notebook.__init__(self, parent, id, size=(21,21), style=wx.NB_LEFT)
+        self.ctx = parent.ctx
 
         panel = AccountHierarchy(self, accRoot)
         panel.Layout()
@@ -222,9 +225,7 @@ class MainNotebook(wx.Notebook):
         old = event.GetOldSelection()
         new = event.GetSelection()
         sel = self.GetSelection()
-        page = self.GetPage(sel)
-        if isinstance(page, AccountLedgerView):
-            page.GetTable().Refresh()
+        self.GetPage(sel).Refresh()
         event.Skip()
 
     def OnPageChanging(self, event):
@@ -233,17 +234,17 @@ class MainNotebook(wx.Notebook):
         sel = self.GetSelection()
         event.Skip()
 
-    def OpenEntry(self, entry):
-        account = entry.account
+    def OpenAccount(self, account, focusEntry=None):
         if  account.name not in self.mapAccountToPage:
             page = AccountLedgerView(self, account, sys.stdout)
             self.AddPage(page, account.name)
             self.mapAccountToPage[account.name] = self.GetPageCount() - 1
 
         self.SetSelection(self.mapAccountToPage[account.name])
-        page = self.GetPage(self.GetSelection())
-        page.GetTable().Refresh()
-        page.SetCursorOn(entry)
+        
+        if focusEntry:
+            page = self.GetPage(self.GetSelection())
+            page.SetCursorOn(focusEntry)
         
 
 class Proxy(object):
@@ -266,17 +267,18 @@ class Proxy(object):
 
 
 class AccountLedgerModel(gridlib.PyGridTableBase):
+    """ The MVC model containing all entries for an account.
+        Synchronize automatically with the view to do sorting, updating, ...
+    """
     
     def __init__(self, view, account, log):
         gridlib.PyGridTableBase.__init__(self)
         
         self.view = view
         self.account = account
-        self.log = log
-        
+        self.log = log        
         self.colLabels = ['Date', 'Num', 'Description', 'Account', 
                             'Reconciled', 'Debit', 'Credit', 'Balance']
-
         self.dataTypes = [
             gridlib.GRID_VALUE_DATETIME,
             gridlib.GRID_VALUE_NUMBER,
@@ -288,12 +290,11 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
             gridlib.GRID_VALUE_FLOAT + ':6,2',
             gridlib.GRID_VALUE_FLOAT + ':6,2',
         ]
-
+        # data stores account entries so that we can sort them
+        # graphically whithout changing account.entries order
         self.data = {}
-        for i, entry in enumerate(account.entries):
-            self.data[i] = entry
-        self.rowkeys = self.data.keys()
-
+        self.rowkeys = []
+        self._syncModelAgainstAccount()
 
     #--------------------------------------------------
     # required methods for the wxPyGridTableBase interface
@@ -327,7 +328,11 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
         if col == 2:
             return entry.description
         if col == 3:
-            return entry.siblings[0].account.name
+            # todo split
+            if hasattr(entry, 'oppositeAccountName'):
+                return entry.oppositeAccountName
+            else:
+                return entry.opposedEntry.account.name
         if col == 4:
             return entry.isReconciled
         if col == 5:
@@ -351,7 +356,7 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
         elif col == 2:
             entry.description = value
         elif col == 3:
-            entry.opposedAccountName = value
+            entry.oppositeAccountName = value
         elif col == 4:
             entry.isReconciled = value
         elif col == 5:
@@ -422,34 +427,55 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
             if v is entry:
                 row = self.rowkeys.index(k)
                 return row
-        raise "Row not Found"
+        raise "Row not Found for entry " + entry.description
 
-    def Refresh(self, keepFocus=True):
-        row = self.GetView().GetGridCursorRow()
-        currentEntry = self.GetEntry(row)
+    def Refresh(self, keepFocus=True, sort=True):
+        self._syncModelAgainstAccount()
 
-        for i, entry in enumerate(self.account.entries):
-            self.data[i] = entry
-        self.rowkeys = self.data.keys()
-        # todo : really necessary ???
-        self.Sort()
+        if sort:
+            # todo : when is really necessary to sort ?
+            self.Sort()
         
-        if keepFocus:
+        row = self.GetView().GetGridCursorRow()
+        if keepFocus and self.GetNumberRows() > 1 and row != -1:
+            currentEntry = self.GetEntry(row)
             row = self.GetRow(currentEntry)
             self.GetView().SetGridCursor(row, 0)
 
-    def Sort(self, bycol=0):
-        descending = False
+        msg = wx.grid.GridTableMessage(self, 
+                                    wx.grid.GRIDTABLE_REQUEST_VIEW_GET_VALUES)
+        self.GetView().ProcessTableMessage(msg)
+        self.GetView().AutoSizeColumns()
+
+    def _syncModelAgainstAccount(self):
+        oldrows = self.rowkeys
+        self.data.clear()
+        for i, entry in enumerate(self.account.entries):
+            self.data[i] = entry
+        
+        self.rowkeys = self.data.keys()
+        lo = len(oldrows)
+        ln = len(self.rowkeys)
+        if ln > lo:
+            msg = wx.grid.GridTableMessage(self, wx.grid.GRIDTABLE_NOTIFY_ROWS_APPENDED, ln-lo)
+        elif lo > ln:
+            msg = wx.grid.GridTableMessage(self, wx.grid.GRIDTABLE_NOTIFY_ROWS_DELETED, 0, lo-ln)
+        else:
+            msg = None
+        if msg is not None:
+            self.view.ProcessTableMessage(msg)
+
+    def Sort(self, bycol=0, descending=False):
         l = [(self._getdata(bycol, self.data[key]), key) for key in self.rowkeys]
         l.sort()
         if descending:
             l.reverse()
         # new order
-        self.rowkeys = [key for val,key in l]
+        self.rowkeys = [key for val, key in l]
         
         msg = wx.grid.GridTableMessage(self, 
-            wx.grid.GRIDTABLE_REQUEST_VIEW_GET_VALUES)
-        self.view.ProcessTableMessage(msg)
+                                    wx.grid.GRIDTABLE_REQUEST_VIEW_GET_VALUES)
+        self.GetView().ProcessTableMessage(msg)
 
 
 class AccountLedgerView(gridlib.Grid):
@@ -458,11 +484,8 @@ class AccountLedgerView(gridlib.Grid):
     """
     def __init__(self, parent, account, log):
         super(AccountLedgerView, self).__init__(parent, -1)
-        # todo use right format
-        renderer = gridlib.GridCellDateTimeRenderer('%c', '%c')
-        self.RegisterDataType(gridlib.GRID_VALUE_DATETIME,
-                                renderer, DateCellEditor(log))
-
+        self.ctx = parent.ctx
+        
         table = AccountLedgerModel(self, account, log)
         # The second parameter means that the grid is to take ownership of the
         # table and will destroy it when done. Otherwise you would need to keep
@@ -470,6 +493,10 @@ class AccountLedgerView(gridlib.Grid):
         self.SetTable(table, True)
         self.GetTable().Sort()
 
+        # todo use right format
+        renderer = gridlib.GridCellDateTimeRenderer('%c', '%c')
+        self.RegisterDataType(gridlib.GRID_VALUE_DATETIME,
+                                renderer, DateCellEditor(log))
         self.SetRowLabelSize(0)
         self.SetMargins(0,0)
         self.AutoSizeColumns(False)
@@ -522,11 +549,13 @@ class AccountLedgerView(gridlib.Grid):
                 nb=proxy.getModifiedAttr('number'),
                 desc=proxy.getModifiedAttr('description'),
                 amount=proxy.getModifiedAttr('amount'))
-    ##            todo
-    ##        entry.update(
-    ##            account=hasattr(proxy, 'opposedAccountName') and proxy.opposedAccountName)
-    ##        entry.isReconciled = value
-    
+            
+            account = proxy.getModifiedAttr('oppositeAccountName')
+            if account:
+                account = self.ctx.Accounts.get(account)
+            entry.opposedEntry.update(account=account)
+            entry.update(isReconciled=proxy.getModifiedAttr('isReconciled'))
+
             # get ready to register next entry modifications with a new proxy
             del self._entryProxy
             
@@ -535,14 +564,14 @@ class AccountLedgerView(gridlib.Grid):
             self.GetTable().SetEntry(row, entry)
             self.GetTable().Refresh()
         
-        nextRow = self.GetGridCursorRow() + 1
-        if nextRow < self.GetTable().GetNumberRows():
-            self.SetGridCursor(nextRow, 0)
-            self.MakeCellVisible(nextRow, 0)
-        else:
-            # this would be a good place to add a new row if your app
-            # needs to do that
-            pass
+##        nextRow = self.GetGridCursorRow() + 1
+##        if nextRow < self.GetTable().GetNumberRows():
+##            self.SetGridCursor(nextRow, 0)
+##            self.MakeCellVisible(nextRow, 0)
+##        else:
+##            # this would be a good place to add a new row if your app
+##            # needs to do that
+##            pass
 
     def SetCursorOn(self, entry):
         rowkeys = self.GetTable().rowkeys
@@ -559,6 +588,8 @@ class AccountLedgerView(gridlib.Grid):
     def GetModifiedEntry(self):
         return self._entryProxy
 
+    def Refresh(self):
+        self.GetTable().Refresh()
 
 class WxApp(wx.App):
    
