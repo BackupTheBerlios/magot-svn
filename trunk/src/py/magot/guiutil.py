@@ -1,4 +1,5 @@
 import datetime
+import string
 
 import wx
 import wx.grid as gridlib
@@ -207,7 +208,8 @@ class DateCellEditor(gridlib.PyGridCellEditor):
             grid.GetTable().SetValue(row, col, val) # update the table
 
         self.startValue = ''
-        self.log.write("DateCellEditor: EndEdit (%d,%d) return %s\n" % (row, col, changed))
+        self.log.write("DateCellEditor: EndEdit (%d,%d) return %s\n" %
+                        (row, col, changed))
         return changed
 
 
@@ -226,7 +228,8 @@ class DateCellEditor(gridlib.PyGridCellEditor):
         version only checks that the event has no modifiers.  F2 is special
         and will always start the editor.
         """
-        self.log.write("DateCellEditor: IsAcceptedKey: %d\n" % (evt.GetKeyCode()))
+        self.log.write("DateCellEditor: IsAcceptedKey: %d\n" % 
+                        (evt.GetKeyCode()))
 
         ## Oops, there's a bug here, we'll have to do it ourself..
         ##return self.base_IsAcceptedKey(evt)

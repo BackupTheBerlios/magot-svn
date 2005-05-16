@@ -63,7 +63,8 @@ class DetailAccount(Account):
 
         def add(self, account, entry):
             date = entry.date
-            positions = [i for i, e in enumerate(account.entries) if e.date <= date]
+            positions = [i for i, e in enumerate(account.entries) 
+                            if e.date <= date]
             self._notifyLink(account, entry, len(positions))
 
     class balance(model.DerivedFeature):
@@ -129,12 +130,12 @@ class Transaction(model.Element):
     def __init__(self, date, description, debit=None, credit=None, amount=None):
 
         if debit is None or credit is None or amount is None:
-            super(Transaction, self).__init__(date=date, description=description)
+            super(Transaction,self).__init__(date=date, description=description)
         else:
             if not isinstance(amount, Money):
                 amount = Money(amount)
 
-            super(Transaction, self).__init__(date=date, description=description)
+            super(Transaction,self).__init__(date=date, description=description)
             self.addDebitEntry(debit, amount)
             self.addCreditEntry(credit, amount)
 
@@ -154,9 +155,9 @@ class Transaction(model.Element):
                 account = e.account
                 account.removeEntry(e)
                 account.addEntry(e)
-        if nb is not None and nb != self.number:
+        if nb is not None:
             self.number = nb
-        if desc is not None and desc != self.description:
+        if desc is not None:
             self.description = desc
         if amount is not None:
             if self.isSplit:
@@ -170,6 +171,18 @@ class Entry(model.Element):
     class description(model.Attribute):
         referencedType = model.String
         defaultValue = ''
+
+        def get(description, entry):
+            if not entry.transaction.isSplit:
+                return entry.transaction.description
+            else:
+                return description
+
+        def set(description, entry, value):
+            if not entry.transaction.isSplit:
+                entry.transaction.description = value
+            else:
+                description = value
 
     class type(model.Attribute):
         referencedType = MovementType
@@ -195,42 +208,52 @@ class Entry(model.Element):
             todo : improved algorithm """
         referencedType = Money
         
-        def get(feature, element):
-            entries = element.account.entries
+        def get(balance, entry):
+            entries = entry.account.entries
             previousBalance = Money.Zero
-            i = entries.index(element)
+            i = entries.index(entry)
             if i > 0:
                 # recursif
                 previousBalance = entries[i-1].balance
             
-            if element.type is element.account.type:
-                previousBalance += element.amount
+            if entry.type is entry.account.type:
+                previousBalance += entry.amount
             else:
-                previousBalance -= element.amount
+                previousBalance -= entry.amount
             
             return previousBalance
 
     class date(model.DerivedFeature):
         referencedType = Date
         
-        def get(self, entry):
+        def get(date, entry):
             return entry.transaction.date
+
+    class number(model.DerivedFeature):
+        referencedType = model.Integer
+        
+        def get(number, entry):
+            if hasattr(entry.transaction, 'number'):
+                return entry.transaction.number
+            else:
+                return None
 
     class siblings(model.DerivedFeature):
         """ List of other entries contained in the same transaction. """
         
-        def get(feature, element):
-            siblings = list(element.transaction.entries)
-            siblings.remove(element)
-            return siblings
+        def get(siblings, entry):
+            entries = list(entry.transaction.entries)
+            entries.remove(entry)
+            return entries
 
     def __init__(self, type, transaction, account=None, amount=0):
-        super(Entry, self).__init__(type=type, amount=amount, transaction=transaction)
+        super(Entry, self).__init__(type=type, amount=amount, 
+                                    transaction=transaction)
         account.addEntry(self)
 
     def __str__(self):
         return "%s\t%s\t%s\t%s" % (str(self.date), str(self.type),
-            str(self.amount), str(self.balance))
+                                   str(self.amount), str(self.balance))
 
     def update(self, account=None, type=None, amount=None, desc=None):
         if account is not None and account != self.account:

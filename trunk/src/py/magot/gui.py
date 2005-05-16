@@ -1,32 +1,21 @@
-import wx
-import wx.grid as gridlib
 import sys
 import datetime
 import weakref
 
+import wx
+import wx.grid as gridlib
 
 from magot.model import *
 from magot.refdata import *
 from magot.storage import *
 from magot.guiutil import *
 
-#---------------------------------------------------------------------------
-# TODO :
-# double click sur un compte ==> TAB des entries
-# population des entries
-# catcher la sortie de ligne pour valider l'entry = creer ou modifier la tx grace au veto
-# touche entree deplace le curseur vers la gauche et non vers le bas
 
-# sortable columns
-# population de la liste de comptes
-# split a plusieurs entries
-# mettre des defauts visibles blanc et non egal a 0
-# validation des champs : entier, montant
-
-class Frame(wx.Frame):
+class MainFrame(wx.Frame):
 
     def __init__(self, parent, title, ctx):
-        wx.Frame.__init__(self, parent, -1, title, pos=(150, 150), size=(850, 500))
+        wx.Frame.__init__(self, parent, -1, title, 
+                            pos=(150, 150), size=(850, 500))
         self.ctx = ctx
 
         menuBar = wx.MenuBar()
@@ -58,10 +47,11 @@ class Frame(wx.Frame):
 
     def OnEditAccount(self, evt):
         tree = self.panel.tree
-        win = AccountDetailDialog(self, tree, -1, "Account details", 
+        win = AccountEditor(self, tree, -1, "Account details", 
             size=wx.Size(500, 200), 
             style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
         win.CenterOnScreen()
+        
         if win.ShowModal() == wx.ID_OK:
             item = tree.GetSelection()
             account = tree.GetPyData(item)
@@ -76,7 +66,7 @@ class Frame(wx.Frame):
                     return
                     
                 account.parent = newParent
-                self.panel.refresh(account)
+                self.panel.Refresh(account)
 
     def OnSave(self, evt):
         self.ctx.Accounts.register(self.accRoot)
@@ -85,16 +75,16 @@ class Frame(wx.Frame):
 
     def OnJump(self, event):
         page = self.nb.GetPage(self.nb.GetSelection())
-        table = page.GetTable()
-        key = table.rowkeys[page.GetGridCursorRow()]
-        entry = table.data[key]
-        self.nb.openEntry(entry.siblings[0])
+        entry = page.GetTable().GetEntry(page.GetGridCursorRow())
+        self.nb.OpenEntry(entry.siblings[0])
 
     def OnSort(self, event):
         table = self.nb.GetPage(self.nb.GetSelection()).GetTable()
-        table.Sort()
+        # todo use item menu for column to sort by
+        table.Sort(3)
 
-class AllAccountsPanel(wx.Panel):
+
+class AccountHierarchy(wx.Panel):
 
     def __init__(self, parent, accRoot):
         wx.Panel.__init__(self, parent, -1)
@@ -102,13 +92,15 @@ class AllAccountsPanel(wx.Panel):
 
         self.accRoot = accRoot
         self.parent = parent
-        self.tree = AutoWidthTreeListCtrl(self, -1, style=wx.TR_DEFAULT_STYLE |
-            wx.TR_HIDE_ROOT)
+        self.tree = AutoWidthTreeListCtrl(self, -1, 
+            style=wx.TR_DEFAULT_STYLE | wx.TR_HIDE_ROOT)
 
         isz = (16,16)
         il = wx.ImageList(isz[0], isz[1])
-        self.fldridx = il.Add(wx.ArtProvider_GetBitmap(wx.ART_FOLDER, wx.ART_OTHER, isz))
-        self.fldropenidx = il.Add(wx.ArtProvider_GetBitmap(wx.ART_FILE_OPEN, wx.ART_OTHER, isz))
+        self.fldridx = il.Add(wx.ArtProvider_GetBitmap(
+            wx.ART_FOLDER, wx.ART_OTHER, isz))
+        self.fldropenidx = il.Add(wx.ArtProvider_GetBitmap(
+            wx.ART_FILE_OPEN, wx.ART_OTHER, isz))
 
         self.tree.SetImageList(il)
         self.il = il
@@ -121,7 +113,7 @@ class AllAccountsPanel(wx.Panel):
         self.tree.SetColumnWidth(0, 175)
         self.tree.SetColumnWidth(1, 300)
 
-        self.refresh()
+        self.Refresh()
 
         wx.EVT_LEFT_DCLICK(self.tree.GetMainWindow(), self.OnLeftDClick)
 
@@ -133,12 +125,12 @@ class AllAccountsPanel(wx.Panel):
             account = self.tree.GetPyData(item)
             sys.stdout.write('OnLeftDClick: %s, Col:%s, Text: %s, name %s\n' %
                 (flags, col, self.tree.GetItemText(item, col), account.name))
-            self.parent.openEntry(account.entries[0])
+            self.parent.OpenEntry(account.entries[0])
 
     def OnSize(self, evt):
         self.tree.SetSize(self.GetSize())
 
-    def refresh(self, focus=None):
+    def Refresh(self, focus=None):
         self.tree.DeleteAllItems()
         self.root = self.tree.AddRoot("The Root Item")
         self._displayLevel(self.accRoot, self.root, focus)
@@ -159,7 +151,7 @@ class AllAccountsPanel(wx.Panel):
                 self._displayLevel(account, child, focus)
 
 
-class AccountDetailDialog(wx.Dialog):
+class AccountEditor(wx.Dialog):
     
     def __init__(self, parent, tree, ID, title, pos=wx.DefaultPosition, 
             size=wx.DefaultSize, style=wx.DEFAULT_DIALOG_STYLE):
@@ -217,7 +209,7 @@ class MainNotebook(wx.Notebook):
         #  size=(21,21) is mandatory on windows
         wx.Notebook.__init__(self, parent, id, size=(21,21), style=wx.NB_LEFT)
 
-        panel = AllAccountsPanel(self, accRoot)
+        panel = AccountHierarchy(self, accRoot)
         panel.Layout()
         self.AddPage(panel, 'accounts')
         parent.panel = panel
@@ -230,6 +222,9 @@ class MainNotebook(wx.Notebook):
         old = event.GetOldSelection()
         new = event.GetSelection()
         sel = self.GetSelection()
+        page = self.GetPage(sel)
+        if isinstance(page, AccountLedgerView):
+            page.GetTable().Refresh()
         event.Skip()
 
     def OnPageChanging(self, event):
@@ -238,19 +233,39 @@ class MainNotebook(wx.Notebook):
         sel = self.GetSelection()
         event.Skip()
 
-    def openEntry(self, entry):
+    def OpenEntry(self, entry):
         account = entry.account
         if  account.name not in self.mapAccountToPage:
-            page = AccountLedger(self, account, sys.stdout)
+            page = AccountLedgerView(self, account, sys.stdout)
             self.AddPage(page, account.name)
             self.mapAccountToPage[account.name] = self.GetPageCount() - 1
 
         self.SetSelection(self.mapAccountToPage[account.name])
         page = self.GetPage(self.GetSelection())
+        page.GetTable().Refresh()
         page.SetCursorOn(entry)
+        
+
+class Proxy(object):
+    """The Proxy base class."""
+
+    def __init__(self, obj):
+        """The initializer."""
+        super(Proxy, self).__init__(obj)
+        #Set attribute.
+        self._obj = obj
+        
+    def __getattr__(self, attrib):
+        try:
+            return self.__dict__[attrib]
+        except KeyError:
+            return getattr(self._obj, attrib)
+
+    def getModifiedAttr(self, key):
+        return self.__dict__.get(key, None)
 
 
-class EntryDataTable(gridlib.PyGridTableBase):
+class AccountLedgerModel(gridlib.PyGridTableBase):
     
     def __init__(self, view, account, log):
         gridlib.PyGridTableBase.__init__(self)
@@ -259,8 +274,8 @@ class EntryDataTable(gridlib.PyGridTableBase):
         self.account = account
         self.log = log
         
-        self.colLabels = ['Date', 'Num', 'Description', 'Account', 'Reconciled',
-                                'Debit', 'Credit', 'Balance']
+        self.colLabels = ['Date', 'Num', 'Description', 'Account', 
+                            'Reconciled', 'Debit', 'Credit', 'Balance']
 
         self.dataTypes = [
             gridlib.GRID_VALUE_DATETIME,
@@ -297,20 +312,20 @@ class EntryDataTable(gridlib.PyGridTableBase):
     # Renderer understands the type too,) not just strings as in the C++ version.
     def GetValue(self, row, col):
         try:
-            entry = self.data[self.rowkeys[row]]
+            entry = self.GetEntry(row)
         except:
             print "bad row", row
             return ''
-        return self.getdata(col, entry, "")
+        return self._getdata(col, entry, "")
 
-    def getdata(self, col, entry, default=''):
-        # TODO split
+    def _getdata(self, col, entry, default=''):
+        # todo split
         if col == 0:
             return pydate2wxdate(entry.date)
         if col == 1:
-            return hasattr(entry.transaction, 'number') or ''
+            return entry.number
         if col == 2:
-            return entry.transaction.description
+            return entry.description
         if col == 3:
             return entry.siblings[0].account.name
         if col == 4:
@@ -328,17 +343,34 @@ class EntryDataTable(gridlib.PyGridTableBase):
         if col == 7:
             return entry.balance.amount
 
+    def _setdata(self, col, entry, value=None):
+        if col == 0:
+            entry.date = wxdate2pydate(value)
+        elif col == 1:
+            entry.number = value
+        elif col == 2:
+            entry.description = value
+        elif col == 3:
+            entry.opposedAccountName = value
+        elif col == 4:
+            entry.isReconciled = value
+        elif col == 5:
+            if entry.type is MovementType.DEBIT:
+                entry.amount = Money(str(value))
+        elif col == 6:
+            if entry.type is not MovementType.DEBIT:
+                entry.amount = Money(str(value))
+
     def SetValue(self, row, col, value):
         try:
-            entry = self.data[self.rowkeys[row]]
-            # todo : for other columns different than date
-            entry.transaction.update(date=wxdate2pydate(value))
-            
-            for i, entry in enumerate(entry.account.entries):
-                self.data[i] = entry
-            self.rowkeys = self.data.keys()
-            # to not necessary if update of date
-            self.Sort()
+            if not self.GetView().HasEntryBeenModified():
+                # first modification on this entry, so register it in the view
+                e = self.GetEntry(row)
+                modifiedEntry = self.GetView().RegisterEntryForModification(e)
+                # the model must now use the modified entry
+                self.SetEntry(row, modifiedEntry)
+
+            self._setdata(col, self.GetView().GetModifiedEntry(), value)
         except IndexError:
             # add a new row
             self.data.append([''] * self.GetNumberCols())
@@ -378,37 +410,65 @@ class EntryDataTable(gridlib.PyGridTableBase):
     def CanSetValueAs(self, row, col, typeName):
         return self.CanGetValueAs(row, col, typeName)
 
+    def GetEntry(self, row):
+        entry = self.data[self.rowkeys[row]]
+        return entry
+
+    def SetEntry(self, row, entry):
+        self.data[self.rowkeys[row]] = entry
+
+    def GetRow(self, entry):
+        for k, v in self.data.iteritems():
+            if v is entry:
+                row = self.rowkeys.index(k)
+                return row
+        raise "Row not Found"
+
+    def Refresh(self, keepFocus=True):
+        row = self.GetView().GetGridCursorRow()
+        currentEntry = self.GetEntry(row)
+
+        for i, entry in enumerate(self.account.entries):
+            self.data[i] = entry
+        self.rowkeys = self.data.keys()
+        # todo : really necessary ???
+        self.Sort()
+        
+        if keepFocus:
+            row = self.GetRow(currentEntry)
+            self.GetView().SetGridCursor(row, 0)
+
     def Sort(self, bycol=0):
         descending = False
-        l = [ (self.getdata(bycol, self.data[key]), key) for key in self.rowkeys]
+        l = [(self._getdata(bycol, self.data[key]), key) for key in self.rowkeys]
         l.sort()
         if descending:
             l.reverse()
         # new order
         self.rowkeys = [key for val,key in l]
         
-        msg = wx.grid.GridTableMessage(self, wx.grid.GRIDTABLE_REQUEST_VIEW_GET_VALUES)
+        msg = wx.grid.GridTableMessage(self, 
+            wx.grid.GRIDTABLE_REQUEST_VIEW_GET_VALUES)
         self.view.ProcessTableMessage(msg)
 
 
-class AccountLedger(gridlib.Grid):
+class AccountLedgerView(gridlib.Grid):
     """ 
     This is a page of the notebook and displays all entries for one account.
     """
     def __init__(self, parent, account, log):
-        super(AccountLedger, self).__init__(parent, -1)
-        # todo own renderer
+        super(AccountLedgerView, self).__init__(parent, -1)
+        # todo use right format
         renderer = gridlib.GridCellDateTimeRenderer('%c', '%c')
         self.RegisterDataType(gridlib.GRID_VALUE_DATETIME,
-                                        renderer,
-                                        DateCellEditor(log))
+                                renderer, DateCellEditor(log))
 
-        table = EntryDataTable(self, account, log)
-        table.Sort()
+        table = AccountLedgerModel(self, account, log)
         # The second parameter means that the grid is to take ownership of the
         # table and will destroy it when done. Otherwise you would need to keep
         # a reference to it and call it's Destroy method later.
         self.SetTable(table, True)
+        self.GetTable().Sort()
 
         self.SetRowLabelSize(0)
         self.SetMargins(0,0)
@@ -433,10 +493,7 @@ class AccountLedger(gridlib.Grid):
         attr.SetReadOnly(True)
         self.SetColAttr(7, attr)
 
-    def SetCursorOn(self, entry):
-        rowkeys = self.GetTable().rowkeys
-        index = entry.account.entries.index(entry)
-        self.SetGridCursor(rowkeys.index(index), 3)
+        self.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
 
     def GetTable(self):
         return self.tableRef()
@@ -444,6 +501,63 @@ class AccountLedger(gridlib.Grid):
     def SetTable(self, object, *attributes):
         self.tableRef = weakref.ref(object)
         return gridlib.Grid.SetTable(self, object, *attributes)
+
+    def OnKeyDown(self, evt):
+        if evt.KeyCode() != wx.WXK_RETURN:
+            evt.Skip()
+            return
+
+        if evt.ControlDown():   # the edit control needs this key
+            evt.Skip()
+            return
+
+        self.DisableCellEditControl()
+
+        if self.HasEntryBeenModified():
+            proxy = self._entryProxy
+            entry = proxy._obj
+    
+            entry.transaction.update(
+                date=proxy.getModifiedAttr('date'),
+                nb=proxy.getModifiedAttr('number'),
+                desc=proxy.getModifiedAttr('description'),
+                amount=proxy.getModifiedAttr('amount'))
+    ##            todo
+    ##        entry.update(
+    ##            account=hasattr(proxy, 'opposedAccountName') and proxy.opposedAccountName)
+    ##        entry.isReconciled = value
+    
+            # get ready to register next entry modifications with a new proxy
+            del self._entryProxy
+            
+            # modifications OK, so replace in the model the proxy by the entry
+            row = self.GetGridCursorRow()
+            self.GetTable().SetEntry(row, entry)
+            self.GetTable().Refresh()
+        
+        nextRow = self.GetGridCursorRow() + 1
+        if nextRow < self.GetTable().GetNumberRows():
+            self.SetGridCursor(nextRow, 0)
+            self.MakeCellVisible(nextRow, 0)
+        else:
+            # this would be a good place to add a new row if your app
+            # needs to do that
+            pass
+
+    def SetCursorOn(self, entry):
+        rowkeys = self.GetTable().rowkeys
+        index = entry.account.entries.index(entry)
+        self.SetGridCursor(rowkeys.index(index), 3)
+
+    def HasEntryBeenModified(self):
+        return hasattr(self, '_entryProxy')
+
+    def RegisterEntryForModification(self, entry):
+        self._entryProxy = Proxy(entry)
+        return self._entryProxy
+
+    def GetModifiedEntry(self):
+        return self._entryProxy
 
 
 class WxApp(wx.App):
@@ -453,13 +567,13 @@ class WxApp(wx.App):
         wx.App.__init__(self)
     
     def OnInit(self):
-        self.frame = Frame(None, 'Magot', self.ctx)
+        self.frame = MainFrame(None, 'Magot', self.ctx)
         self.frame.Show()
         self.SetTopWindow(self.frame)
         return True
 
 
-class MagotGUI(commands.AbstractCommand):
+class MagotGUICmd(commands.AbstractCommand):
 
     Accounts = binding.Make('magot.storage.AccountDM')
 
@@ -470,5 +584,5 @@ class MagotGUI(commands.AbstractCommand):
 
 if __name__ == '__main__':
     root = config.makeRoot()
-    app = MagotGUI(root)
+    app = MagotGUICmd(root)
     app.run()
