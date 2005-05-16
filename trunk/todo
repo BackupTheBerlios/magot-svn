@@ -1,25 +1,30 @@
-Magot TODO:
+Magot TODO :
 
-- focus on the updated entry having a new value date
-- fixe dateCtrl and notebook tab layout that are misplaced according wx 2.6.0
+- entry edition :
+    update entry specific fields (account, desc, amount, type)
+    intercept "exit modified entry" (mouse clicking or arrows) to Valid/Cancel
 
+- formatting/display :
+    render date with appropriate format
+    display '' for empty entry.number, not 0- access a notebook page by its view only, not its model
+    fixe notebook tab layout that are misplaced
+
+- finish sorting entries (by tx desc, entry amount) with menu items
 - populate account list-box with current account tree
-- fixe bug when double-clicking on a summary account (merge summary and detail account)
 - finish RefData module : 
     integrate currency in Money
     rounding decimal.getcontext().rounding="ROUND_HALF_UP" for EURO
     __str__
     use of locale for each currency
+- __repr__ of DetailAccount
+- add tool bar : JumpToAccount, OpenAccount, EditAccount, HierarchyOptions
 
-- finish sorting entries (by tx desc, entry amount) with menu items
-- edit entry (account, date, desc, amount) by redefining 'enter' to validate
+- copy/paste of cell or entry
+- fixe bug when double-clicking on a summary account (merge summary and detail account)
 - create/duplicate/delete one tx
 - view entries by range date
 - search tx by criteria
 - create account
-
-- __repr__ of DetailAccount
-- add tool bar : Jump, Edit, Options, ...
 - display all account paths in entry/account column
 - can close a Tab account
 - alternate color between entries
@@ -28,13 +33,14 @@ Magot TODO:
 - Num column should propose : ATM, Virement, ...
 - set the focus on a moved account 
 - right adjust account amount
+- make multiple entry (aka split)
 - rapports :
-	perte/profit = compte de résultat = Profit and loss = Income Statement
-    bilan = balance sheet
+	Profit and loss = Income Statement
+    balance sheet
 - general ledger
-- imputation budgetaires / exercice / create a budget
-- tiers ?
-
+- budgets / accounting periods
+- parties ?
 - unicode + i18n + l10n
 - unit tests with http://www.access.wvu.edu/class/acctutor/tableofc.htm + doctest
-- make true persistence : SQLlite, DURUS/ZODB/Pypersyst, Metakit, SQLObject, Roundup HyperDB ?
+- make true persistence : SQLlite, DURUS/ZODB/Pypersyst, Metakit, SQLObject, 
+Roundup HyperDB, PyDO ?
