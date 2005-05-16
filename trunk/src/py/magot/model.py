@@ -261,13 +261,20 @@ class Entry(model.Element):
         return "%s\t%s\t%s\t%s" % (str(self.date), str(self.type),
                                    str(self.amount), str(self.balance))
 
+    def _changeType(self):
+        if self.type == MovementType.CREDIT:
+            self.type = MovementType.DEBIT
+        else:
+            self.type = MovementType.CREDIT
+        
     def update(self, account=None, type=None, amount=None, desc=None, 
                 isReconciled=None):
         if account is not None and account is not self.account:
             self.account.removeEntry(self)
             account.addEntry(self)
         if type is not None and type != self.type:
-            self.type = type
+            self._changeType()
+            self.opposedEntry._changeType()
         if amount is not None and amount != self.amount:
             self.amount = amount
         if desc is not None and desc != self.description:

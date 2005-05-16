@@ -320,7 +320,6 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
         return self._getdata(col, entry, "")
 
     def _getdata(self, col, entry, default=''):
-        # todo split
         if col == 0:
             return pydate2wxdate(entry.date)
         if col == 1:
@@ -336,15 +335,15 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
         if col == 4:
             return entry.isReconciled
         if col == 5:
-            if entry.type is MovementType.DEBIT:
+            if entry.type == MovementType.DEBIT:
                 return entry.amount.amount
             else:
                 return default
         if col == 6:
-            if entry.type is MovementType.DEBIT:
-                return default
-            else:
+            if entry.type == MovementType.CREDIT:
                 return entry.amount.amount
+            else:
+                return default
         if col == 7:
             return entry.balance.amount
 
@@ -360,11 +359,11 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
         elif col == 4:
             entry.isReconciled = value
         elif col == 5:
-            if entry.type is MovementType.DEBIT:
-                entry.amount = Money(str(value))
+            entry.type = MovementType.DEBIT
+            entry.amount = Money(value)
         elif col == 6:
-            if entry.type is not MovementType.DEBIT:
-                entry.amount = Money(str(value))
+            entry.type = MovementType.CREDIT
+            entry.amount = Money(value)
 
     def SetValue(self, row, col, value):
         try:
@@ -457,16 +456,18 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
         lo = len(oldrows)
         ln = len(self.rowkeys)
         if ln > lo:
-            msg = wx.grid.GridTableMessage(self, wx.grid.GRIDTABLE_NOTIFY_ROWS_APPENDED, ln-lo)
+            msg = wx.grid.GridTableMessage(self, 
+                wx.grid.GRIDTABLE_NOTIFY_ROWS_APPENDED, ln-lo)
         elif lo > ln:
-            msg = wx.grid.GridTableMessage(self, wx.grid.GRIDTABLE_NOTIFY_ROWS_DELETED, 0, lo-ln)
+            msg = wx.grid.GridTableMessage(self, 
+                wx.grid.GRIDTABLE_NOTIFY_ROWS_DELETED, 0, lo-ln)
         else:
             msg = None
         if msg is not None:
             self.view.ProcessTableMessage(msg)
 
     def Sort(self, bycol=0, descending=False):
-        l = [(self._getdata(bycol, self.data[key]), key) for key in self.rowkeys]
+        l = [(self._getdata(bycol, self.data[k]), k) for k in self.rowkeys]
         l.sort()
         if descending:
             l.reverse()
@@ -474,13 +475,13 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
         self.rowkeys = [key for val, key in l]
         
         msg = wx.grid.GridTableMessage(self, 
-                                    wx.grid.GRIDTABLE_REQUEST_VIEW_GET_VALUES)
+                wx.grid.GRIDTABLE_REQUEST_VIEW_GET_VALUES)
         self.GetView().ProcessTableMessage(msg)
 
 
 class AccountLedgerView(gridlib.Grid):
     """ 
-    This is a page of the notebook and displays all entries for one account.
+    This is a page of the notebook that displays all entries of an account.
     """
     def __init__(self, parent, account, log):
         super(AccountLedgerView, self).__init__(parent, -1)
@@ -543,27 +544,31 @@ class AccountLedgerView(gridlib.Grid):
         if self.HasEntryBeenModified():
             proxy = self._entryProxy
             entry = proxy._obj
-    
+            
+            # transaction level modifications
             entry.transaction.update(
                 date=proxy.getModifiedAttr('date'),
                 nb=proxy.getModifiedAttr('number'),
                 desc=proxy.getModifiedAttr('description'),
                 amount=proxy.getModifiedAttr('amount'))
-            
+            # entry level modifications
+            entry.update(
+                isReconciled=proxy.getModifiedAttr('isReconciled'),
+                type=proxy.getModifiedAttr('type'))
+            # opposite entry level modifications
             account = proxy.getModifiedAttr('oppositeAccountName')
             if account:
                 account = self.ctx.Accounts.get(account)
             entry.opposedEntry.update(account=account)
-            entry.update(isReconciled=proxy.getModifiedAttr('isReconciled'))
-
-            # get ready to register next entry modifications with a new proxy
+            
+            # get ready to register next modifications with a new proxy
             del self._entryProxy
             
             # modifications OK, so replace in the model the proxy by the entry
             row = self.GetGridCursorRow()
             self.GetTable().SetEntry(row, entry)
             self.GetTable().Refresh()
-        
+## todo        
 ##        nextRow = self.GetGridCursorRow() + 1
 ##        if nextRow < self.GetTable().GetNumberRows():
 ##            self.SetGridCursor(nextRow, 0)
