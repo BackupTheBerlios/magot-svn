@@ -81,9 +81,11 @@ class MainFrame(wx.Frame):
         self.nb.OpenAccount(opposedEntry.account, opposedEntry)
 
     def OnSort(self, event):
-        table = self.nb.GetPage(self.nb.GetSelection()).GetTable()
+        page = self.nb.GetPage(self.nb.GetSelection())
         # todo use item menu for column to sort by
-        table.Sort(3)
+        currentEntry = page.GetTable().GetEntry(page.GetGridCursorRow())
+        page.GetTable().Sort(3)
+        page.SetCursorOn(currentEntry)
 
 
 class AccountHierarchy(wx.Panel):
@@ -144,8 +146,10 @@ class AccountHierarchy(wx.Panel):
                 
                 self.tree.SetItemText(child, account.description, 1)
                 self.tree.SetItemText(child, str(account.balance.amount), 2)
-                self.tree.SetItemImage(child, self.fldridx, which=wx.TreeItemIcon_Normal)
-                self.tree.SetItemImage(child, self.fldropenidx, which=wx.TreeItemIcon_Expanded)
+                self.tree.SetItemImage(child, self.fldridx, 
+                                        which=wx.TreeItemIcon_Normal)
+                self.tree.SetItemImage(child, self.fldropenidx, 
+                                        which=wx.TreeItemIcon_Expanded)
                 self.tree.SetPyData(child, account)
                 if account is focus:
                     self.tree.Expand(child)
@@ -276,7 +280,7 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
         
         self.view = view
         self.account = account
-        self.log = log        
+        self.log = log
         self.colLabels = ['Date', 'Num', 'Description', 'Account', 
                             'Reconciled', 'Debit', 'Credit', 'Balance']
         self.dataTypes = [
@@ -292,7 +296,7 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
         ]
         # data stores account entries so that we can sort them
         # graphically whithout changing account.entries order
-        self.data = {}
+        self.data = {} # todo make data a list
         self.rowkeys = []
         self._syncModelAgainstAccount()
 
@@ -422,6 +426,8 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
         self.data[self.rowkeys[row]] = entry
 
     def GetRow(self, entry):
+##        index = entry.account.entries.index(entry)
+##        row = rowkeys.index(index)
         for k, v in self.data.iteritems():
             if v is entry:
                 row = self.rowkeys.index(k)
@@ -429,17 +435,18 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
         raise "Row not Found for entry " + entry.description
 
     def Refresh(self, keepFocus=True, sort=True):
+        row = self.GetView().GetGridCursorRow()
+        currentEntry = self.GetEntry(row)
+        
         self._syncModelAgainstAccount()
 
         if sort:
             # todo : when is really necessary to sort ?
             self.Sort()
         
-        row = self.GetView().GetGridCursorRow()
+        # todo : should really the model access the view ???
         if keepFocus and self.GetNumberRows() > 1 and row != -1:
-            currentEntry = self.GetEntry(row)
-            row = self.GetRow(currentEntry)
-            self.GetView().SetGridCursor(row, 0)
+            self.GetView().SetCursorOn(currentEntry)
 
         msg = wx.grid.GridTableMessage(self, 
                                     wx.grid.GRIDTABLE_REQUEST_VIEW_GET_VALUES)
@@ -451,7 +458,6 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
         self.data.clear()
         for i, entry in enumerate(self.account.entries):
             self.data[i] = entry
-        
         self.rowkeys = self.data.keys()
         lo = len(oldrows)
         ln = len(self.rowkeys)
@@ -486,6 +492,7 @@ class AccountLedgerView(gridlib.Grid):
     def __init__(self, parent, account, log):
         super(AccountLedgerView, self).__init__(parent, -1)
         self.ctx = parent.ctx
+        self.log = log
         
         table = AccountLedgerModel(self, account, log)
         # The second parameter means that the grid is to take ownership of the
@@ -522,6 +529,9 @@ class AccountLedgerView(gridlib.Grid):
         self.SetColAttr(7, attr)
 
         self.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
+        self.Bind(gridlib.EVT_GRID_SELECT_CELL, self.OnSelectCell)
+##        self.Bind(gridlib.EVT_GRID_RANGE_SELECT, self.OnRangeSelect)
+##        self.Bind(gridlib.EVT_GRID_CELL_CHANGE, self.OnCellChange)
 
     def GetTable(self):
         return self.tableRef()
@@ -565,9 +575,9 @@ class AccountLedgerView(gridlib.Grid):
             del self._entryProxy
             
             # modifications OK, so replace in the model the proxy by the entry
-            row = self.GetGridCursorRow()
-            self.GetTable().SetEntry(row, entry)
-            self.GetTable().Refresh()
+            self.GetTable().SetEntry(self.GetGridCursorRow(), entry)
+            self.Refresh()
+
 ## todo        
 ##        nextRow = self.GetGridCursorRow() + 1
 ##        if nextRow < self.GetTable().GetNumberRows():
@@ -578,18 +588,33 @@ class AccountLedgerView(gridlib.Grid):
 ##            # needs to do that
 ##            pass
 
+    def OnSelectCell(self, evt):
+        self.log.write("OnSelectCell: (%d,%d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+
+        if self.IsCellEditControlEnabled():
+            self.HideCellEditControl()
+            self.DisableCellEditControl()
+            
+        if self.HasEntryBeenModified() and \
+           self.GetGridCursorRow() != evt.GetRow():
+            # todo ask Valid/Cancel/Escape
+            self.log.write("Save or cancel modifications before leaving line\n")
+            return
+
+        self.SelectRow(evt.GetRow())
+        evt.Skip()
+   
     def SetCursorOn(self, entry):
-        rowkeys = self.GetTable().rowkeys
-        index = entry.account.entries.index(entry)
-        self.SetGridCursor(rowkeys.index(index), 3)
+        row = self.GetTable().GetRow(entry)
+        self.SetGridCursor(row, 0)
+        self.SelectRow(row)
 
     def HasEntryBeenModified(self):
         return hasattr(self, '_entryProxy')
-
     def RegisterEntryForModification(self, entry):
         self._entryProxy = Proxy(entry)
         return self._entryProxy
-
     def GetModifiedEntry(self):
         return self._entryProxy
 
