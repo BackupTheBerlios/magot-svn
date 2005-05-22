@@ -1,7 +1,7 @@
 Magot TODO :
 
 - entry edition :
-    intercept "exit modified entry" (mouse clicking or arrows) to Valid/Cancel
+    ask Valid/Cancel when leaving a modified entry
 - formatting/display :
     render date with appropriate format
     display '' for empty entry.number, not 0- access a notebook page by its view only, not its model
