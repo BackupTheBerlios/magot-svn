@@ -78,7 +78,7 @@ class MainFrame(wx.Frame):
         # todo split
         selectedEntry = accountLedger.GetSelectedEntry()
         if selectedEntry is not None:
-            opposedEntry = accountLedger.GetSelectedEntry().opposedEntry
+            opposedEntry = selectedEntry.opposedEntry
             self.nb.OpenAccount(opposedEntry.account, opposedEntry)
 
     def OnSort(self, event):
@@ -244,10 +244,10 @@ class MainNotebook(wx.Notebook):
             self.mapAccountToPage[account.name] = self.GetPageCount() - 1
 
         self.SetSelection(self.mapAccountToPage[account.name])
-        
+
         page = self.GetPage(self.GetSelection())
         page.Refresh(focusEntry=focusEntry)
-        
+
 
 class Proxy(object):
     """The Proxy base class."""
@@ -502,10 +502,10 @@ class AccountLedgerView(gridlib.Grid):
         # todo use right format
         renderer = gridlib.GridCellDateTimeRenderer('%c', '%c')
         self.RegisterDataType(gridlib.GRID_VALUE_DATETIME,
-                                renderer, DateCellEditor(log))
+                              renderer, DateCellEditor(log))
         self.SetRowLabelSize(0)
-        self.SetMargins(0,0)
-        self.AutoSizeColumns(False)
+        self.SetMargins(0, 0)
+        self.AutoSizeColumns(True)
 
         attr = gridlib.GridCellAttr()
         self.SetColAttr(0, attr)
