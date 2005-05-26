@@ -293,7 +293,7 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
             gridlib.GRID_VALUE_FLOAT + ':6,2',
         ]
         # data stores account entries so that we can sort them
-        # graphically whithout changing account.entries value-date ordered
+        # graphically whithout changing value-date ordered account.entries
         self.data = []
         self.rowkeys = []
         self._syncModelAgainstAccount()
@@ -586,9 +586,6 @@ class AccountLedgerView(gridlib.Grid):
 ##            pass
 
     def OnSelectCell(self, evt):
-        self.log.write("OnSelectCell: (%d,%d) %s\n" %
-                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
-
         if self.IsCellEditControlEnabled():
             self.HideCellEditControl()
             self.DisableCellEditControl()
