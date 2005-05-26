@@ -246,7 +246,7 @@ class MainNotebook(wx.Notebook):
         self.SetSelection(self.mapAccountToPage[account.name])
 
         page = self.GetPage(self.GetSelection())
-        page.Refresh(focusEntry=focusEntry)
+        page.SetCursorOn(focusEntry)
 
 
 class Proxy(object):
@@ -293,16 +293,14 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
             gridlib.GRID_VALUE_FLOAT + ':6,2',
         ]
         # data stores account entries so that we can sort them
-        # graphically whithout changing value-date ordered account.entries
+        # whithout changing value-date ordered account.entries
         self.data = []
-        self.rowkeys = []
-        self._syncModelAgainstAccount()
 
     #--------------------------------------------------
     # required methods for the wxPyGridTableBase interface
 
     def GetNumberRows(self):
-        return len(self.rowkeys)
+        return len(self.data)
 
     def GetNumberCols(self):
         return len(self.colLabels)
@@ -319,7 +317,7 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
         except:
             print "bad row", row
             return ''
-        return self._getdata(col, entry, "")
+        return self._getdata(col, entry)
 
     def _getdata(self, col, entry, default=''):
         if col == 0:
@@ -417,21 +415,20 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
         return self.CanGetValueAs(row, col, typeName)
 
     def GetEntry(self, row):
-        if len(self.data) > 0:
-            entry = self.data[self.rowkeys[row]]
+        if self.GetNumberRows() > 0:
+            entry = self.data[row]
             return entry
         return None
 
     def SetEntry(self, row, entry):
-        self.data[self.rowkeys[row]] = entry
+        self.data[row] = entry
 
     def GetRow(self, entry):
         try:
             entryIndex = self.data.index(entry)
         except ValueError:
-            raise "Row not Found for entry " + entry.description
-        row = self.rowkeys.index(entryIndex)
-        return row
+            raise "Entry not Found : " + entry.description
+        return entryIndex
 
     def Refresh(self, sort=True, focusEntry=None):
         if focusEntry is None:
@@ -450,33 +447,36 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
         self.GetView().AutoSizeColumns()
 
     def Sort(self, bycol=0, descending=False, requestGetValues=True):
+        self.log.write("Sort called on account ledger "+
+                        self.account.name+"\n")
+        
         if self.GetNumberRows() < 2:
             return
-       
-        l = [(self._getdata(bycol, self.data[k]), k) for k in self.rowkeys]
+        # todo use 2.4 Sorted
+        l = [(self._getdata(bycol, e), i, e) for i, e in enumerate(self.data)]
         l.sort()
         if descending:
             l.reverse()
         # new order
-        self.rowkeys = [key for val, key in l]
-        
+        self.data = [entry for __, __, entry in l] # __ means ignore
+
         if requestGetValues:
             msg = wx.grid.GridTableMessage(
                 self, wx.grid.GRIDTABLE_REQUEST_VIEW_GET_VALUES)
             self.GetView().ProcessTableMessage(msg)
 
     def _syncModelAgainstAccount(self):
-        oldrows = self.rowkeys
+        lo = self.GetNumberRows()
+        # update model with a shallow copy
         self.data = list(self.account.entries)
-        self.rowkeys = range(len(self.data))
-        lo = len(oldrows)
-        ln = len(self.rowkeys)
-        if ln > lo:
-            msg = wx.grid.GridTableMessage(self, 
-                wx.grid.GRIDTABLE_NOTIFY_ROWS_APPENDED, ln-lo)
-        elif lo > ln:
-            msg = wx.grid.GridTableMessage(self, 
-                wx.grid.GRIDTABLE_NOTIFY_ROWS_DELETED, 0, lo-ln)
+        ln = len(self.data)
+        if lo != ln:
+            if ln > lo:
+                msg = wx.grid.GridTableMessage(self, 
+                    wx.grid.GRIDTABLE_NOTIFY_ROWS_APPENDED, ln-lo)
+            elif lo > ln:
+                msg = wx.grid.GridTableMessage(self, 
+                    wx.grid.GRIDTABLE_NOTIFY_ROWS_DELETED, 0, lo-ln)
         else:
             msg = None
         if msg is not None:
@@ -497,7 +497,6 @@ class AccountLedgerView(gridlib.Grid):
         # table and will destroy it when done. Otherwise you would need to keep
         # a reference to it and call it's Destroy method later.
         self.SetTable(table, True)
-        self.GetTable().Sort()
 
         # todo use right format
         renderer = gridlib.GridCellDateTimeRenderer('%c', '%c')
@@ -616,9 +615,12 @@ class AccountLedgerView(gridlib.Grid):
         self.SelectRow(row)
 
     def Refresh(self, focusEntry=None):
+        self.log.write("Refresh called on account ledger "+
+                        self.GetTable().account.name+"\n")
         self.GetTable().Refresh(focusEntry=focusEntry)
 
     def Sort(self, columnToSortBy=0):
+        # todo pass the column to sort by
         self.GetTable().Refresh(sort=True)
 
     def GetSelectedEntry(self):
