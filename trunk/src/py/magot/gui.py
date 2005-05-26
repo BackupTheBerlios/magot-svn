@@ -159,7 +159,7 @@ class AccountHierarchy(wx.Panel):
 class AccountEditor(wx.Dialog):
     
     def __init__(self, parent, tree, ID, title, pos=wx.DefaultPosition, 
-            size=wx.DefaultSize, style=wx.DEFAULT_DIALOG_STYLE):
+                 size=wx.DefaultSize, style=wx.DEFAULT_DIALOG_STYLE):
 
         wx.Dialog.__init__(self, parent, ID, title, pos, size, style)
         
@@ -268,6 +268,53 @@ class Proxy(object):
         return self.__dict__.get(key, None)
 
 
+def _getdata(col, entry, default=''):
+    if col == 0:
+        return pydate2wxdate(entry.date)
+    if col == 1:
+        return entry.number
+    if col == 2:
+        return entry.description
+    if col == 3:
+        # todo split
+        if hasattr(entry, 'oppositeAccountName'):
+            return entry.oppositeAccountName
+        else:
+            return entry.opposedEntry.account.name
+    if col == 4:
+        return entry.isReconciled
+    if col == 5:
+        if entry.type == MovementType.DEBIT:
+            return entry.amount.amount
+        else:
+            return default
+    if col == 6:
+        if entry.type == MovementType.CREDIT:
+            return entry.amount.amount
+        else:
+            return default
+    if col == 7:
+        return entry.balance.amount
+
+def _setdata(col, entry, value=None):
+    if col == 0:
+        entry.date = wxdate2pydate(value)
+    elif col == 1:
+        entry.number = value
+    elif col == 2:
+        entry.description = value
+    elif col == 3:
+        entry.oppositeAccountName = value
+    elif col == 4:
+        entry.isReconciled = value
+    elif col == 5:
+        entry.type = MovementType.DEBIT
+        entry.amount = Money(value)
+    elif col == 6:
+        entry.type = MovementType.CREDIT
+        entry.amount = Money(value)
+
+
 class AccountLedgerModel(gridlib.PyGridTableBase):
     """ The MVC model containing all entries for an account.
         Synchronize automatically with the view to do sorting, updating, ...
@@ -317,53 +364,7 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
         except:
             print "bad row", row
             return ''
-        return self._getdata(col, entry)
-
-    def _getdata(self, col, entry, default=''):
-        if col == 0:
-            return pydate2wxdate(entry.date)
-        if col == 1:
-            return entry.number
-        if col == 2:
-            return entry.description
-        if col == 3:
-            # todo split
-            if hasattr(entry, 'oppositeAccountName'):
-                return entry.oppositeAccountName
-            else:
-                return entry.opposedEntry.account.name
-        if col == 4:
-            return entry.isReconciled
-        if col == 5:
-            if entry.type == MovementType.DEBIT:
-                return entry.amount.amount
-            else:
-                return default
-        if col == 6:
-            if entry.type == MovementType.CREDIT:
-                return entry.amount.amount
-            else:
-                return default
-        if col == 7:
-            return entry.balance.amount
-
-    def _setdata(self, col, entry, value=None):
-        if col == 0:
-            entry.date = wxdate2pydate(value)
-        elif col == 1:
-            entry.number = value
-        elif col == 2:
-            entry.description = value
-        elif col == 3:
-            entry.oppositeAccountName = value
-        elif col == 4:
-            entry.isReconciled = value
-        elif col == 5:
-            entry.type = MovementType.DEBIT
-            entry.amount = Money(value)
-        elif col == 6:
-            entry.type = MovementType.CREDIT
-            entry.amount = Money(value)
+        return _getdata(col, entry)
 
     def SetValue(self, row, col, value):
         try:
@@ -374,7 +375,7 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
                 # the model must now use the modified entry
                 self.SetEntry(row, modifiedEntry)
 
-            self._setdata(col, self.GetView().GetModifiedEntry(), value)
+            _setdata(col, self.GetView().GetModifiedEntry(), value)
         except IndexError:
             # add a new row
             self.data.append([''] * self.GetNumberCols())
@@ -452,13 +453,10 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
         
         if self.GetNumberRows() < 2:
             return
-        # todo use 2.4 Sorted
-        l = [(self._getdata(bycol, e), i, e) for i, e in enumerate(self.data)]
-        l.sort()
-        if descending:
-            l.reverse()
-        # new order
-        self.data = [entry for __, __, entry in l] # __ means ignore
+
+        def keyColumn(col):
+            return lambda entry : _getdata(col, entry)
+        l = sorted(self.data, key=keyColumn(bycol), reverse=descending)
 
         if requestGetValues:
             msg = wx.grid.GridTableMessage(
@@ -527,8 +525,6 @@ class AccountLedgerView(gridlib.Grid):
 
         self.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
         self.Bind(gridlib.EVT_GRID_SELECT_CELL, self.OnSelectCell)
-##        self.Bind(gridlib.EVT_GRID_RANGE_SELECT, self.OnRangeSelect)
-##        self.Bind(gridlib.EVT_GRID_CELL_CHANGE, self.OnCellChange)
 
     def GetTable(self):
         return self.tableRef()
