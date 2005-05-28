@@ -1,6 +1,5 @@
 Magot TODO :
 
-- fixe bug when double-clicking on a summary account (merge summary and detail account)
 - populate account list-box with current account tree
 - finish sorting entries (by tx desc, entry amount) with menu items
 

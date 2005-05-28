@@ -47,14 +47,13 @@ class AccountDM(storage.EntityDM):
         return default
    
     def _findAccount(self, oid, parent):
-        if isinstance(parent, SummaryAccount):
-            for account in parent.subAccounts:
-                if oid == account.name:
-                    return account
-            for account in parent.subAccounts:
-                acc = self._findAccount(oid, account)
-                if acc is not None:
-                    return acc
+        for account in parent.subAccounts:
+            if oid == account.name:
+                return account
+        for account in parent.subAccounts:
+            acc = self._findAccount(oid, account)
+            if acc is not None:
+                return acc
     
     def abortTransaction(self, ob):
         self._delBinding("root")

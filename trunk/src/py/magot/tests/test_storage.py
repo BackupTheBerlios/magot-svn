@@ -11,18 +11,18 @@ filename = config.fileNearModule('magot', 'account.list')
 
 def makeDB():
     # create all accounts
-    root = SummaryAccount(name='root')
+    root = DetailAccount(name='root')
     # debit accounts
-    asset = SummaryAccount(parent=root, name='asset', type=MovementType.DEBIT)
+    asset = DetailAccount(parent=root, name='asset', type=MovementType.DEBIT)
     checking = DetailAccount(parent=asset, name='checking', type=MovementType.DEBIT)
     computer = DetailAccount(parent=asset, name='computer', type=MovementType.DEBIT)
-    expense = SummaryAccount(parent=root, name='expense', type=MovementType.DEBIT)
+    expense = DetailAccount(parent=root, name='expense', type=MovementType.DEBIT)
     warranty = DetailAccount(parent=expense, name='warranty', type=MovementType.DEBIT)
     cash = DetailAccount(parent=expense, name='cash', type=MovementType.DEBIT)
     # credit accounts
-    income = SummaryAccount(parent=root, name='income', type=MovementType.CREDIT)
+    income = DetailAccount(parent=root, name='income', type=MovementType.CREDIT)
     salary = DetailAccount(parent=income, name='salary', type=MovementType.CREDIT)
-    liability = SummaryAccount(parent=root, name='liability', type=MovementType.CREDIT)
+    liability = DetailAccount(parent=root, name='liability', type=MovementType.CREDIT)
     loan = DetailAccount(parent=liability, name='loan', type=MovementType.CREDIT)
     equity = DetailAccount(parent=root, name='equity', type=MovementType.CREDIT)
     

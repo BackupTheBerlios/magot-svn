@@ -21,7 +21,7 @@ class Account(model.Element):
         isChangeable = False
 
     class parent(model.Attribute):
-        referencedType = 'SummaryAccount'
+        referencedType = 'DetailAccount'
         referencedEnd = 'subAccounts'
         defaultValue = None
 
@@ -30,23 +30,6 @@ class Account(model.Element):
 
     def __str__(self):
         return "%s\t\t%s\t\t%s" % (self.name, self.description, self.balance)
-
-
-class SummaryAccount(Account):
-    
-    class subAccounts(model.Collection):
-        referencedType = Account
-        referencedEnd = 'parent'
-        singularName = 'subAccount'
-
-    class balance(model.DerivedFeature):
-        referencedType = Money
-
-        def get(self, account):
-            balance = Money.Zero
-            for account in account.subAccounts:
-                balance += account.balance
-            return balance
 
 
 class DetailAccount(Account):
@@ -67,6 +50,11 @@ class DetailAccount(Account):
                             if e.date <= date]
             self._notifyLink(account, entry, len(positions))
 
+    class subAccounts(model.Collection):
+        referencedType = Account
+        referencedEnd = 'parent'
+        singularName = 'subAccount'
+
     class balance(model.DerivedFeature):
         referencedType = Money
 
@@ -77,8 +65,12 @@ class DetailAccount(Account):
                     balance += entry.amount
                 else:
                     balance -= entry.amount
+            
             if account.type is MovementType.CREDIT:
                 balance = Money(-balance.amount, balance.currency)
+            
+            for account in account.subAccounts:
+                balance += account.balance
             return balance
 
     def makeInitialTransaction(self, equity, amount, date=None):

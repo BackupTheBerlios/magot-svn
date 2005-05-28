@@ -11,14 +11,14 @@ from magot.refdata import *
 
 def makeAccounts(self):
     # create all accounts
-    self.root = SummaryAccount(name='Accounts')
-    self.asset = SummaryAccount(parent=self.root, name='Asset')
+    self.root = DetailAccount(name='Accounts')
+    self.asset = DetailAccount(parent=self.root, name='Asset')
     self.checking = DetailAccount(parent=self.asset, name='Checking', type=MovementType.DEBIT)
     self.computer = DetailAccount(parent=self.asset, name='Computer', type=MovementType.DEBIT)
-    self.expense = SummaryAccount(parent=self.root, name='Expense', type=MovementType.DEBIT)
+    self.expense = DetailAccount(parent=self.root, name='Expense', type=MovementType.DEBIT)
     self.warranty = DetailAccount(parent=self.expense, name='Warranty', type=MovementType.DEBIT)
     self.cash = DetailAccount(parent=self.expense, name='Cash', type=MovementType.DEBIT)
-    self.income = SummaryAccount(parent=self.root, name='Income', type=MovementType.CREDIT)
+    self.income = DetailAccount(parent=self.root, name='Income', type=MovementType.CREDIT)
     self.salary = DetailAccount(parent=self.income, name='Salary', type=MovementType.CREDIT)
     self.equity = DetailAccount(parent=self.root, name='Equity', type=MovementType.CREDIT)
     # set all initial balances

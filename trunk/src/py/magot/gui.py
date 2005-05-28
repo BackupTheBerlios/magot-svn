@@ -139,21 +139,20 @@ class AccountHierarchy(wx.Panel):
         self._displayLevel(self.accRoot, self.root, focus)
 
     def _displayLevel(self, parent, node, focus=None):
-        if isinstance(parent, SummaryAccount):
-            for account in parent.subAccounts:
-                child = self.tree.AppendItem(node, account.name)
+        for account in parent.subAccounts:
+            child = self.tree.AppendItem(node, account.name)
+            
+            self.tree.SetItemText(child, account.description, 1)
+            self.tree.SetItemText(child, str(account.balance.amount), 2)
+            self.tree.SetItemImage(child, self.fldridx, 
+                                   which=wx.TreeItemIcon_Normal)
+            self.tree.SetItemImage(child, self.fldropenidx, 
+                                   which=wx.TreeItemIcon_Expanded)
+            self.tree.SetPyData(child, account)
+            if account is focus:
+                self.tree.Expand(child)
                 
-                self.tree.SetItemText(child, account.description, 1)
-                self.tree.SetItemText(child, str(account.balance.amount), 2)
-                self.tree.SetItemImage(child, self.fldridx, 
-                                        which=wx.TreeItemIcon_Normal)
-                self.tree.SetItemImage(child, self.fldropenidx, 
-                                        which=wx.TreeItemIcon_Expanded)
-                self.tree.SetPyData(child, account)
-                if account is focus:
-                    self.tree.Expand(child)
-                    
-                self._displayLevel(account, child, focus)
+            self._displayLevel(account, child, focus)
 
 
 class AccountEditor(wx.Dialog):
