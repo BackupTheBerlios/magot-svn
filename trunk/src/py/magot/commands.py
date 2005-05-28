@@ -60,9 +60,8 @@ Displays all accounts.
         
         for acc1 in self.Accounts.root.subAccounts:
             print >>self.stdout, str(acc1)
-            if isinstance(acc1, SummaryAccount):
-                for acc2 in acc1.subAccounts:
-                    print >>self.stdout, '\t' + str(acc2)
+            for acc2 in acc1.subAccounts:
+                print >>self.stdout, '\t' + str(acc2)
 
         storage.commitTransaction(self)
 
