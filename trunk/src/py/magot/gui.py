@@ -545,32 +545,9 @@ class AccountLedgerView(gridlib.Grid):
         self.DisableCellEditControl()
 
         if self.HasEntryBeenModified():
-            proxy = self._entryProxy
-            entry = proxy._obj
-            
-            # transaction level modifications
-            entry.transaction.update(
-                date=proxy.getModifiedAttr('date'),
-                nb=proxy.getModifiedAttr('number'),
-                desc=proxy.getModifiedAttr('description'),
-                amount=proxy.getModifiedAttr('amount'))
-            # entry level modifications
-            entry.update(
-                isReconciled=proxy.getModifiedAttr('isReconciled'),
-                type=proxy.getModifiedAttr('type'))
-            # opposite entry level modifications
-            account = proxy.getModifiedAttr('oppositeAccountName')
-            if account:
-                account = self.ctx.Accounts.get(account)
-            entry.opposedEntry.update(account=account)
-            
-            # get ready to register next modifications with a new proxy
-            del self._entryProxy
-            
-            # modifications OK, so replace in the model the proxy by the entry
-            self.GetTable().SetEntry(self.GetGridCursorRow(), entry)
+            self.PostEntry()
             self.Refresh()
-## todo        
+## todo new entry
 ##        nextRow = self.GetGridCursorRow() + 1
 ##        if nextRow < self.GetTable().GetNumberRows():
 ##            self.SetGridCursor(nextRow, 0)
@@ -587,21 +564,61 @@ class AccountLedgerView(gridlib.Grid):
             
         if self.HasEntryBeenModified() and \
            self.GetGridCursorRow() != evt.GetRow():
-            # todo ask Valid/Cancel/Escape
-            self.log.write("Save or cancel modifications before leaving line\n")
-            return
+            dlg = wx.MessageDialog(self, 
+                'Do you want to post entry modifications?',
+                'Question',
+                wx.YES_NO | wx.CANCEL | wx.ICON_QUESTION | wx.STAY_ON_TOP
+            )
+            toBeSaved = dlg.ShowModal()
+            dlg.Destroy()
+            if toBeSaved == wx.ID_CANCEL:
+                self.SelectRow(self.GetGridCursorRow())
+                # todo call evt.Skip() ?
+                return
+            elif toBeSaved == wx.ID_YES:
+                self.PostEntry()
+            elif toBeSaved == wx.ID_NO:
+                self.InitEntryForModification()
+            self.Refresh()
 
         self.SelectRow(evt.GetRow())
         evt.Skip()
    
     def HasEntryBeenModified(self):
         return hasattr(self, '_entryProxy')
+    def InitEntryForModification(self):
+        del self._entryProxy
     def RegisterEntryForModification(self, entry):
         self._entryProxy = Proxy(entry)
         return self._entryProxy
     def GetModifiedEntry(self):
         return self._entryProxy
-
+    def PostEntry(self):
+        proxy = self._entryProxy
+        entry = proxy._obj
+        
+        # transaction level modifications
+        entry.transaction.update(
+            date=proxy.getModifiedAttr('date'),
+            nb=proxy.getModifiedAttr('number'),
+            desc=proxy.getModifiedAttr('description'),
+            amount=proxy.getModifiedAttr('amount'))
+        # entry level modifications
+        entry.update(
+            isReconciled=proxy.getModifiedAttr('isReconciled'),
+            type=proxy.getModifiedAttr('type'))
+        # opposite entry level modifications
+        account = proxy.getModifiedAttr('oppositeAccountName')
+        if account:
+            account = self.ctx.Accounts.get(account)
+        entry.opposedEntry.update(account=account)
+        
+        # get ready to register next entry modifications with a new proxy
+        self.InitEntryForModification()
+        
+        # modifications OK, so replace in the model the proxy by the entry
+        self.GetTable().SetEntry(self.GetGridCursorRow(), entry)
+        return entry
     def SetCursorOn(self, entry):
         try:
             row = self.GetTable().GetRow(entry)

@@ -1,4 +1,4 @@
-import pickle
+import cPickle
 
 from peak.api import *
 from peak.storage.files import EditableFile
@@ -15,7 +15,7 @@ class AccountDM(storage.EntityDM):
    
     def root(self):
         text = self.file.text
-        root = pickle.loads(text)
+        root = cPickle.loads(text)
         return root
     root = binding.Make(root)
 
@@ -31,7 +31,7 @@ class AccountDM(storage.EntityDM):
 
     def flush(self, ob=None):
         super(AccountDM, self).flush(ob)
-        self.file.text = pickle.dumps(self.root)
+        self.file.text = cPickle.dumps(self.root)
 
     def get(self, oid, default=None):
         if oid in self.cache:

@@ -1,14 +1,13 @@
 Magot TODO :
 
-- entry edition :
-    ask Valid/Cancel when leaving a modified entry
+- fixe bug when double-clicking on a summary account (merge summary and detail account)
+- populate account list-box with current account tree
+- finish sorting entries (by tx desc, entry amount) with menu items
+
 - formatting/display :
     render date with appropriate format
     display '' for empty entry.number, not 0- access a notebook page by its view only, not its model
-    fixe notebook tab layout that are misplaced
-- populate account list-box with current account tree
-
-- finish sorting entries (by tx desc, entry amount) with menu items
+    fixe notebook tab layout that are misplaced on linux
 - finish RefData module : 
     integrate currency in Money
     rounding decimal.getcontext().rounding="ROUND_HALF_UP" for EURO
@@ -17,7 +16,6 @@ Magot TODO :
 - __repr__ of DetailAccount
 - add tool bar : JumpToAccount, OpenAccount, EditAccount, HierarchyOptions
 - copy/paste of cell or entry
-- fixe bug when double-clicking on a summary account (merge summary and detail account)
 - create/duplicate/delete one tx
 - view entries by range date
 - search tx by criteria

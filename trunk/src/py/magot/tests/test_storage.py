@@ -1,4 +1,4 @@
-import pickle
+import cPickle
 
 from peak.api import *
 from datetime import *
@@ -41,11 +41,11 @@ def makeDB():
     assert salary.balance == Money(100.5)
     assert equity.balance == Money(-90.5)    
 
-    pickle.dump(root, open(filename,'w'))
+    cPickle.dump(root, open(filename,'w'))
 
 
 def readDB():
-    root = pickle.load(open(filename))
+    root = cPickle.load(open(filename))
     assert root.name == 'root'
 
 if __name__ == '__main__':   
