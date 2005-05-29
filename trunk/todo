@@ -1,12 +1,14 @@
 Magot TODO :
 
 - populate account list-box with current account tree
-- finish sorting entries (by tx desc, entry amount) with menu items
-
 - formatting/display :
     render date with appropriate format
     display '' for empty entry.number, not 0- access a notebook page by its view only, not its model
     fixe notebook tab layout that are misplaced on linux
+
+- fixe bug when typing anything on date cell
+- intercept "click to another tab" when current entry is modified
+- use a mapping to get the column nb with its name
 - finish RefData module : 
     integrate currency in Money
     rounding decimal.getcontext().rounding="ROUND_HALF_UP" for EURO

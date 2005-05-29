@@ -6,6 +6,9 @@ from peak.model.enumerations import Enumeration, enum
 from peak.model.features import structField
 
 
+ZERO = Decimal("0.00")
+
+
 class Date(Immutable):
 
     def mdl_fromString(klass, value):
@@ -27,7 +30,7 @@ class Money(Struct):
 
     class amount(structField):
         referencedType = Decimal
-        defaultValue = Decimal("0.00")
+        defaultValue = ZERO
 
     class currency(structField):
         referencedType = Currency

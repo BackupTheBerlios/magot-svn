@@ -24,13 +24,11 @@ class MainFrame(wx.Frame):
         menu.Append(wx.ID_SAVE, "&Save\tAlt-S", "Save data")
         menu.Append(wx.ID_EXIT, "E&xit\tAlt-X", "Exit application")
         menu.Append(1, "&Jump\tAlt-J", "Jump to account")
-        menu.Append(2, "&Sort\tAlt-R", "Sort entries")
         
         wx.EVT_MENU(self, wx.ID_OPEN, self.OnEditAccount)
         wx.EVT_MENU(self, wx.ID_SAVE, self.OnSave)
         wx.EVT_MENU(self, wx.ID_EXIT, self.OnTimeToClose)
         wx.EVT_MENU(self, 1, self.OnJump)
-        wx.EVT_MENU(self, 2, self.OnSort)
 
         menuBar.Append(menu, "&File") 
         self.SetMenuBar(menuBar) 
@@ -80,11 +78,6 @@ class MainFrame(wx.Frame):
         if selectedEntry is not None:
             opposedEntry = selectedEntry.opposedEntry
             self.nb.OpenAccount(opposedEntry.account, opposedEntry)
-
-    def OnSort(self, event):
-        accountLedger = self.nb.GetPage(self.nb.GetSelection())
-        columnToSortBy = 3  # todo retrieve column to sort by with item menu
-        accountLedger.Sort(columnToSortBy)
 
 
 class AccountHierarchy(wx.Panel):
@@ -237,7 +230,7 @@ class MainNotebook(wx.Notebook):
         event.Skip()
 
     def OpenAccount(self, account, focusEntry=None):
-        if  account.name not in self.mapAccountToPage:
+        if account.name not in self.mapAccountToPage:
             page = AccountLedgerView(self, account, sys.stdout)
             self.AddPage(page, account.name)
             self.mapAccountToPage[account.name] = self.GetPageCount() - 1
@@ -267,7 +260,7 @@ class Proxy(object):
         return self.__dict__.get(key, None)
 
 
-def _getdata(col, entry, default=''):
+def _getdata(col, entry):
     if col == 0:
         return pydate2wxdate(entry.date)
     if col == 1:
@@ -286,12 +279,12 @@ def _getdata(col, entry, default=''):
         if entry.type == MovementType.DEBIT:
             return entry.amount.amount
         else:
-            return default
+            return ZERO
     if col == 6:
         if entry.type == MovementType.CREDIT:
             return entry.amount.amount
         else:
-            return default
+            return ZERO
     if col == 7:
         return entry.balance.amount
 
@@ -387,7 +380,6 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
                     )
             self.GetView().ProcessTableMessage(msg)
 
-
     #--------------------------------------------------
     # Some optional methods
 
@@ -430,34 +422,47 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
             raise "Entry not Found : " + entry.description
         return entryIndex
 
-    def Refresh(self, sort=True, focusEntry=None):
+    def Refresh(self, sortByCol=None, focusEntry=None, sync=True):
+        self.log.write("Refresh called on ledger "+self.account.name+
+            "with focus on entry "+str(focusEntry)+"\n")
+        
         if focusEntry is None:
+            # try to get the current entry as focus
             focusEntry = self.GetView().GetSelectedEntry()
-        self._syncModelAgainstAccount()
-        
-        if sort:  # todo : when is really necessary to sort here ?
-            self.Sort(requestGetValues=False)
-        
-        # todo : should really the model access the view ???
-        self.GetView().SetCursorOn(focusEntry)
 
+        if sync:
+            self._syncModelAgainstAccount()
+        
+        if sortByCol is not None:
+            self.Sort(updateView=False, byCol=sortByCol)
+        
         msg = wx.grid.GridTableMessage(
             self, wx.grid.GRIDTABLE_REQUEST_VIEW_GET_VALUES)
         self.GetView().ProcessTableMessage(msg)
         self.GetView().AutoSizeColumns()
 
-    def Sort(self, bycol=0, descending=False, requestGetValues=True):
-        self.log.write("Sort called on account ledger "+
-                        self.account.name+"\n")
+        # todo : should really the model access the view ?
+        # is the model a controler ?
+        self.GetView().SetCursorOn(focusEntry)
+
+    def Sort(self, byCol=0, descending=False, updateView=True):
+        self.log.write("Sort() called on ledger "+self.account.name+
+                       " on column "+str(byCol)+"\n")
         
         if self.GetNumberRows() < 2:
             return
+        
+        if byCol == 0:
+            # account.entries is already sorted by date
+            self.data = list(self.account.entries)
+            if descending:
+                self.data.reverse()
+        else:
+            def keyColumn(col):
+                return lambda entry : _getdata(col, entry)
+            self.data.sort(key=keyColumn(byCol), reverse=descending)
 
-        def keyColumn(col):
-            return lambda entry : _getdata(col, entry)
-        l = sorted(self.data, key=keyColumn(bycol), reverse=descending)
-
-        if requestGetValues:
+        if updateView:
             msg = wx.grid.GridTableMessage(
                 self, wx.grid.GRIDTABLE_REQUEST_VIEW_GET_VALUES)
             self.GetView().ProcessTableMessage(msg)
@@ -481,13 +486,15 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
 
 
 class AccountLedgerView(gridlib.Grid):
-    """ 
-    This is a page of the notebook that displays all entries of an account.
-    """
+    """ It's a page of the notebook that displays all entries of an account. """
+    
     def __init__(self, parent, account, log):
         super(AccountLedgerView, self).__init__(parent, -1)
         self.ctx = parent.ctx
         self.log = log
+        self.sortByCol = 0
+        
+        self.CreateGrid(25, 25, gridlib.Grid.SelectRows)
         
         table = AccountLedgerModel(self, account, log)
         # The second parameter means that the grid is to take ownership of the
@@ -524,7 +531,11 @@ class AccountLedgerView(gridlib.Grid):
 
         self.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
         self.Bind(gridlib.EVT_GRID_SELECT_CELL, self.OnSelectCell)
-
+        self.Bind(gridlib.EVT_GRID_LABEL_LEFT_CLICK, self.OnLabelLeftClick)
+        self.Bind(gridlib.EVT_GRID_RANGE_SELECT, self.OnRangeSelect)
+        
+        self.Bind(gridlib.EVT_GRID_EDITOR_SHOWN, self.OnEditorShown)        
+ 
     def GetTable(self):
         return self.tableRef()
 
@@ -572,17 +583,57 @@ class AccountLedgerView(gridlib.Grid):
             dlg.Destroy()
             if toBeSaved == wx.ID_CANCEL:
                 self.SelectRow(self.GetGridCursorRow())
-                # todo call evt.Skip() ?
                 return
-            elif toBeSaved == wx.ID_YES:
+            if toBeSaved == wx.ID_YES:
                 self.PostEntry()
+                self.Refresh(sync=True, sort=True)
             elif toBeSaved == wx.ID_NO:
                 self.InitEntryForModification()
-            self.Refresh()
+                self.Refresh(sync=False, sort=False)
 
         self.SelectRow(evt.GetRow())
         evt.Skip()
    
+    def OnLabelLeftClick(self, evt):
+        self.sortByCol = evt.GetCol()
+        self.Refresh(sync=False, sort=True)
+        evt.Skip()
+    
+    def OnRangeSelect(self, evt):
+        if evt.Selecting() and evt.GetBottomRow() !=  evt.GetTopRow():
+            # vertical selection not allowed
+            evt.Veto()
+            self.SelectRow(self.GetGridCursorRow())
+        evt.Skip()
+
+    def OnEditorShown(self, evt):
+        self.log.write("OnEditorShown: (%d,%d) %s\n" %
+                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
+        evt.Skip()
+
+    def Refresh(self, focusEntry=None, sync=True, sort=True):
+        if sort:
+            col = self.sortByCol
+        else:
+            col = None
+        self.GetTable().Refresh(focusEntry=focusEntry, 
+                                sync=sync, sortByCol=col)
+
+    def GetSelectedEntry(self):
+        row = self.GetGridCursorRow()
+        if row not in [None, -1]:
+            selectedEntry = self.GetTable().GetEntry(row)
+            return selectedEntry
+        return None
+
+    def SetCursorOn(self, entry):
+        if entry is None:
+            row = 0
+        else:
+            row = self.GetTable().GetRow(entry)
+        self.SetGridCursor(row, 0)
+        self.SelectRow(self.GetGridCursorRow())
+
     def HasEntryBeenModified(self):
         return hasattr(self, '_entryProxy')
     def InitEntryForModification(self):
@@ -618,29 +669,6 @@ class AccountLedgerView(gridlib.Grid):
         # modifications OK, so replace in the model the proxy by the entry
         self.GetTable().SetEntry(self.GetGridCursorRow(), entry)
         return entry
-    def SetCursorOn(self, entry):
-        try:
-            row = self.GetTable().GetRow(entry)
-        except:
-            row = 0
-        self.SetGridCursor(row, 0)
-        self.SelectRow(row)
-
-    def Refresh(self, focusEntry=None):
-        self.log.write("Refresh called on account ledger "+
-                        self.GetTable().account.name+"\n")
-        self.GetTable().Refresh(focusEntry=focusEntry)
-
-    def Sort(self, columnToSortBy=0):
-        # todo pass the column to sort by
-        self.GetTable().Refresh(sort=True)
-
-    def GetSelectedEntry(self):
-        row = self.GetGridCursorRow()
-        if row not in [None, -1]:
-            selectedEntry = self.GetTable().GetEntry(row)
-            return selectedEntry
-        return None
 
 
 class WxApp(wx.App):
