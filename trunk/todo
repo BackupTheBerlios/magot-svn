@@ -6,8 +6,8 @@ Magot TODO :
     display '' for empty entry.number, not 0- access a notebook page by its view only, not its model
     fixe notebook tab layout that are misplaced on linux
 
+- exit is not working properly
 - fixe bug when typing anything on date cell
-- intercept "click to another tab" when current entry is modified
 - use a mapping to get the column nb with its name
 - finish RefData module : 
     integrate currency in Money

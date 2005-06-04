@@ -72,7 +72,7 @@ class MainFrame(wx.Frame):
         storage.beginTransaction(self.ctx)
 
     def OnJump(self, event):
-        accountLedger = self.nb.GetPage(self.nb.GetSelection())
+        accountLedger = self.nb.GetCurrentPage()
         # todo split
         selectedEntry = accountLedger.GetSelectedEntry()
         if selectedEntry is not None:
@@ -147,6 +147,9 @@ class AccountHierarchy(wx.Panel):
                 
             self._displayLevel(account, child, focus)
 
+    def ValidAnyModification(self):
+        """ No modification to validate, so can pursue the flow. """
+        return True
 
 class AccountEditor(wx.Dialog):
     
@@ -203,7 +206,7 @@ class AccountEditor(wx.Dialog):
 class MainNotebook(wx.Notebook):
     
     def __init__(self, parent, id, accRoot):
-        #  size=(21,21) is mandatory on windows
+        #  todo size=(21,21) is mandatory on windows ???
         wx.Notebook.__init__(self, parent, id, size=(21,21), style=wx.NB_LEFT)
         self.ctx = parent.ctx
 
@@ -213,20 +216,18 @@ class MainNotebook(wx.Notebook):
         parent.panel = panel
         self.mapAccountToPage = {'root':0}
 
-        wx.EVT_NOTEBOOK_PAGE_CHANGED(self, self.GetId(), self.OnPageChanged)
         wx.EVT_NOTEBOOK_PAGE_CHANGING(self, self.GetId(), self.OnPageChanging)
-
-    def OnPageChanged(self, event):
-        old = event.GetOldSelection()
-        new = event.GetSelection()
-        sel = self.GetSelection()
-        self.GetPage(sel).Refresh()
-        event.Skip()
+        wx.EVT_NOTEBOOK_PAGE_CHANGED(self, self.GetId(), self.OnPageChanged)
 
     def OnPageChanging(self, event):
-        old = event.GetOldSelection()
-        new = event.GetSelection()
-        sel = self.GetSelection()
+        oldPage = self.GetPage(event.GetOldSelection())
+        if not oldPage.ValidAnyModification():
+            event.Veto()
+        event.Skip()
+
+    def OnPageChanged(self, event):
+        if hasattr(self,'pageShouldRefresh') and self.pageShouldRefresh:
+            self.GetCurrentPage().Refresh()
         event.Skip()
 
     def OpenAccount(self, account, focusEntry=None):
@@ -234,10 +235,14 @@ class MainNotebook(wx.Notebook):
             page = AccountLedgerView(self, account, sys.stdout)
             self.AddPage(page, account.name)
             self.mapAccountToPage[account.name] = self.GetPageCount() - 1
-
+    
+        # don't refresh in any handler when changing page, it will be done later
+        self.pageShouldRefresh = False
         self.SetSelection(self.mapAccountToPage[account.name])
 
-        page = self.GetPage(self.GetSelection())
+        page = self.GetCurrentPage()
+        page.Refresh()
+        self.pageShouldRefresh = True
         page.SetCursorOn(focusEntry)
 
 
@@ -416,10 +421,7 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
         self.data[row] = entry
 
     def GetRow(self, entry):
-        try:
-            entryIndex = self.data.index(entry)
-        except ValueError:
-            raise "Entry not Found : " + entry.description
+        entryIndex = self.data.index(entry)
         return entryIndex
 
     def Refresh(self, sortByCol=None, focusEntry=None, sync=True):
@@ -568,14 +570,22 @@ class AccountLedgerView(gridlib.Grid):
 ##            pass
 
     def OnSelectCell(self, evt):
+        # todo : really necessary ?
         if self.IsCellEditControlEnabled():
             self.HideCellEditControl()
             self.DisableCellEditControl()
-            
-        if self.HasEntryBeenModified() and \
-           self.GetGridCursorRow() != evt.GetRow():
+        
+        if self.GetGridCursorRow() != evt.GetRow():        
+            if not self.ValidAnyModification():
+                return
+        self.SelectRow(evt.GetRow())
+        evt.Skip()
+   
+    def ValidAnyModification(self):
+        """ Return True if validation is OK to pursue the flow. False else. """
+        if self.HasEntryBeenModified():
             dlg = wx.MessageDialog(self, 
-                'Do you want to post entry modifications?',
+                'Do you want to save entry modifications?',
                 'Question',
                 wx.YES_NO | wx.CANCEL | wx.ICON_QUESTION | wx.STAY_ON_TOP
             )
@@ -583,17 +593,15 @@ class AccountLedgerView(gridlib.Grid):
             dlg.Destroy()
             if toBeSaved == wx.ID_CANCEL:
                 self.SelectRow(self.GetGridCursorRow())
-                return
+                return False
             if toBeSaved == wx.ID_YES:
                 self.PostEntry()
                 self.Refresh(sync=True, sort=True)
             elif toBeSaved == wx.ID_NO:
                 self.InitEntryForModification()
-                self.Refresh(sync=False, sort=False)
+                self.Refresh(sync=True, sort=False)
+        return True
 
-        self.SelectRow(evt.GetRow())
-        evt.Skip()
-   
     def OnLabelLeftClick(self, evt):
         self.sortByCol = evt.GetCol()
         self.Refresh(sync=False, sort=True)
@@ -627,10 +635,10 @@ class AccountLedgerView(gridlib.Grid):
         return None
 
     def SetCursorOn(self, entry):
-        if entry is None:
-            row = 0
-        else:
+        try:
             row = self.GetTable().GetRow(entry)
+        except ValueError:
+            row = 0
         self.SetGridCursor(row, 0)
         self.SelectRow(self.GetGridCursorRow())
 
