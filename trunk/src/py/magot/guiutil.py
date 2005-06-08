@@ -302,3 +302,64 @@ def wxdate2pydate(date):
         return datetime.date(*ymd)
     else:
         return None
+
+
+class OppositeAccountEditor(gridlib.PyGridCellEditor):
+    
+    def __init__(self, varDefDict, editable):
+        gridlib.PyGridCellEditor.__init__(self)
+        self._varDefDict = varDefDict
+        self._editable = editable
+
+    def Create(self, parent, id, evtHandler):
+        """
+        Called to create the control, which must derive from wxControl.
+        """
+        
+        
+        self._tc = wx.Choice(parent, id, choices = self._varDefDict.values())
+        if len(self._varDefDict.keys()):
+            self._tc.SetSelection(0)
+        self.SetControl(self._tc)
+        if evtHandler:
+            self._tc.PushEventHandler(evtHandler)
+
+    def SetSize(self, rect):
+        """
+        Called to position/size the edit control within the cell rectangle.
+        If you don't fill the cell (the rect) then be sure to override
+        PaintBackground and do something meaningful there.
+        """
+        self._tc.SetDimensions(rect.x, rect.y, rect.width+4, rect.height+4,
+                               wx.SIZE_ALLOW_MINUS_ONE)
+
+    def BeginEdit(self, row, col, grid):
+        """
+        Fetch the value from the table and prepare the edit control
+        to begin editing.  Set the focus to the edit control.
+        """
+        self.startValue = grid.GetTable().GetValue(row, col)
+        self._tc.SetStringSelection(self._varDefDict[self.startValue])
+        self._tc.SetFocus()
+
+    def EndEdit(self, row, col, grid):
+        """
+        Complete the editing of the current cell. Returns true if the value
+        has changed.  If necessary, the control may be destroyed.
+        """
+        changed = False
+
+        completePath = self._tc.GetStringSelection()
+##        if pcl != self.startValue :
+##            changed = True
+##            grid.GetTable().SetValue(row, col, pcl) # update the table
+
+        self.startValue = ''
+        self.Destroy()
+        return changed
+
+    def Reset(self):
+        """
+        Reset the value in the control back to its starting value.
+        """
+        self._tc.SetStringSelection(self._varDefDict[self.startValue])

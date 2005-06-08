@@ -29,22 +29,18 @@ class MainFrame(wx.Frame):
             "Exit application", self.OnExit)
 
         menuBar = wx.MenuBar()
-        menuBar.Append(menuFile, "&File") 
-        self.SetMenuBar(menuBar) 
-        self.CreateStatusBar()
-
-        self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
-
-        # one long transaction between each save
+        menuBar.Append(menuFile, "&File")
+        self.SetMenuBar(menuBar)
+        
+        # begin one long transaction between each save
         storage.beginTransaction(self.ctx)
         self.accRoot = self.ctx.Accounts.root
 
         self.nb = MainNotebook(self, -1, self.accRoot)
+        self.CreateStatusBar()        
        
     def OnExit(self, evt):
         self.Close(True)
-
-    def OnCloseWindow(self, evt):
         # todo : save modification before commit ?
         # storage.commitTransaction(self.ctx)
         self.Destroy()
@@ -333,13 +329,12 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
         self.account = account
         self.log = log
         self.colLabels = ['Date', 'Num', 'Description', 'Account', 
-                            'Reconciled', 'Debit', 'Credit', 'Balance']
+                          'Reconciled', 'Debit', 'Credit', 'Balance']
         self.dataTypes = [
             gridlib.GRID_VALUE_DATETIME,
             gridlib.GRID_VALUE_NUMBER,
             gridlib.GRID_VALUE_STRING,
-            gridlib.GRID_VALUE_CHOICE + 
-                ':checking,computer,warranty,cash,salary,loan,equity',
+            gridlib.GRID_VALUE_CHOICE,
             gridlib.GRID_VALUE_BOOL,
             gridlib.GRID_VALUE_FLOAT + ':6,2',
             gridlib.GRID_VALUE_FLOAT + ':6,2',
@@ -383,7 +378,7 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
 
             _setdata(col, self.GetView().GetModifiedEntry(), value)
         except IndexError:
-            # add a new row
+            # todo add a new row
             self.data.append([''] * self.GetNumberCols())
             self.SetValue(row, col, value)
 
@@ -503,7 +498,7 @@ class AccountLedgerView(gridlib.Grid):
         super(AccountLedgerView, self).__init__(parent, -1)
         self.ctx = parent.ctx
         self.log = log
-        self.sortByCol = 0
+        self.sortByCol = 0 # by entry date
         
         self.CreateGrid(25, 25, gridlib.Grid.SelectRows)
         
@@ -512,30 +507,30 @@ class AccountLedgerView(gridlib.Grid):
         # table and will destroy it when done. Otherwise you would need to keep
         # a reference to it and call it's Destroy method later.
         self.SetTable(table, True)
-
-        # todo use right format
-        renderer = gridlib.GridCellDateTimeRenderer('%c', '%c')
-        self.RegisterDataType(gridlib.GRID_VALUE_DATETIME,
-                              renderer, DateCellEditor(log))
+   
         self.SetRowLabelSize(0)
         self.SetMargins(0, 0)
         self.AutoSizeColumns(True)
+        
+        # todo use right date format
+        renderer = gridlib.GridCellDateTimeRenderer('%c', '%c')
+        self.RegisterDataType(gridlib.GRID_VALUE_DATETIME,
+                              renderer, DateCellEditor(log))
 
+        dict = {
+            'checking':'asset:checking:asset:checking:asset:checking',
+            'computer':'asset:computer',
+            'warranty':'expense:warranty',
+            'cash':'expense:cash',
+            'salary':'income:salary',
+            'loan':'liability:loan',
+            'equity':'equity',
+        }
         attr = gridlib.GridCellAttr()
-        self.SetColAttr(0, attr)
-        self.SetColSize(0, 100)
-
-        attr = gridlib.GridCellAttr()
-        attr.SetRenderer(gridlib.GridCellNumberRenderer())
-        self.SetColAttr(1, attr)
-
-        attr = gridlib.GridCellAttr()
+        attr.SetEditor(OppositeAccountEditor(dict, True))
         self.SetColAttr(3, attr)
-        self.SetColSize(3, 100)
 
-        attr = gridlib.GridCellAttr()
-        self.SetColAttr(5, attr)
-
+        # balance is readonly
         attr = gridlib.GridCellAttr()
         attr.SetReadOnly(True)
         self.SetColAttr(7, attr)
@@ -544,7 +539,6 @@ class AccountLedgerView(gridlib.Grid):
         self.Bind(gridlib.EVT_GRID_SELECT_CELL, self.OnSelectCell)
         self.Bind(gridlib.EVT_GRID_LABEL_LEFT_CLICK, self.OnLabelLeftClick)
         self.Bind(gridlib.EVT_GRID_RANGE_SELECT, self.OnRangeSelect)
-        
         self.Bind(gridlib.EVT_GRID_EDITOR_SHOWN, self.OnEditorShown)        
  
     def GetTable(self):
