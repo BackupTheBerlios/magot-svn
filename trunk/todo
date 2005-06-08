@@ -1,12 +1,13 @@
 Magot TODO :
 
+- use self.Bind() for all menu
 - populate account list-box with current account tree
 - formatting/display :
     render date with appropriate format
     display '' for empty entry.number, not 0- access a notebook page by its view only, not its model
     fixe notebook tab layout that are misplaced on linux
 
-- exit is not working properly
+- exit is not working properly due to peak command mechanism
 - fixe bug when typing anything on date cell
 - use a mapping to get the column nb with its name
 - finish RefData module : 

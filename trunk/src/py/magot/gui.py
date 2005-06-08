@@ -27,9 +27,11 @@ class MainFrame(wx.Frame):
         
         wx.EVT_MENU(self, wx.ID_OPEN, self.OnEditAccount)
         wx.EVT_MENU(self, wx.ID_SAVE, self.OnSave)
-        wx.EVT_MENU(self, wx.ID_EXIT, self.OnTimeToClose)
+        wx.EVT_MENU(self, wx.ID_EXIT, self.OnExit)
         wx.EVT_MENU(self, 1, self.OnJump)
-
+        
+        self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
+        
         menuBar.Append(menu, "&File") 
         self.SetMenuBar(menuBar) 
         self.CreateStatusBar()
@@ -40,8 +42,13 @@ class MainFrame(wx.Frame):
 
         self.nb = MainNotebook(self, -1, self.accRoot)
     
-    def OnTimeToClose(self, evt):
-        self.Close() 
+    def OnExit(self, evt):
+        self.Close()
+
+    def OnCloseWindow(self, evt):
+        # todo : save modification before commit ?
+        storage.commitTransaction(self.ctx)
+        self.Destroy()
 
     def OnEditAccount(self, evt):
         tree = self.panel.tree
@@ -216,8 +223,8 @@ class MainNotebook(wx.Notebook):
         parent.panel = panel
         self.mapAccountToPage = {'root':0}
 
-        wx.EVT_NOTEBOOK_PAGE_CHANGING(self, self.GetId(), self.OnPageChanging)
-        wx.EVT_NOTEBOOK_PAGE_CHANGED(self, self.GetId(), self.OnPageChanged)
+        self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGING, self.OnPageChanging)
+        self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnPageChanged)
 
     def OnPageChanging(self, event):
         oldPage = self.GetPage(event.GetOldSelection())
@@ -227,7 +234,7 @@ class MainNotebook(wx.Notebook):
 
     def OnPageChanged(self, event):
         if hasattr(self,'pageShouldRefresh') and self.pageShouldRefresh:
-            self.GetCurrentPage().Refresh()
+            self.GetPage(event.GetSelection()).Refresh()
         event.Skip()
 
     def OpenAccount(self, account, focusEntry=None):
@@ -425,13 +432,13 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
         return entryIndex
 
     def Refresh(self, sortByCol=None, focusEntry=None, sync=True):
-        self.log.write("Refresh called on ledger "+self.account.name+
-            "with focus on entry "+str(focusEntry)+"\n")
-        
         if focusEntry is None:
             # try to get the current entry as focus
             focusEntry = self.GetView().GetSelectedEntry()
 
+        self.log.write("Refresh called on ledger "+self.account.name+
+            "with focus on entry "+str(focusEntry)+"\n")
+        
         if sync:
             self._syncModelAgainstAccount()
         
@@ -620,10 +627,9 @@ class AccountLedgerView(gridlib.Grid):
         evt.Skip()
 
     def Refresh(self, focusEntry=None, sync=True, sort=True):
+        col = None
         if sort:
             col = self.sortByCol
-        else:
-            col = None
         self.GetTable().Refresh(focusEntry=focusEntry, 
                                 sync=sync, sortByCol=col)
 
