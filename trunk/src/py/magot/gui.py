@@ -15,39 +15,38 @@ class MainFrame(wx.Frame):
 
     def __init__(self, parent, title, ctx):
         wx.Frame.__init__(self, parent, -1, title, 
-                            pos=(150, 150), size=(850, 500))
+                          pos=(150, 150), size=(850, 500))
         self.ctx = ctx
 
+        menuFile = wx.Menu()
+        self.BindMenuItemToHandler(menuFile, "E&dit\tAlt-E", 
+            "Edit account details", self.OnEditAccount)
+        self.BindMenuItemToHandler(menuFile, "&Save\tAlt-S", 
+            "Save data", self.OnSave)
+        self.BindMenuItemToHandler(menuFile, "&Jump\tAlt-J", 
+            "Jump to account", self.OnJump)
+        self.BindMenuItemToHandler(menuFile, "E&xit\tAlt-X", 
+            "Exit application", self.OnExit)
+
         menuBar = wx.MenuBar()
-        menu = wx.Menu()
-        menu.Append(wx.ID_OPEN, "E&dit\tAlt-E", "Edit account details")
-        menu.Append(wx.ID_SAVE, "&Save\tAlt-S", "Save data")
-        menu.Append(wx.ID_EXIT, "E&xit\tAlt-X", "Exit application")
-        menu.Append(1, "&Jump\tAlt-J", "Jump to account")
-        
-        wx.EVT_MENU(self, wx.ID_OPEN, self.OnEditAccount)
-        wx.EVT_MENU(self, wx.ID_SAVE, self.OnSave)
-        wx.EVT_MENU(self, wx.ID_EXIT, self.OnExit)
-        wx.EVT_MENU(self, 1, self.OnJump)
-        
-        self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
-        
-        menuBar.Append(menu, "&File") 
+        menuBar.Append(menuFile, "&File") 
         self.SetMenuBar(menuBar) 
         self.CreateStatusBar()
+
+        self.Bind(wx.EVT_CLOSE, self.OnCloseWindow)
 
         # one long transaction between each save
         storage.beginTransaction(self.ctx)
         self.accRoot = self.ctx.Accounts.root
 
         self.nb = MainNotebook(self, -1, self.accRoot)
-    
+       
     def OnExit(self, evt):
-        self.Close()
+        self.Close(True)
 
     def OnCloseWindow(self, evt):
         # todo : save modification before commit ?
-        storage.commitTransaction(self.ctx)
+        # storage.commitTransaction(self.ctx)
         self.Destroy()
 
     def OnEditAccount(self, evt):
@@ -86,6 +85,9 @@ class MainFrame(wx.Frame):
             opposedEntry = selectedEntry.opposedEntry
             self.nb.OpenAccount(opposedEntry.account, opposedEntry)
 
+    def BindMenuItemToHandler(self, menu, title, help, handler):
+        item = menu.Append(-1, title, help)
+        self.Bind(wx.EVT_MENU, handler, item)
 
 class AccountHierarchy(wx.Panel):
 
