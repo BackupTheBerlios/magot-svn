@@ -78,8 +78,8 @@ class MainFrame(wx.Frame):
         # todo split
         selectedEntry = accountLedger.GetSelectedEntry()
         if selectedEntry is not None:
-            opposedEntry = selectedEntry.opposedEntry
-            self.nb.OpenAccount(opposedEntry.account, opposedEntry)
+            oppositeEntry = selectedEntry.oppositeEntry
+            self.nb.OpenAccount(oppositeEntry.account, oppositeEntry)
 
     def BindMenuItemToHandler(self, menu, title, help, handler):
         item = menu.Append(-1, title, help)
@@ -156,6 +156,7 @@ class AccountHierarchy(wx.Panel):
         """ No modification to validate, so can pursue the flow. """
         return True
 
+
 class AccountEditor(wx.Dialog):
     
     def __init__(self, parent, tree, ID, title, pos=wx.DefaultPosition, 
@@ -207,6 +208,7 @@ class AccountEditor(wx.Dialog):
 
         self.SetSizer(sizer)
         self.SetAutoLayout(True)
+
 
 class MainNotebook(wx.Notebook):
     
@@ -282,7 +284,7 @@ def _getdata(col, entry):
         if hasattr(entry, 'oppositeAccountName'):
             return entry.oppositeAccountName
         else:
-            return entry.opposedEntry.account.name
+            return entry.oppositeEntry.account.name
     if col == 4:
         return entry.isReconciled
     if col == 5:
@@ -517,17 +519,8 @@ class AccountLedgerView(gridlib.Grid):
         self.RegisterDataType(gridlib.GRID_VALUE_DATETIME,
                               renderer, DateCellEditor(log))
 
-        dict = {
-            'checking':'asset:checking:asset:checking:asset:checking',
-            'computer':'asset:computer',
-            'warranty':'expense:warranty',
-            'cash':'expense:cash',
-            'salary':'income:salary',
-            'loan':'liability:loan',
-            'equity':'equity',
-        }
         attr = gridlib.GridCellAttr()
-        attr.SetEditor(OppositeAccountEditor(dict, True))
+        attr.SetEditor(OppositeAccountEditor(self.ctx))
         self.SetColAttr(3, attr)
 
         # balance is readonly
@@ -671,7 +664,7 @@ class AccountLedgerView(gridlib.Grid):
         account = proxy.getModifiedAttr('oppositeAccountName')
         if account:
             account = self.ctx.Accounts.get(account)
-        entry.opposedEntry.update(account=account)
+        entry.oppositeEntry.update(account=account)
         
         # get ready to register next entry modifications with a new proxy
         self.InitEntryForModification()

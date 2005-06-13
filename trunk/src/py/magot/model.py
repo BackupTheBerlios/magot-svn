@@ -153,7 +153,8 @@ class Transaction(model.Element):
             self.description = desc
         if amount is not None:
             if self.isSplit:
-                raise AttributeError, "Can't update entry amount because tx is split"
+                raise AttributeError, "Can't update entry amount because tx is \
+                    split"
             for e in self.entries:
                 e.update(amount=amount)
 
@@ -238,7 +239,7 @@ class Entry(model.Element):
             entries.remove(entry)
             return entries
 
-    class opposedEntry(model.DerivedFeature):
+    class oppositeEntry(model.DerivedFeature):
         """ The first sibling entry contained in the same transaction. """
         
         def get(self, entry):
@@ -266,7 +267,7 @@ class Entry(model.Element):
             account.addEntry(self)
         if type is not None and type != self.type:
             self._changeType()
-            self.opposedEntry._changeType()
+            self.oppositeEntry._changeType()
         if amount is not None and amount != self.amount:
             self.amount = amount
         if desc is not None and desc != self.description:

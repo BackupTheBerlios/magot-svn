@@ -306,23 +306,77 @@ def wxdate2pydate(date):
 
 class OppositeAccountEditor(gridlib.PyGridCellEditor):
     
-    def __init__(self, varDefDict, editable):
+    paths = {
+        'checking':'asset:checking',
+        'computer':'asset:computer',
+        'warranty':'expense:warranty',
+        'cash':'expense:cash',
+        'salary':'income:salary',
+        'loan':'liability:loan',
+        'equity':'equity',
+    }
+    
+    def __init__(self, ctx):
         gridlib.PyGridCellEditor.__init__(self)
-        self._varDefDict = varDefDict
-        self._editable = editable
+        self.ctx = ctx
 
     def Create(self, parent, id, evtHandler):
         """
         Called to create the control, which must derive from wxControl.
         """
-        
-        
-        self._tc = wx.Choice(parent, id, choices = self._varDefDict.values())
-        if len(self._varDefDict.keys()):
-            self._tc.SetSelection(0)
+        # todo keep dict ordering
+        self._mapNameToPath = {}
+        self._getAccountPaths(self._mapNameToPath)
+
+        self._tc = wx.Choice(parent, id, choices=self._mapNameToPath.values())
         self.SetControl(self._tc)
         if evtHandler:
             self._tc.PushEventHandler(evtHandler)
+
+    def _getAccountPaths(self, dict):
+        root = self.ctx.Accounts.root
+        currentPath = None
+        heap = []
+        self._addSubAccountPaths(root, dict, heap, currentPath)
+
+    def _addSubAccountPaths(self, parent, dict, heap, currentPath):
+        for account in parent.subAccounts:
+            heap.append(account.name)
+            if currentPath is not None:
+                path = currentPath + ":" + account.name
+            else:
+                path = account.name
+            self._addSubAccountPaths(account, dict, heap, path)
+        
+        if heap:
+            accountName = heap.pop()
+            if not parent.subAccounts:
+                dict[accountName] = currentPath
+
+
+    def BeginEdit(self, row, col, grid):
+        """
+        Fetch the value from the table and prepare the edit control
+        to begin editing. Set the focus to the edit control.
+        """
+        self.startValue = grid.GetTable().GetValue(row, col)
+        self._tc.SetStringSelection(self._mapNameToPath[self.startValue])
+        self._tc.SetFocus()
+
+    def EndEdit(self, row, col, grid):
+        """
+        Complete the editing of the current cell. 
+        Returns true if the value has changed.
+        """
+        changed = False
+        completePath = self._tc.GetStringSelection()
+        # todo objectify translation from path to last item
+        oppositeAccountName = completePath[completePath.rfind(':') + 1:]
+        if oppositeAccountName != self.startValue :
+            changed = True
+            grid.GetTable().SetValue(row, col, oppositeAccountName)
+        self.Destroy()
+        return changed
 
     def SetSize(self, rect):
         """
@@ -333,33 +387,8 @@ class OppositeAccountEditor(gridlib.PyGridCellEditor):
         self._tc.SetDimensions(rect.x, rect.y, rect.width+4, rect.height+4,
                                wx.SIZE_ALLOW_MINUS_ONE)
 
-    def BeginEdit(self, row, col, grid):
-        """
-        Fetch the value from the table and prepare the edit control
-        to begin editing.  Set the focus to the edit control.
-        """
-        self.startValue = grid.GetTable().GetValue(row, col)
-        self._tc.SetStringSelection(self._varDefDict[self.startValue])
-        self._tc.SetFocus()
-
-    def EndEdit(self, row, col, grid):
-        """
-        Complete the editing of the current cell. Returns true if the value
-        has changed.  If necessary, the control may be destroyed.
-        """
-        changed = False
-
-        completePath = self._tc.GetStringSelection()
-##        if pcl != self.startValue :
-##            changed = True
-##            grid.GetTable().SetValue(row, col, pcl) # update the table
-
-        self.startValue = ''
-        self.Destroy()
-        return changed
-
     def Reset(self):
         """
         Reset the value in the control back to its starting value.
         """
-        self._tc.SetStringSelection(self._varDefDict[self.startValue])
+        self._tc.SetStringSelection(self._mapNameToPath[self.startValue])

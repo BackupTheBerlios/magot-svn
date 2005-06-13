@@ -1,7 +1,6 @@
 Magot TODO :
 
-- use self.Bind() for all menu
-- populate account list-box with current account tree
+- keep dict ordering when populating account list-box with current account tree
 - formatting/display :
     render date with appropriate format
     display '' for empty entry.number, not 0- access a notebook page by its view only, not its model
