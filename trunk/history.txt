@@ -2,10 +2,10 @@ Magot History
 
 version 0.0.2, 2005/06/19
 =========================
--------- New features -----------
 
 Model :
 - change str() and repr() of an entry
+- update command 'gui accounts' to use repr() instead of str()
 
 Account Ledgger :
 - add OppositeAccountEditor that displays now the true account hierarchy
@@ -13,7 +13,6 @@ Account Ledgger :
 
 version 0.0.1, 2005/06/07
 =========================
--------- New features -----------
     
 Model : 
 - double-entry transactions
