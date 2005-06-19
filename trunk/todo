@@ -1,11 +1,13 @@
 Magot TODO :
 
-- keep dict ordering when populating account list-box with current account tree
+0.1
+- update web site
+- account Edition has to propose a tree for choosing its parent
 - formatting/display :
     render date with appropriate format
     display '' for empty entry.number, not 0- access a notebook page by its view only, not its model
     fixe notebook tab layout that are misplaced on linux
-
+    better formatted output for command 'gui accounts'
 - exit is not working properly due to peak command mechanism
 - fixe bug when typing anything on date cell
 - use a mapping to get the column nb with its name
@@ -16,27 +18,38 @@ Magot TODO :
     use of locale for each currency
 - __repr__ of DetailAccount
 - add tool bar : JumpToAccount, OpenAccount, EditAccount, HierarchyOptions
-- copy/paste of cell or entry
-- create/duplicate/delete one tx
-- view entries by range date
-- search tx by criteria
-- create account
-- display all account paths in entry/account column
 - can close a Tab account
 - alternate color between entries
 - action/memo for entry vs date/num/description for tx
+- right adjust account amount
+
+0.2
+- copy/cut/paste of cell or entry
+- create/duplicate/delete tx
+- create/delete account
+
+0.3
+- view entries by range date
+- search tx by criteria
+
+0.4
 - create all standard account types
 - Num column should propose : ATM, Virement, ...
-- set the focus on a moved account 
-- right adjust account amount
+
+0.5
 - make multiple entry (aka split)
+
+0.6
 - rapports :
 	Profit and loss = Income Statement
     balance sheet
-- general ledger
-- budgets / accounting periods
-- parties ?
+
+1.0
 - unicode + i18n + l10n
 - unit tests with http://www.access.wvu.edu/class/acctutor/tableofc.htm + doctest
-- make true persistence : SQLlite, DURUS/ZODB/Pypersyst, Metakit, SQLObject, 
-Roundup HyperDB, PyDO ?
+- doc
+
+post 1.0
+- make true persistence / multi user : SQLlite, DURUS/ZODB/Pypersyst, Metakit, SQLObject, Roundup HyperDB, PyDO ?
+- budgets / accounting periods
+- parties

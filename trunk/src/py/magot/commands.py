@@ -59,9 +59,9 @@ Displays all accounts.
         storage.beginTransaction(self)
         
         for acc1 in self.Accounts.root.subAccounts:
-            print >>self.stdout, str(acc1)
+            print >>self.stdout, repr(acc1)
             for acc2 in acc1.subAccounts:
-                print >>self.stdout, '\t' + str(acc2)
+                print >>self.stdout, '\t' + repr(acc2)
 
         storage.commitTransaction(self)
 

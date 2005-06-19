@@ -305,16 +305,10 @@ def wxdate2pydate(date):
 
 
 class OppositeAccountEditor(gridlib.PyGridCellEditor):
-    
-    paths = {
-        'checking':'asset:checking',
-        'computer':'asset:computer',
-        'warranty':'expense:warranty',
-        'cash':'expense:cash',
-        'salary':'income:salary',
-        'loan':'liability:loan',
-        'equity':'equity',
-    }
+    """
+    Editor for choosing the opposite account of a selected entry.
+    A Choice control is used to display all paths in the account hierarchy.
+    """
     
     def __init__(self, ctx):
         gridlib.PyGridCellEditor.__init__(self)
@@ -324,34 +318,32 @@ class OppositeAccountEditor(gridlib.PyGridCellEditor):
         """
         Called to create the control, which must derive from wxControl.
         """
-        # todo keep dict ordering
-        self._mapNameToPath = {}
-        self._getAccountPaths(self._mapNameToPath)
-
-        self._tc = wx.Choice(parent, id, choices=self._mapNameToPath.values())
+        accPathPairs = self._getAccountPathPairs()
+        self._accToPath = dict(accPathPairs)
+        choices = [ path for acc, path in accPathPairs ]
+        self._tc = wx.Choice(parent, id, choices=choices)
         self.SetControl(self._tc)
         if evtHandler:
             self._tc.PushEventHandler(evtHandler)
 
-    def _getAccountPaths(self, dict):
-        root = self.ctx.Accounts.root
-        currentPath = None
-        heap = []
-        self._addSubAccountPaths(root, dict, heap, currentPath)
+    def _getAccountPathPairs(self):
+        accPathPairs = []
+        self._addSubAccPathPairs(self.ctx.Accounts.root, accPathPairs, [], None)
+        return accPathPairs
 
-    def _addSubAccountPaths(self, parent, dict, heap, currentPath):
+    def _addSubAccPathPairs(self, parent, accPathPairs, heap, currentPath):
         for account in parent.subAccounts:
             heap.append(account.name)
             if currentPath is not None:
                 path = currentPath + ":" + account.name
             else:
                 path = account.name
-            self._addSubAccountPaths(account, dict, heap, path)
+            self._addSubAccPathPairs(account, accPathPairs, heap, path)
         
         if heap:
             accountName = heap.pop()
             if not parent.subAccounts:
-                dict[accountName] = currentPath
+                accPathPairs.append((parent, currentPath))
 
 
     def BeginEdit(self, row, col, grid):
@@ -359,8 +351,9 @@ class OppositeAccountEditor(gridlib.PyGridCellEditor):
         Fetch the value from the table and prepare the edit control
         to begin editing. Set the focus to the edit control.
         """
-        self.startValue = grid.GetTable().GetValue(row, col)
-        self._tc.SetStringSelection(self._mapNameToPath[self.startValue])
+        self.oldOppositeAcc = grid.GetTable().GetValue(row, col)
+        self.oldAccPath = self._accToPath[self.oldOppositeAcc]
+        self._tc.SetStringSelection(self.oldAccPath)
         self._tc.SetFocus()
 
     def EndEdit(self, row, col, grid):
@@ -369,12 +362,15 @@ class OppositeAccountEditor(gridlib.PyGridCellEditor):
         Returns true if the value has changed.
         """
         changed = False
-        completePath = self._tc.GetStringSelection()
-        # todo objectify translation from path to last item
-        oppositeAccountName = completePath[completePath.rfind(':') + 1:]
-        if oppositeAccountName != self.startValue :
+        selectedPath = self._tc.GetStringSelection()
+        if selectedPath != self.oldAccPath:
             changed = True
-            grid.GetTable().SetValue(row, col, oppositeAccountName)
+            # inverse dict _accToPath
+            pathToAcc = dict(
+                [ (v,k) for k,v in self._accToPath.iteritems() ])
+            newOppositeAcc = pathToAcc[selectedPath]
+            grid.GetTable().SetValue(row, col, newOppositeAcc)
+        # destroy self in order to populate it next time with fresh data
         self.Destroy()
         return changed
 
@@ -391,4 +387,4 @@ class OppositeAccountEditor(gridlib.PyGridCellEditor):
         """
         Reset the value in the control back to its starting value.
         """
-        self._tc.SetStringSelection(self._mapNameToPath[self.startValue])
+        self._tc.SetStringSelection(self.oldAccPath)

@@ -28,8 +28,13 @@ class Account(model.Element):
     class balance(model.DerivedFeature):
         referencedType = Money
 
+    def __repr__(self):
+        # todo better formatted repr
+        return self.name.ljust(10) + self.description.rjust(25) + \
+            str(self.balance).rjust(8)
+        
     def __str__(self):
-        return "%s\t\t%s\t\t%s" % (self.name, self.description, self.balance)
+        return self.name
 
 
 class DetailAccount(Account):
@@ -198,7 +203,7 @@ class Entry(model.Element):
 
     class balance(model.DerivedFeature):
         """ Account balance at the entry update/insert date. 
-            todo : improved algorithm """
+            todo : improved algorithm using memoized balances"""
         referencedType = Money
         
         def get(self, entry):

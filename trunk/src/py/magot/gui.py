@@ -281,10 +281,10 @@ def _getdata(col, entry):
         return entry.description
     if col == 3:
         # todo split
-        if hasattr(entry, 'oppositeAccountName'):
-            return entry.oppositeAccountName
+        if hasattr(entry, 'oppositeAccount'):
+            return entry.oppositeAccount
         else:
-            return entry.oppositeEntry.account.name
+            return entry.oppositeEntry.account
     if col == 4:
         return entry.isReconciled
     if col == 5:
@@ -308,7 +308,7 @@ def _setdata(col, entry, value=None):
     elif col == 2:
         entry.description = value
     elif col == 3:
-        entry.oppositeAccountName = value
+        entry.oppositeAccount = value
     elif col == 4:
         entry.isReconciled = value
     elif col == 5:
@@ -358,9 +358,9 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
     def IsEmptyCell(self, row, col):
         return False
 
-    # Get/Set values in the table.  The Python version of these
+    # Get/Set values in the table. The Python version of these
     # methods can handle any data-type, (as long as the Editor and
-    # Renderer understands the type too,) not just strings as in the C++ version.
+    # Renderer understands the type too) not just strings as in the C++ version.
     def GetValue(self, row, col):
         try:
             entry = self.GetEntry(row)
@@ -650,21 +650,19 @@ class AccountLedgerView(gridlib.Grid):
         proxy = self._entryProxy
         entry = proxy._obj
         
-        # transaction level modifications
+        # modifications on the transaction
         entry.transaction.update(
             date=proxy.getModifiedAttr('date'),
             nb=proxy.getModifiedAttr('number'),
             desc=proxy.getModifiedAttr('description'),
             amount=proxy.getModifiedAttr('amount'))
-        # entry level modifications
+        # modifications on the entry
         entry.update(
             isReconciled=proxy.getModifiedAttr('isReconciled'),
             type=proxy.getModifiedAttr('type'))
-        # opposite entry level modifications
-        account = proxy.getModifiedAttr('oppositeAccountName')
-        if account:
-            account = self.ctx.Accounts.get(account)
-        entry.oppositeEntry.update(account=account)
+        # modifications on the opposite entry
+        entry.oppositeEntry.update(
+            account=proxy.getModifiedAttr('oppositeAccount'))
         
         # get ready to register next entry modifications with a new proxy
         self.InitEntryForModification()
