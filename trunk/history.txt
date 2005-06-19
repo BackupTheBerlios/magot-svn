@@ -1,24 +1,33 @@
-Magot 0.0.2, 2005/06/19
-=======================
-New features :
-    Model :
-		change str() and repr() of an entry
-	Account Ledgger :
-		add OppositeAccountEditor that displays now the true account hierarchy
+Magot History
 
-Magot 0.0.1, 2005/06/07
-=======================
-New features :
-    Model : 
-		double-entry transactions
-		persistent modifications
-        transactions are contained in hierarchical accounts
-	Account Hierarchy :
-		navigation in the hierarchy
-		display of the each account balance
-		edition of this hierarchy
-		open account ledger
-	Account Ledgger :
-		sort by any column
-		jump to the opposite account of an entry
-		change any field of an entry (date, num, description, opposite account, debit/credit)
+version 0.0.2, 2005/06/19
+=========================
+-------- New features -----------
+
+Model :
+- change str() and repr() of an entry
+
+Account Ledgger :
+- add OppositeAccountEditor that displays now the true account hierarchy
+
+
+version 0.0.1, 2005/06/07
+=========================
+-------- New features -----------
+    
+Model : 
+- double-entry transactions
+- persistent modifications
+- transactions are contained in hierarchical accounts
+
+Account Hierarchy :
+- navigation in the hierarchy
+- display of each account balance
+- edition of this hierarchy to change account parent
+- open account ledger in a notebook : one account per page
+
+Account Ledgger :
+- sort by any column
+- jump to the opposite account of an entry
+- change any field of an entry (date, num, description, opposite account, debit/credit)
+- automatic update of the account balance for each entry
