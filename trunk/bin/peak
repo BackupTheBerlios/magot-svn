@@ -1,0 +1,5 @@
+#!e:\tools\python241\python.exe
+
+from peak.running import commands
+commands.runMain( commands.Bootstrap )
+

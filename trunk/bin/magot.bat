@@ -1,3 +1,5 @@
-set PYTHONPATH=C:\projets\magot\trunk\src\py
-python E:/tools/python23/Scripts/peak runIni magot gui
+set PYTHONPATH=..\src\py
+set PYTHON=C:\tools\python241\python
 
+%PYTHON% peak runIni magot gui
+pause
