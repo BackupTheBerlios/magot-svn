@@ -8,7 +8,7 @@ accountfile = config.fileNearModule('magot', 'account.list')
 
 [peak.running.shortcuts]
 * = commands.NoSuchSubcommand
-gui = importString('magot.gui:Application')
+gui = importString('magot.gui:MagotGUICmd')
 newdb = importString('magot.commands.newDatabaseCmd')
 accounts = importString('magot.commands.displayAccountsCmd')
 account = importString('magot.commands.displayAccountCmd')

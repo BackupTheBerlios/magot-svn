@@ -8,7 +8,7 @@ from magot.model import *
 
 class AccountDM(storage.EntityDM):
 
-    defaultClass = DetailAccount
+    defaultClass = EntryAccount
 
     filename = binding.Obtain(PropertyName('magot.accountfile'))
     file = binding.Make(lambda self: EditableFile(filename=self.filename))

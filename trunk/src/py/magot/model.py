@@ -6,8 +6,6 @@ from peak.util import fmtparse
 
 
 class Account(model.Element):
-
-    mdl_isAbstract = True
     
     class name(model.Attribute):
         referencedType = model.String
@@ -21,9 +19,14 @@ class Account(model.Element):
         isChangeable = False
 
     class parent(model.Attribute):
-        referencedType = 'DetailAccount'
+        referencedType = 'Account'
         referencedEnd = 'subAccounts'
         defaultValue = None
+
+    class subAccounts(model.Collection):
+        referencedType = 'Account'
+        referencedEnd = 'parent'
+        singularName = 'subAccount'
 
     class balance(model.DerivedFeature):
         referencedType = Money
@@ -37,7 +40,7 @@ class Account(model.Element):
         return self.name
 
 
-class DetailAccount(Account):
+class EntryAccount(Account):
 
     class commodity(model.Attribute):
         referencedType = Currency
@@ -54,11 +57,6 @@ class DetailAccount(Account):
             positions = [i for i, e in enumerate(account.entries) 
                             if e.date <= date]
             self._notifyLink(account, entry, len(positions))
-
-    class subAccounts(model.Collection):
-        referencedType = Account
-        referencedEnd = 'parent'
-        singularName = 'subAccount'
 
     class balance(model.DerivedFeature):
         referencedType = Money
@@ -145,7 +143,7 @@ class Transaction(model.Element):
         return Entry(MovementType.CREDIT, self, account, amount)
 
     def update(self, date=None, nb=None, desc=None, amount=None):
-        """ Always use this method to update a transaction. """
+        """ Always use this method to update transaction attributes. """
         if date is not None and date != self.date:
             self.date = date
             for e in self.entries:
@@ -189,7 +187,7 @@ class Entry(model.Element):
         referencedType = Money
 
     class account(model.Attribute):
-        referencedType = DetailAccount
+        referencedType = EntryAccount
         referencedEnd = 'entries'
 
     class transaction(model.Attribute):
@@ -266,7 +264,8 @@ class Entry(model.Element):
             self.type = MovementType.CREDIT
         
     def update(self, account=None, type=None, amount=None, desc=None, 
-                isReconciled=None):
+               isReconciled=None):
+        """ Always use this method to update entry  attributes. """
         if account is not None and account is not self.account:
             self.account.removeEntry(self)
             account.addEntry(self)

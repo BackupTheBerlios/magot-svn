@@ -22,7 +22,7 @@ Available commands:
 """
 
     Accounts = binding.Make(
-        'magot.storage.AccountDM', offerAs=[storage.DMFor(DetailAccount)]
+        'magot.storage.AccountDM', offerAs=[storage.DMFor(EntryAccount)]
     )
 
 class newDatabaseCmd(commands.AbstractCommand):
@@ -33,7 +33,7 @@ Usage: newdb
 create a new database.
 """
 
-    Accounts = binding.Obtain(storage.DMFor(DetailAccount))
+    Accounts = binding.Obtain(storage.DMFor(EntryAccount))
 
     def _run(self):
         if len(self.argv)<1:
@@ -51,7 +51,7 @@ Usage: accounts
 Displays all accounts.
 """
 
-    Accounts = binding.Obtain(storage.DMFor(DetailAccount))
+    Accounts = binding.Obtain(storage.DMFor(EntryAccount))
 
     def _run(self):
         if len(self.argv)<1:
@@ -74,7 +74,7 @@ Usage: check
 Checks the accounting equation : Assets + Expenses = Equity + Liabilities + Income
 """
 
-    Accounts = binding.Obtain(storage.DMFor(DetailAccount))
+    Accounts = binding.Obtain(storage.DMFor(EntryAccount))
 
     def _run(self):
         if len(self.argv)<1:
@@ -99,7 +99,7 @@ Usage: account accountName
 Displays one account.
 """
 
-    Accounts = binding.Obtain(storage.DMFor(DetailAccount))
+    Accounts = binding.Obtain(storage.DMFor(EntryAccount))
 
     def _run(self):
         if len(self.argv)<2:
@@ -108,7 +108,7 @@ Displays one account.
 
         account = self.Accounts.get(self.argv[1])
         print >>self.stdout, str(account)
-        if isinstance(account, DetailAccount):
+        if isinstance(account, EntryAccount):
             for entry in account.entries:
                 print >>self.stdout, str(entry)
 
@@ -123,7 +123,7 @@ Usage: addTx desc debit credit amount [date num]
 Add a new Transaction.
 """
 
-    Accounts = binding.Obtain(storage.DMFor(DetailAccount))
+    Accounts = binding.Obtain(storage.DMFor(EntryAccount))
    
     def _run(self):
    
