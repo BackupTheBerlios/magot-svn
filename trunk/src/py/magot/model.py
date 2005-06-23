@@ -38,6 +38,9 @@ class Account(model.Element):
         
     def __str__(self):
         return self.name
+    
+    def __cmp__(self, other):
+        return cmp(self.name, other.name)
 
 
 class EntryAccount(Account):

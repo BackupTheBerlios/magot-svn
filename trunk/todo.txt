@@ -2,7 +2,6 @@ Magot TODO :
 
 0.1
 - update web site
-- the sort on opposite account is broken
 - exit is not working properly due to peak command mechanism
 - account Edition has to propose a tree for choosing its parent
 - formatting/display :
