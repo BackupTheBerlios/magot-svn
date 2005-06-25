@@ -94,7 +94,13 @@ class AccountHierarchy(wx.Panel):
         self.accRoot = accRoot
         self.parent = parent
         self.tree = AutoWidthTreeListCtrl(self, -1, 
-            style=wx.TR_DEFAULT_STYLE | wx.TR_HIDE_ROOT)
+            style=wx.TR_HIDE_ROOT 
+            | wx.TR_FULL_ROW_HIGHLIGHT 
+            | wx.TR_LINES_AT_ROOT
+            | wx.TR_ROW_LINES
+            | wx.TR_HAS_BUTTONS 
+##            | wx.TR_DEFAULT_STYLE 
+        )
 
         isz = (16,16)
         il = wx.ImageList(isz[0], isz[1])
@@ -113,6 +119,7 @@ class AccountHierarchy(wx.Panel):
         self.tree.SetMainColumn(0) # the one with the tree in it...
         self.tree.SetColumnWidth(0, 175)
         self.tree.SetColumnWidth(1, 300)
+        self.tree.SetColumnAlignment(2, wx.LIST_FORMAT_RIGHT)
 
         self.Refresh()
 
@@ -141,7 +148,7 @@ class AccountHierarchy(wx.Panel):
             child = self.tree.AppendItem(node, account.name)
             
             self.tree.SetItemText(child, account.description, 1)
-            self.tree.SetItemText(child, str(account.balance.amount), 2)
+            self.tree.SetItemText(child, str(account.balance), 2)
             self.tree.SetItemImage(child, self.fldridx, 
                                    which=wx.TreeItemIcon_Normal)
             self.tree.SetItemImage(child, self.fldropenidx, 
@@ -334,7 +341,7 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
                           'Reconciled', 'Debit', 'Credit', 'Balance']
         self.dataTypes = [
             gridlib.GRID_VALUE_DATETIME,
-            gridlib.GRID_VALUE_NUMBER,
+            gridlib.GRID_VALUE_STRING,
             gridlib.GRID_VALUE_STRING,
             gridlib.GRID_VALUE_CHOICE,
             gridlib.GRID_VALUE_BOOL,
@@ -372,10 +379,10 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
     def SetValue(self, row, col, value):
         try:
             if not self.GetView().HasEntryBeenModified():
-                # first modification on this entry, so register it in the view
                 e = self.GetEntry(row)
+                # first modification on this entry, so register it in the view
                 modifiedEntry = self.GetView().RegisterEntryForModification(e)
-                # the model must now use the modified entry
+                # display now the modified entry instead of the original
                 self.SetEntry(row, modifiedEntry)
 
             _setdata(col, self.GetView().GetModifiedEntry(), value)
@@ -416,7 +423,7 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
 
     def CanSetValueAs(self, row, col, typeName):
         return self.CanGetValueAs(row, col, typeName)
-
+    
     def GetEntry(self, row):
         if self.GetNumberRows() > 0:
             entry = self.data[row]
@@ -514,11 +521,11 @@ class AccountLedgerView(gridlib.Grid):
         self.SetMargins(0, 0)
         self.AutoSizeColumns(True)
         
-        # todo use right date format
-        renderer = gridlib.GridCellDateTimeRenderer('%c', '%c')
-        self.RegisterDataType(gridlib.GRID_VALUE_DATETIME,
-                              renderer, DateCellEditor(log))
-
+        attr = gridlib.GridCellAttr()
+        attr.SetRenderer(DateCellRenderer())
+        attr.SetEditor(DateCellEditor(log))
+        self.SetColAttr(0, attr)
+        
         attr = gridlib.GridCellAttr()
         attr.SetEditor(OppositeAccountEditor(self.ctx))
         self.SetColAttr(3, attr)

@@ -4,8 +4,6 @@ import sys
 
 import wx
 import wx.grid as gridlib
-import wx.calendar as cal
-import wx.lib.popupctl as pop
 from wx.gizmos import TreeListCtrl
 
 
@@ -128,7 +126,7 @@ class ListCtrlAutoWidthMixin:
 class AutoWidthTreeListCtrl(TreeListCtrl, ListCtrlAutoWidthMixin):
 
     def __init__(self, parent, ID, pos=wx.DefaultPosition, size=wx.DefaultSize,
-            style=wx.TR_DEFAULT_STYLE):
+                 style=wx.TR_DEFAULT_STYLE):
         TreeListCtrl.__init__(self, parent, ID, pos, size, style)
         ListCtrlAutoWidthMixin.__init__(self)
 
@@ -154,7 +152,6 @@ class DateCellEditor(gridlib.PyGridCellEditor):
         self.log.write("DateCellEditor ctor\n")
         gridlib.PyGridCellEditor.__init__(self)
 
-
     def Create(self, parent, id, evtHandler):
         """
         Called to create the control, which must derive from wxControl.
@@ -168,7 +165,6 @@ class DateCellEditor(gridlib.PyGridCellEditor):
         if evtHandler:
             self._tc.PushEventHandler(evtHandler)
 
-
     def SetSize(self, rect):
         """
         Called to position/size the edit control within the cell rectangle.
@@ -179,7 +175,6 @@ class DateCellEditor(gridlib.PyGridCellEditor):
         self._tc.SetDimensions(rect.x, rect.y, rect.width+2, rect.height+2,
                                wx.SIZE_ALLOW_MINUS_ONE)
 
-
     def Show(self, show, attr):
         """
         Show or hide the edit control.  You can use the attr (if not None)
@@ -187,7 +182,6 @@ class DateCellEditor(gridlib.PyGridCellEditor):
         """
         self.log.write("DateCellEditor: Show(self, %s, %s)\n" % (show, attr))
         self.base_Show(show, attr)
-
 
     def PaintBackground(self, rect, attr):
         """
@@ -197,7 +191,6 @@ class DateCellEditor(gridlib.PyGridCellEditor):
         don't do anything at all in order to reduce flicker.
         """
         self.log.write("DateCellEditor: PaintBackground\n")
-
 
     def BeginEdit(self, row, col, grid):
         """
@@ -209,7 +202,6 @@ class DateCellEditor(gridlib.PyGridCellEditor):
         self.startValue = grid.GetTable().GetValue(row, col)
         self._tc.SetValue(self.startValue)
         self._tc.SetFocus()
-
 
     def EndEdit(self, row, col, grid):
         """
@@ -229,7 +221,6 @@ class DateCellEditor(gridlib.PyGridCellEditor):
                         (row, col, changed))
         return changed
 
-
     def Reset(self):
         """
         Reset the value in the control back to its starting value.
@@ -237,7 +228,6 @@ class DateCellEditor(gridlib.PyGridCellEditor):
         """
         self.log.write("DateCellEditor: Reset\n")
         self._tc.SetValue(self.startValue)
-
 
     def IsAcceptedKey(self, evt):
         """
@@ -253,7 +243,6 @@ class DateCellEditor(gridlib.PyGridCellEditor):
 
         return (not (evt.ControlDown() or evt.AltDown()) and
                 evt.GetKeyCode() != wx.WXK_SHIFT)
-
 
     def StartingKey(self, evt):
         """
@@ -274,13 +263,10 @@ class DateCellEditor(gridlib.PyGridCellEditor):
             if not evt.ShiftDown():
                 ch = ch.lower()
 
-        if ch is not None:
-            # For this example, replace the text.  Normally we would append it.
-            #self._tc.AppendText(ch)
+        if ch is not None and isinstance(ch, wx.DateTime):
             self._tc.SetValue(ch)
         else:
             evt.Skip()
-
 
     def StartingClick(self):
         """
@@ -290,12 +276,10 @@ class DateCellEditor(gridlib.PyGridCellEditor):
         """
         self.log.write("DateCellEditor: StartingClick\n")
 
-
     def Destroy(self):
         """final cleanup"""
         self.log.write("DateCellEditor: Destroy\n")
         self.base_Destroy()
-
 
     def Clone(self):
         """
@@ -304,6 +288,44 @@ class DateCellEditor(gridlib.PyGridCellEditor):
         """
         self.log.write("DateCellEditor: Clone\n")
         return DateCellEditor(self.log)
+
+
+class DateCellRenderer(gridlib.PyGridCellRenderer):
+    
+    def __init__(self):
+        gridlib.PyGridCellRenderer.__init__(self)
+
+    def Draw(self, grid, attr, dc, rect, row, col, isSelected):
+        dc.DrawRectangleRect(rect)
+        dc.SetFont(attr.GetFont())
+
+        date = grid.GetTable().GetValue(row, col)
+        text = date.FormatDate()
+
+        if isSelected:
+            color = "WHITE"
+        else:
+            color = "BLACK"
+
+        x = rect.x + 1
+        y = rect.y + 1
+        for ch in text:
+            dc.SetTextForeground(color)
+            dc.DrawText(ch, x, y)
+            w, h = dc.GetTextExtent(ch)
+            x = x + w
+            if x > rect.right - 5:
+                break
+
+    def GetBestSize(self, grid, attr, dc, row, col):
+        date = grid.GetTable().GetValue(row, col)
+        text = date.FormatDate()
+        dc.SetFont(attr.GetFont())
+        w, h = dc.GetTextExtent(text)
+        return wx.Size(w, h)
+
+    def Clone(self):
+        return DateCellRenderer()
 
 
 class OppositeAccountEditor(gridlib.PyGridCellEditor):
@@ -321,7 +343,7 @@ class OppositeAccountEditor(gridlib.PyGridCellEditor):
         """
         Called to create the control, which must derive from wxControl.
         """
-        self._tc = wx.Choice(parent, id)        
+        self._tc = wx.Choice(parent, id)
         self.SetControl(self._tc)
 
         if evtHandler:
