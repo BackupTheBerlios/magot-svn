@@ -1,8 +1,9 @@
 """ Domain model for basic accounting. """
 
 from peak.api import *
-from magot.refdata import *
 from peak.util import fmtparse
+
+from magot.refdata import *
 
 
 class Account(model.Element):

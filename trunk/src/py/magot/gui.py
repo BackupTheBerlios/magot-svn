@@ -436,7 +436,7 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
             focusEntry = self.GetView().GetSelectedEntry()
 
         self.log.write("Refresh called on ledger "+self.account.name+
-            "with focus on entry "+str(focusEntry)+"\n")
+            " with focus on entry "+str(focusEntry)+"\n")
         
         if sync:
             self._syncModelAgainstAccount()

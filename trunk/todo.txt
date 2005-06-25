@@ -1,13 +1,12 @@
 Magot TODO :
 
-0.1
+0.1 use wxpython 2.6.0.1
+- fixe notebook tab layout that are misplaced on linux
 - update web site
-- exit is not working properly due to peak command mechanism
 - account Edition has to propose a tree for choosing its parent
 - formatting/display :
     render date with appropriate format
     display '' for empty entry.number, not 0- access a notebook page by its view only, not its model
-    fixe notebook tab layout that are misplaced on linux
     better formatted output for command 'gui accounts'
 - fixe bug when typing anything on date cell
 - use a mapping to get the column nb with its name
