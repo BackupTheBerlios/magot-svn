@@ -1,15 +1,16 @@
 Magot TODO :
 
 0.1 use wxpython 2.6.0.1
-done formatting/display :
+done :
 - render date with appropriate format
 - fixe bug when typing anything on date cell
 - display '' for empty entry.number, not 0
 - right adjust account amount
 - display account.amount with 2 decimal
 - fixe notebook tab layout that are misplaced on linux
-
 - type enter on an account should open its ledger
+
+todo :
 - take all the place for all columns of an entry line
 - update web site
 - finish RefData module : 

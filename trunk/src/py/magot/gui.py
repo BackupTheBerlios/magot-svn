@@ -89,12 +89,11 @@ class AccountHierarchy(wx.Panel):
 
     def __init__(self, parent, accRoot):
         wx.Panel.__init__(self, parent, -1)
-        wx.EVT_SIZE(self, self.OnSize)
+        self.Bind(wx.EVT_SIZE, self.OnSize)
 
         self.accRoot = accRoot
         self.parent = parent
-        self.tree = AutoWidthTreeListCtrl(self, -1, 
-            style=wx.TR_HIDE_ROOT 
+        self.tree = AutoWidthTreeListCtrl(self, -1, style=wx.TR_HIDE_ROOT 
             | wx.TR_FULL_ROW_HIGHLIGHT 
             | wx.TR_LINES_AT_ROOT
             | wx.TR_ROW_LINES
@@ -122,17 +121,14 @@ class AccountHierarchy(wx.Panel):
         self.tree.SetColumnAlignment(2, wx.LIST_FORMAT_RIGHT)
 
         self.Refresh()
+        
+        self.tree.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.OnItemActivated)
 
-        wx.EVT_LEFT_DCLICK(self.tree.GetMainWindow(), self.OnLeftDClick)
-
-
-    def OnLeftDClick(self, event):
-        pt = event.GetPosition();
-        item, flags, col = self.tree.HitTest(pt)
+    def OnItemActivated(self, event):
+        item = event.GetItem();
         if item:
             account = self.tree.GetPyData(item)
-            sys.stdout.write('OnLeftDClick: %s, Col:%s, Text: %s, name %s\n' %
-                (flags, col, self.tree.GetItemText(item, col), account.name))
+            sys.stdout.write('OnItemActivated: account name %s\n' % account.name)
             self.parent.OpenAccount(account)
 
     def OnSize(self, evt):
@@ -168,11 +164,9 @@ class AccountEditor(wx.Dialog):
     
     def __init__(self, parent, tree, ID, title, pos=wx.DefaultPosition, 
                  size=wx.DefaultSize, style=wx.DEFAULT_DIALOG_STYLE):
-
         wx.Dialog.__init__(self, parent, ID, title, pos, size, style)
         
         item = tree.GetSelection()
-        
         sizer = wx.BoxSizer(wx.VERTICAL)
 
         box = wx.BoxSizer(wx.HORIZONTAL)
