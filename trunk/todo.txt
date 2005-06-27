@@ -12,10 +12,10 @@ done :
 - automatically enable field editor when selecting a cell
 
 todo :
-- take all the place for all columns of an entry line
-- fixe Edit without selecting an account
-- don't collapse account hierarchy when selecting this Tab
-- account Edition has to propose a tree for choosing its parent
+- take all the width for all columns of an entry line
+- fixe EditAccount without selecting an account --> crash
+- don't collapse AccountHierarchy at each selection of this Tab
+- account Edition has to propose a tree for choosing its parent instead of a textfield
 - can close a Tab account
 - update web site
 

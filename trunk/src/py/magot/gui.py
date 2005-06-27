@@ -498,12 +498,12 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
             self.view.ProcessTableMessage(msg)
 
 
-class AccountLedgerView(gridlib.Grid, GridAutoEditMixin):
+class AccountLedgerView(gridlib.Grid):
     """ It's a page of the notebook that displays all entries of an account. """
     
     def __init__(self, parent, account, log):
         super(AccountLedgerView, self).__init__(parent, -1)
-        GridAutoEditMixin.__init__(self)
+##        GridAutoEditMixin.__init__(self)
 
         self.ctx = parent.ctx
         self.log = log
@@ -533,12 +533,14 @@ class AccountLedgerView(gridlib.Grid, GridAutoEditMixin):
         attr.SetReadOnly(True)  # account balance is readonly
         self.SetColAttr(7, attr)
 
+        self.__enableEdit = 0
+        
         self.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
         self.Bind(gridlib.EVT_GRID_SELECT_CELL, self.OnSelectCell)
+        self.Bind(wx.EVT_IDLE, self.OnIdle)
         self.Bind(gridlib.EVT_GRID_LABEL_LEFT_CLICK, self.OnLabelLeftClick)
         self.Bind(gridlib.EVT_GRID_RANGE_SELECT, self.OnRangeSelect)
-        self.Bind(gridlib.EVT_GRID_EDITOR_SHOWN, self.OnEditorShown)        
- 
+  
     def GetTable(self):
         return self.tableRef()
 
@@ -546,6 +548,25 @@ class AccountLedgerView(gridlib.Grid, GridAutoEditMixin):
         self.tableRef = weakref.ref(object)
         return gridlib.Grid.SetTable(self, object, *attributes)
 
+    def OnIdle(self, evt):
+        if self.__enableEdit and self.GetGridCursorCol() != 0:
+            if self.CanEnableCellControl():
+                self.EnableCellEditControl()
+            self.__enableEdit = 0
+        evt.Skip()
+
+    def OnSelectCell(self, evt):
+        if self.IsCellEditControlEnabled():
+            self.HideCellEditControl()
+            self.DisableCellEditControl()
+            
+        if self.GetGridCursorRow() != evt.GetRow():
+            if not self.ValidAnyModification():
+                return
+        self.SelectRow(evt.GetRow())
+        self.__enableEdit = 1
+        evt.Skip()
+   
     def OnKeyDown(self, evt):
         if evt.KeyCode() != wx.WXK_RETURN:
             evt.Skip()
@@ -570,18 +591,6 @@ class AccountLedgerView(gridlib.Grid, GridAutoEditMixin):
 ##            # needs to do that
 ##            pass
 
-    def OnSelectCell(self, evt):
-        # TODO: really necessary ?
-        if self.IsCellEditControlEnabled():
-            self.HideCellEditControl()
-            self.DisableCellEditControl()
-        
-        if self.GetGridCursorRow() != evt.GetRow():        
-            if not self.ValidAnyModification():
-                return
-        self.SelectRow(evt.GetRow())
-        evt.Skip()
-   
     def ValidAnyModification(self):
         """ Return True if validation is OK to pursue the flow. False else. """
         if self.HasEntryBeenModified():
@@ -613,11 +622,6 @@ class AccountLedgerView(gridlib.Grid, GridAutoEditMixin):
             # vertical selection not allowed
             evt.Veto()
             self.SelectRow(self.GetGridCursorRow())
-        evt.Skip()
-
-    def OnEditorShown(self, evt):
-        self.log.write("OnEditorShown: (%d,%d) %s\n" %
-                       (evt.GetRow(), evt.GetCol(), evt.GetPosition()))
         evt.Skip()
 
     def Refresh(self, focusEntry=None, sync=True, sort=True):
