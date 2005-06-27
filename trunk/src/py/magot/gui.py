@@ -4,6 +4,7 @@ import weakref
 
 import wx
 import wx.grid as gridlib
+from wx.lib.mixins.grid import GridAutoEditMixin
 
 from magot.model import *
 from magot.refdata import *
@@ -41,7 +42,7 @@ class MainFrame(wx.Frame):
        
     def OnExit(self, evt):
         self.Close(True)
-        # todo : save modification before commit ?
+        # TODO: save modification before commit ?
         # storage.commitTransaction(self.ctx)
         self.Destroy()
 
@@ -75,7 +76,7 @@ class MainFrame(wx.Frame):
 
     def OnJump(self, event):
         accountLedger = self.nb.GetCurrentPage()
-        # todo split
+        # TODO: split
         selectedEntry = accountLedger.GetSelectedEntry()
         if selectedEntry is not None:
             oppositeEntry = selectedEntry.oppositeEntry
@@ -161,6 +162,9 @@ class AccountHierarchy(wx.Panel):
 
 
 class AccountEditor(wx.Dialog):
+    """ 
+    This class provides access to all the properties of an account.
+    """
     
     def __init__(self, parent, tree, ID, title, pos=wx.DefaultPosition, 
                  size=wx.DefaultSize, style=wx.DEFAULT_DIALOG_STYLE):
@@ -214,7 +218,7 @@ class AccountEditor(wx.Dialog):
 class MainNotebook(wx.Notebook):
     
     def __init__(self, parent, id, accRoot):
-        #  todo size=(21,21) is mandatory on windows ???
+        # TODO: size=(21,21) is mandatory on windows ???
         wx.Notebook.__init__(self, parent, id, size=(21,21), style=wx.NB_LEFT)
         self.ctx = parent.ctx
 
@@ -281,7 +285,7 @@ def _getdata(col, entry):
     if col == 2:
         return entry.description
     if col == 3:
-        # todo split
+        # TODO: split
         if hasattr(entry, 'oppositeAccount'):
             return entry.oppositeAccount
         else:
@@ -381,7 +385,7 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
 
             _setdata(col, self.GetView().GetModifiedEntry(), value)
         except IndexError:
-            # todo add a new row
+            # TODO: add a new row
             self.data.append([''] * self.GetNumberCols())
             self.SetValue(row, col, value)
 
@@ -448,9 +452,9 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
         msg = wx.grid.GridTableMessage(
             self, wx.grid.GRIDTABLE_REQUEST_VIEW_GET_VALUES)
         self.GetView().ProcessTableMessage(msg)
-        self.GetView().AutoSizeColumns()
+##        self.GetView().AutoSizeColumns()
 
-        # todo : should really the model access the view ?
+        # TODO: should really the model access the view ?
         # is the model a controler ?
         self.GetView().SetCursorOn(focusEntry)
 
@@ -494,11 +498,13 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
             self.view.ProcessTableMessage(msg)
 
 
-class AccountLedgerView(gridlib.Grid):
+class AccountLedgerView(gridlib.Grid, GridAutoEditMixin):
     """ It's a page of the notebook that displays all entries of an account. """
     
     def __init__(self, parent, account, log):
         super(AccountLedgerView, self).__init__(parent, -1)
+        GridAutoEditMixin.__init__(self)
+
         self.ctx = parent.ctx
         self.log = log
         self.sortByCol = 0 # by entry date
@@ -510,23 +516,21 @@ class AccountLedgerView(gridlib.Grid):
         # table and will destroy it when done. Otherwise you would need to keep
         # a reference to it and call it's Destroy method later.
         self.SetTable(table, True)
-   
+
         self.SetRowLabelSize(0)
-        self.SetMargins(0, 0)
-        self.AutoSizeColumns(True)
-        
+##        self.AutoSizeColumns(True)
+
         attr = gridlib.GridCellAttr()
         attr.SetRenderer(DateCellRenderer())
         attr.SetEditor(DateCellEditor(log))
         self.SetColAttr(0, attr)
-        
+
         attr = gridlib.GridCellAttr()
         attr.SetEditor(OppositeAccountEditor(self.ctx))
         self.SetColAttr(3, attr)
 
-        # balance is readonly
         attr = gridlib.GridCellAttr()
-        attr.SetReadOnly(True)
+        attr.SetReadOnly(True)  # account balance is readonly
         self.SetColAttr(7, attr)
 
         self.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
@@ -567,7 +571,7 @@ class AccountLedgerView(gridlib.Grid):
 ##            pass
 
     def OnSelectCell(self, evt):
-        # todo : really necessary ?
+        # TODO: really necessary ?
         if self.IsCellEditControlEnabled():
             self.HideCellEditControl()
             self.DisableCellEditControl()

@@ -9,23 +9,26 @@ done :
 - display account.amount with 2 decimal
 - fixe notebook tab layout that are misplaced on linux
 - type enter on an account should open its ledger
+- automatically enable field editor when selecting a cell
 
 todo :
 - take all the place for all columns of an entry line
+- fixe Edit without selecting an account
+- don't collapse account hierarchy when selecting this Tab
+- account Edition has to propose a tree for choosing its parent
+- can close a Tab account
 - update web site
+
 - finish RefData module : 
     integrate currency in Money
     rounding decimal.getcontext().rounding="ROUND_HALF_UP" for EURO
     __str__
     use of locale for each currency
 - __repr__ of DetailAccount
-- add tool bar : JumpToAccount, OpenAccount, EditAccount, HierarchyOptions
-- can close a Tab account
+- add tool bar : JumpToAccount, OpenAccount, CloseAccount, EditAccount, HierarchyOptions
 - alternate color between entries
-
 - action/memo for entry vs date/num/description for tx
 - better formatted output for command 'gui accounts'
-- account Edition has to propose a tree for choosing its parent
 - dev design : access a notebook page by its view only, not its model ?
 
 0.2

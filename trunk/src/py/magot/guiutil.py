@@ -23,11 +23,11 @@ def wxdate2pydate(date):
         return None
 
 
-class ListCtrlAutoWidthMixin:
+class TreeListCtrlAutoWidthMixin:
     """ A mix-in class that automatically resizes the last column to take up
-        the remaining width of the wxListCtrl.
+        the remaining width of the wxTreeListCtrl.
 
-        This causes the wxListCtrl to automatically take up the full width of
+        This causes the wxTreeListCtrl to automatically take up the full width of
         the list, without either a horizontal scroll bar (unless absolutely
         necessary) or empty space to the right of the last column.
 
@@ -100,6 +100,7 @@ class ListCtrlAutoWidthMixin:
         # NOTE: on GTK, the scrollbar is included in the client size, but on
         # Windows it is not included
         listWidth = self.GetClientSize().width
+        # TODO: do it for windows
 ##~         if wxPlatform != '__WXMSW__':
 ##~             if self.GetItemCount() > self.GetCountPerPage():
 ##~                 scrollWidth = wxSystemSettings_GetSystemMetric(wxSYS_VSCROLL_X)
@@ -123,12 +124,12 @@ class ListCtrlAutoWidthMixin:
         self.SetColumnWidth(numCols-1, listWidth - totColWidth)
 
 
-class AutoWidthTreeListCtrl(TreeListCtrl, ListCtrlAutoWidthMixin):
+class AutoWidthTreeListCtrl(TreeListCtrl, TreeListCtrlAutoWidthMixin):
 
     def __init__(self, parent, ID, pos=wx.DefaultPosition, size=wx.DefaultSize,
                  style=wx.TR_DEFAULT_STYLE):
         TreeListCtrl.__init__(self, parent, ID, pos, size, style)
-        ListCtrlAutoWidthMixin.__init__(self)
+        TreeListCtrlAutoWidthMixin.__init__(self)
 
 
 class DateCellEditor(gridlib.PyGridCellEditor):
@@ -395,6 +396,7 @@ class OppositeAccountEditor(gridlib.PyGridCellEditor):
         """
         Reset the value in the control back to its starting value.
         """
+        # todo a better way to do this
         idx = [a for a,p in self.accPathPairs].index(self.oldOppositeAcc)
         self._tc.SetSelection(idx)
 
