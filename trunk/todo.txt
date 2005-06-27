@@ -10,9 +10,10 @@ done :
 - fixe notebook tab layout that are misplaced on linux
 - type enter on an account should open its ledger
 - automatically enable field editor when selecting a cell
+- take all the width for all columns of an entry line
 
 todo :
-- take all the width for all columns of an entry line
+- refresh grid after autowidth
 - fixe EditAccount without selecting an account --> crash
 - don't collapse AccountHierarchy at each selection of this Tab
 - account Edition has to propose a tree for choosing its parent instead of a textfield

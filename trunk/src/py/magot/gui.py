@@ -498,12 +498,12 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
             self.view.ProcessTableMessage(msg)
 
 
-class AccountLedgerView(gridlib.Grid):
+class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
     """ It's a page of the notebook that displays all entries of an account. """
     
     def __init__(self, parent, account, log):
         super(AccountLedgerView, self).__init__(parent, -1)
-##        GridAutoEditMixin.__init__(self)
+        GridCtrlAutoWidthMixin.__init__(self)
 
         self.ctx = parent.ctx
         self.log = log
