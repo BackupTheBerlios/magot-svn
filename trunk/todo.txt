@@ -13,11 +13,10 @@ done :
 - take all the width for all columns of an entry line
 
 todo :
-- refresh grid after autowidth
 - fixe EditAccount without selecting an account --> crash
 - don't collapse AccountHierarchy at each selection of this Tab
-- account Edition has to propose a tree for choosing its parent instead of a textfield
 - can close a Tab account
+- account Edition has to propose a tree for choosing its parent instead of a textfield
 - update web site
 
 - finish RefData module : 
@@ -26,7 +25,7 @@ todo :
     __str__
     use of locale for each currency
 - __repr__ of DetailAccount
-- add tool bar : JumpToAccount, OpenAccount, CloseAccount, EditAccount, HierarchyOptions
+- add tool bar : JumpToOppositeAccount, OpenAccount/CloseAccount, EditAccount, HierarchyOptions
 - alternate color between entries
 - action/memo for entry vs date/num/description for tx
 - better formatted output for command 'gui accounts'

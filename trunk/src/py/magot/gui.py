@@ -504,7 +504,8 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
     def __init__(self, parent, account, log):
         super(AccountLedgerView, self).__init__(parent, -1)
         GridCtrlAutoWidthMixin.__init__(self)
-
+        self.setResizeColumn(3) # description
+            
         self.ctx = parent.ctx
         self.log = log
         self.sortByCol = 0 # by entry date
