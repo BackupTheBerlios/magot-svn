@@ -48,13 +48,16 @@ class MainFrame(wx.Frame):
 
     def OnEditAccount(self, evt):
         tree = self.panel.tree
+        item = tree.GetSelection()
+        if item is None or tree.GetRootItem() == item:
+            return
+        
         win = AccountEditor(self, tree, -1, "Account details", 
             size=wx.Size(500, 200), 
             style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
         win.CenterOnScreen()
         
         if win.ShowModal() == wx.ID_OK:
-            item = tree.GetSelection()
             account = tree.GetPyData(item)
             account.description = win.desc()
             account.name = win.name()

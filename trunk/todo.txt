@@ -2,34 +2,36 @@ Magot TODO :
 
 0.1 use wxpython 2.6.0.1
 done :
-- render date with appropriate format
+- render entry date with locale format
 - fixe bug when typing anything on date cell
-- display '' for empty entry.number, not 0
+- display '' for empty entry.number (a string now) instead of 0
 - right adjust account amount
 - display account.amount with 2 decimal
 - fixe notebook tab layout that are misplaced on linux
 - type enter on an account should open its ledger
 - automatically enable field editor when selecting a cell
 - take all the width for all columns of an entry line
+- fixe EditAccount without selecting an account --> crash
 
 todo :
-- fixe EditAccount without selecting an account --> crash
 - don't collapse AccountHierarchy at each selection of this Tab
 - can close a Tab account
 - account Edition has to propose a tree for choosing its parent instead of a textfield
 - update web site
 
+- add tool bar : JumpToOppositeAccount, OpenAccount/CloseAccount, EditAccount, HierarchyOptions
+- ask : save modifications before exit ?
+- alternate color between entries
+- action/memo for entry vs date/num/description for tx
+
+- better formatted output for command 'gui accounts'
+- dev design : access a notebook page by its view only, not its model ?
 - finish RefData module : 
     integrate currency in Money
     rounding decimal.getcontext().rounding="ROUND_HALF_UP" for EURO
     __str__
     use of locale for each currency
 - __repr__ of DetailAccount
-- add tool bar : JumpToOppositeAccount, OpenAccount/CloseAccount, EditAccount, HierarchyOptions
-- alternate color between entries
-- action/memo for entry vs date/num/description for tx
-- better formatted output for command 'gui accounts'
-- dev design : access a notebook page by its view only, not its model ?
 
 0.2
 - copy/cut/paste of cell or entry
