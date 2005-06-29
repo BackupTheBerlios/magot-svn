@@ -38,8 +38,9 @@ class MainFrame(wx.Frame):
         self.accRoot = self.ctx.Accounts.root
 
         self.nb = MainNotebook(self, -1, self.accRoot)
-        self.CreateStatusBar()        
-       
+
+        self.CreateStatusBar()
+
     def OnExit(self, evt):
         self.Close(True)
         # TODO: save modification before commit ?
@@ -47,7 +48,7 @@ class MainFrame(wx.Frame):
         self.Destroy()
 
     def OnEditAccount(self, evt):
-        tree = self.panel.tree
+        tree = self.nb.hierarchy.tree
         item = tree.GetSelection()
         if item is None or tree.GetRootItem() == item:
             return
@@ -67,17 +68,18 @@ class MainFrame(wx.Frame):
                 try:
                     newParent = self.ctx.Accounts.get(win.parent())
                 except exceptions.NameNotFound:
+                    # TODO: handle exception
                     return
                     
                 account.parent = newParent
-                self.panel.Refresh(account)
+                self.nb.hierarchy.Refresh(account)
 
     def OnSave(self, evt):
         self.ctx.Accounts.register(self.accRoot)
         storage.commitTransaction(self.ctx)
         storage.beginTransaction(self.ctx)
 
-    def OnJump(self, event):
+    def OnJump(self, evt):
         accountLedger = self.nb.GetCurrentPage()
         # TODO: split
         selectedEntry = accountLedger.GetSelectedEntry()
@@ -94,24 +96,25 @@ class AccountHierarchy(wx.Panel):
     def __init__(self, parent, accRoot):
         wx.Panel.__init__(self, parent, -1)
         self.Bind(wx.EVT_SIZE, self.OnSize)
-
+        
+        self.log = sys.stdout
         self.accRoot = accRoot
         self.parent = parent
-        self.tree = AutoWidthTreeListCtrl(self, -1, style=wx.TR_HIDE_ROOT 
-            | wx.TR_FULL_ROW_HIGHLIGHT 
+        self.tree = AccountTreeListCtrl(self, -1, style=wx.TR_HIDE_ROOT 
             | wx.TR_LINES_AT_ROOT
             | wx.TR_ROW_LINES
             | wx.TR_HAS_BUTTONS 
 ##            | wx.TR_DEFAULT_STYLE 
+##            | wx.TR_FULL_ROW_HIGHLIGHT 
         )
 
         isz = (16,16)
         il = wx.ImageList(isz[0], isz[1])
-        self.fldridx = il.Add(wx.ArtProvider_GetBitmap(
-            wx.ART_FOLDER, wx.ART_OTHER, isz))
-        self.fldropenidx = il.Add(wx.ArtProvider_GetBitmap(
-            wx.ART_FILE_OPEN, wx.ART_OTHER, isz))
-
+        bitmap = wx.ArtProvider_GetBitmap
+        self.fldridx = il.Add(bitmap(wx.ART_FOLDER, wx.ART_OTHER, isz))
+        self.fldropenidx = il.Add(bitmap(wx.ART_FOLDER_OPEN, wx.ART_OTHER, isz))
+##        self.fileidx = il.Add(bitmap(wx.ART_REPORT_VIEW, wx.ART_OTHER, isz))
+        
         self.tree.SetImageList(il)
         self.il = il
 
@@ -127,12 +130,56 @@ class AccountHierarchy(wx.Panel):
         self.Refresh()
         
         self.tree.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.OnItemActivated)
+        self.tree.Bind(wx.EVT_TREE_BEGIN_DRAG, self.OnBeginDrag)
+        self.tree.Bind(wx.EVT_TREE_END_DRAG, self.OnEndDrag)
 
-    def OnItemActivated(self, event):
-        item = event.GetItem();
+    def OnBeginDrag(self, event):
+        """ Allow drag-and-drop for any node. """
+        event.Allow()
+        self.dragItem = event.GetItem()
+
+    def OnEndDrag(self, event):
+        """ Do the re-organization if possible. """
+        # If we dropped somewhere that isn't on top of an item, ignore the event
+        if event.GetItem().IsOk():
+            target = event.GetItem()
+        else:
+            return
+
+        # Make sure this memeber exists.
+        try:
+            source = self.dragItem
+        except:
+            return
+
+        # Prevent the user from dropping an item inside of itse
+        if self.tree.ItemIsChildOf(target, source):
+            self.log.write("the tree item can not be moved in to itself!")
+            self.tree.UnselectItem(target)
+            return
+
+        def InsertInToThisGroup():
+            movedAccount = self.tree.GetPyData(source)
+            newParentAccount = self.tree.GetPyData(target)
+            # save + delete the source
+            save = self.tree.SaveItemsToList(source)
+            # TODO: should be all sub-treeitems deleted? call DeleteChildren()?
+            self.tree.Delete(source)
+            newitems = self.tree.InsertItemsFromList(save, target)
+            movedAccount.parent = newParentAccount
+
+        def computeBalance(child, depth):
+            account = self.tree.GetPyData(child)
+            self.tree.SetItemText(child, str(account.balance), 2)
+
+        InsertInToThisGroup()
+        self.tree.Traverse(computeBalance, self.root, False)
+
+    def OnItemActivated(self, evt):
+        item = evt.GetItem();
         if item:
             account = self.tree.GetPyData(item)
-            sys.stdout.write('OnItemActivated: account name %s\n' % account.name)
+            self.log.write('OnItemActivated: account name %s\n' % account.name)
             self.parent.OpenAccount(account)
 
     def OnSize(self, evt):
@@ -140,27 +187,32 @@ class AccountHierarchy(wx.Panel):
 
     def Refresh(self, focus=None):
         self.tree.DeleteAllItems()
-        self.root = self.tree.AddRoot("The Root Item")
-        self._displayLevel(self.accRoot, self.root, focus)
+        self.root = self.tree.AddRoot("The Root of all Accounts")
+        self.tree.SetPyData(self.root, None)  # necessary to sort by node label
+        self.tree.SetItemImage(self.root, self.fldridx, wx.TreeItemIcon_Normal)
+        self.tree.SetItemImage(self.root, self.fldropenidx, wx.TreeItemIcon_Expanded)
+        
+        self.displayOneLevel(self.accRoot, self.root, focus)
+        self.tree.Expand(self.root)
 
-    def _displayLevel(self, parent, node, focus=None):
+    def displayOneLevel(self, parent, node, focus=None):
         for account in parent.subAccounts:
-            child = self.tree.AppendItem(node, account.name)
-            
-            self.tree.SetItemText(child, account.description, 1)
-            self.tree.SetItemText(child, str(account.balance), 2)
-            self.tree.SetItemImage(child, self.fldridx, 
-                                   which=wx.TreeItemIcon_Normal)
-            self.tree.SetItemImage(child, self.fldropenidx, 
-                                   which=wx.TreeItemIcon_Expanded)
-            self.tree.SetPyData(child, account)
+            child = self.createAndAppendAccount(node, account)
+            if focus is None:
+                focus = account
             if account is focus:
-                self.tree.Expand(child)
-                
-            self._displayLevel(account, child, focus)
+                self.tree.SelectItem(child)
+            self.displayOneLevel(account, child, focus)
+
+    def createAndAppendAccount(self, parent, account):
+        child = self.tree.AppendItem(parent, account.name, self.fldridx, self.fldropenidx)
+        self.tree.SetPyData(child, account)
+        self.tree.SetItemText(child, account.description, 1)
+        self.tree.SetItemText(child, str(account.balance), 2)
+        return child
 
     def ValidAnyModification(self):
-        """ No modification to validate, so can pursue the flow. """
+        """ No modification to validate, so we can safely pursue the flow. """
         return True
 
 
@@ -225,25 +277,24 @@ class MainNotebook(wx.Notebook):
         wx.Notebook.__init__(self, parent, id, size=(21,21), style=wx.NB_LEFT)
         self.ctx = parent.ctx
 
-        panel = AccountHierarchy(self, accRoot)
-        panel.Layout()
-        self.AddPage(panel, 'accounts')
-        parent.panel = panel
+        self.hierarchy = AccountHierarchy(self, accRoot)
+        self.hierarchy.Layout()
+        self.AddPage(self.hierarchy, 'accounts')
         self.mapAccountToPage = {'root':0}
 
         self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGING, self.OnPageChanging)
         self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnPageChanged)
 
-    def OnPageChanging(self, event):
-        oldPage = self.GetPage(event.GetOldSelection())
+    def OnPageChanging(self, evt):
+        oldPage = self.GetPage(evt.GetOldSelection())
         if not oldPage.ValidAnyModification():
-            event.Veto()
-        event.Skip()
+            evt.Veto()
+        evt.Skip()
 
-    def OnPageChanged(self, event):
-        if hasattr(self,'pageShouldRefresh') and self.pageShouldRefresh:
-            self.GetPage(event.GetSelection()).Refresh()
-        event.Skip()
+    def OnPageChanged(self, evt):
+        if hasattr(self, 'pageShouldRefresh') and self.pageShouldRefresh:
+            self.GetPage(evt.GetSelection()).Refresh()
+        evt.Skip()
 
     def OpenAccount(self, account, focusEntry=None):
         if account.name not in self.mapAccountToPage:
@@ -455,7 +506,6 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
         msg = wx.grid.GridTableMessage(
             self, wx.grid.GRIDTABLE_REQUEST_VIEW_GET_VALUES)
         self.GetView().ProcessTableMessage(msg)
-##        self.GetView().AutoSizeColumns()
 
         # TODO: should really the model access the view ?
         # is the model a controler ?
