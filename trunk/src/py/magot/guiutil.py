@@ -272,11 +272,13 @@ class AccountTreeListCtrl(TreeListCtrl, TreeListCtrlAutoWidthMixin):
         return self.result
 
     def SaveItemsToList(self, startnode):
-        """ Generates a python object representation of the tree (or a branch of it),
+        """ Generates a python object representation of the tree (or a 
+            branch of it),
             composed of a list of dictionaries with the following key/values:
             label:      the text that the tree item had
             data:       the node's data, returned from GetItemPyData(node)
-            children:   a list containing the node's children (one of these dictionaries for each)
+            children:   a list containing the node's children (one of these 
+                        dictionaries for each)
         """
         global list
         list = []
@@ -296,7 +298,8 @@ class AccountTreeListCtrl(TreeListCtrl, TreeListCtrlAutoWidthMixin):
             item['icon-normal'] = self.GetItemImage(node, wx.TreeItemIcon_Normal)
             item['icon-selected'] = self.GetItemImage(node, wx.TreeItemIcon_Selected)
             item['icon-expanded'] = self.GetItemImage(node, wx.TreeItemIcon_Expanded)
-            item['icon-selectedexpanded'] = self.GetItemImage(node, wx.TreeItemIcon_SelectedExpanded)
+            item['icon-selectedexpanded'] = self.GetItemImage(node, 
+                wx.TreeItemIcon_SelectedExpanded)
 
             tmplist.append(item)
 
@@ -323,7 +326,8 @@ class AccountTreeListCtrl(TreeListCtrl, TreeListCtrlAutoWidthMixin):
             self.SetItemImage(node, item['icon-normal'], wx.TreeItemIcon_Normal)
             self.SetItemImage(node, item['icon-selected'], wx.TreeItemIcon_Selected)
             self.SetItemImage(node, item['icon-expanded'], wx.TreeItemIcon_Expanded)
-            self.SetItemImage(node, item['icon-selectedexpanded'], wx.TreeItemIcon_SelectedExpanded)
+            self.SetItemImage(node, item['icon-selectedexpanded'], 
+                wx.TreeItemIcon_SelectedExpanded)
 
             newitems.append(node)
             if item.has_key('children'):

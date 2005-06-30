@@ -64,15 +64,6 @@ class MainFrame(wx.Frame):
             account.name = win.name()
             tree.SetItemText(item, account.name, 0)
             tree.SetItemText(item, account.description, 1)
-            if account.parent.name != win.parent():
-                try:
-                    newParent = self.ctx.Accounts.get(win.parent())
-                except exceptions.NameNotFound:
-                    # TODO: handle exception
-                    return
-                    
-                account.parent = newParent
-                self.nb.hierarchy.Refresh(account)
 
     def OnSave(self, evt):
         self.ctx.Accounts.register(self.accRoot)
@@ -127,7 +118,7 @@ class AccountHierarchy(wx.Panel):
         self.tree.SetColumnWidth(1, 300)
         self.tree.SetColumnAlignment(2, wx.LIST_FORMAT_RIGHT)
 
-        self.Refresh()
+        self.BuildHierarchy()
         
         self.tree.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.OnItemActivated)
         self.tree.Bind(wx.EVT_TREE_BEGIN_DRAG, self.OnBeginDrag)
@@ -158,22 +149,25 @@ class AccountHierarchy(wx.Panel):
             self.tree.UnselectItem(target)
             return
 
-        def InsertInToThisGroup():
-            movedAccount = self.tree.GetPyData(source)
-            newParentAccount = self.tree.GetPyData(target)
-            # save + delete the source
-            save = self.tree.SaveItemsToList(source)
-            # TODO: should be all sub-treeitems deleted? call DeleteChildren()?
-            self.tree.Delete(source)
-            newitems = self.tree.InsertItemsFromList(save, target)
-            movedAccount.parent = newParentAccount
+        self.MoveAccount(source, target)
+        self.Refresh()
 
-        def computeBalance(child, depth):
+    def MoveAccount(self, source, target):
+        movedAccount = self.tree.GetPyData(source)
+        newParentAccount = self.tree.GetPyData(target)
+        # save + delete the source
+        save = self.tree.SaveItemsToList(source)
+        # TODO: should be all sub-treeitems deleted? call DeleteChildren()?
+        self.tree.Delete(source)
+        newitems = self.tree.InsertItemsFromList(save, target)
+        movedAccount.parent = newParentAccount
+
+    def Refresh(self):
+        def refreshAccount(child, depth):
             account = self.tree.GetPyData(child)
+            self.tree.SetItemText(child, account.description, 1)
             self.tree.SetItemText(child, str(account.balance), 2)
-
-        InsertInToThisGroup()
-        self.tree.Traverse(computeBalance, self.root, False)
+        self.tree.Traverse(refreshAccount, self.root, False)
 
     def OnItemActivated(self, evt):
         item = evt.GetItem();
@@ -185,7 +179,7 @@ class AccountHierarchy(wx.Panel):
     def OnSize(self, evt):
         self.tree.SetSize(self.GetSize())
 
-    def Refresh(self, focus=None):
+    def BuildHierarchy(self, focus=None):
         self.tree.DeleteAllItems()
         self.root = self.tree.AddRoot("The Root of all Accounts")
         self.tree.SetPyData(self.root, None)  # necessary to sort by node label

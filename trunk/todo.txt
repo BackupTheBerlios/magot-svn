@@ -15,7 +15,6 @@ done :
 - drag&drop of an account that changes its parent
 
 todo :
-- don't collapse AccountHierarchy at each selection of this Tab
 - use a different icon when draging (wxDragImage?)
 - can close a Tab account
 - don't open a new Notebook Tab when changing the name of an account
