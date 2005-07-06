@@ -11,20 +11,20 @@ filename = config.fileNearModule('magot', 'account.list')
 
 def makeDB():
     # create all accounts
-    root = DetailAccount(name='root')
+    root = Account(name='root')
     # debit accounts
-    asset = DetailAccount(parent=root, name='asset', type=MovementType.DEBIT)
-    checking = DetailAccount(parent=asset, name='checking', type=MovementType.DEBIT)
-    computer = DetailAccount(parent=asset, name='computer', type=MovementType.DEBIT)
-    expense = DetailAccount(parent=root, name='expense', type=MovementType.DEBIT)
-    warranty = DetailAccount(parent=expense, name='warranty', type=MovementType.DEBIT)
-    cash = DetailAccount(parent=expense, name='cash', type=MovementType.DEBIT)
+    equity = EntryAccount(parent=root, name='equity', type=MovementType.CREDIT, description="")
+    asset = EntryAccount(parent=root, name='asset', type=MovementType.DEBIT, description="")
+    checking = EntryAccount(parent=asset, name='checking', type=MovementType.DEBIT, description="")
+    computer = EntryAccount(parent=asset, name='computer', type=MovementType.DEBIT, description="")
+    expense = EntryAccount(parent=root, name='expense', type=MovementType.DEBIT, description="")
+    warranty = EntryAccount(parent=expense, name='warranty', type=MovementType.DEBIT, description="")
+    cash = EntryAccount(parent=expense, name='cash', type=MovementType.DEBIT, description="")
     # credit accounts
-    income = DetailAccount(parent=root, name='income', type=MovementType.CREDIT)
-    salary = DetailAccount(parent=income, name='salary', type=MovementType.CREDIT)
-    liability = DetailAccount(parent=root, name='liability', type=MovementType.CREDIT)
-    loan = DetailAccount(parent=liability, name='loan', type=MovementType.CREDIT)
-    equity = DetailAccount(parent=root, name='equity', type=MovementType.CREDIT)
+    income = EntryAccount(parent=root, name='income', type=MovementType.CREDIT, description="")
+    salary = EntryAccount(parent=income, name='salary', type=MovementType.CREDIT, description="")
+    liability = EntryAccount(parent=root, name='liability', type=MovementType.CREDIT, description="")
+    loan = EntryAccount(parent=liability, name='loan', type=MovementType.CREDIT, description="")
     
     # set all initial balances
     checking.makeInitialTransaction(equity, Money(1), date(2005,2,1))

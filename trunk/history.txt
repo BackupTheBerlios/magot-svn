@@ -1,5 +1,23 @@
 Magot History
 
+version 0.0.3, 2005/07/07
+=========================
+
+- render entry date with locale format
+- fixe bug when typing anything on date cell
+- display '' for empty entry.number (a string now) instead of 0
+- right adjust account amount
+- display account.amount with 2 decimal
+- fixe notebook tab layout that are misplaced on linux
+- typing Enter on an account in the hierarchy opens its ledger
+- automatically enable field editor when selecting a cell
+- take all the width for all columns of an entry line
+- fixe EditAccount without selecting an account --> crash
+- move the account hierarchy in to new module accountHierarchy.py
+- drag&drop of an account to change its parent, even under root
+- use a different colour when draging
+
+
 version 0.0.2, 2005/06/19
 =========================
 

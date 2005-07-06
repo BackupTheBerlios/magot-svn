@@ -4,12 +4,12 @@ import weakref
 
 import wx
 import wx.grid as gridlib
-from wx.lib.mixins.grid import GridAutoEditMixin
 
 from magot.model import *
 from magot.refdata import *
 from magot.storage import *
 from magot.guiutil import *
+from magot.accountHierarchy import *
 
 
 class MainFrame(wx.Frame):
@@ -81,133 +81,6 @@ class MainFrame(wx.Frame):
     def BindMenuItemToHandler(self, menu, title, help, handler):
         item = menu.Append(-1, title, help)
         self.Bind(wx.EVT_MENU, handler, item)
-
-class AccountHierarchy(wx.Panel):
-
-    def __init__(self, parent, accRoot):
-        wx.Panel.__init__(self, parent, -1)
-        self.Bind(wx.EVT_SIZE, self.OnSize)
-        
-        self.log = sys.stdout
-        self.accRoot = accRoot
-        self.parent = parent
-        self.tree = AccountTreeListCtrl(self, -1, style=wx.TR_HIDE_ROOT 
-            | wx.TR_LINES_AT_ROOT
-            | wx.TR_ROW_LINES
-            | wx.TR_HAS_BUTTONS 
-##            | wx.TR_DEFAULT_STYLE 
-##            | wx.TR_FULL_ROW_HIGHLIGHT 
-        )
-
-        isz = (16,16)
-        il = wx.ImageList(isz[0], isz[1])
-        bitmap = wx.ArtProvider_GetBitmap
-        self.fldridx = il.Add(bitmap(wx.ART_FOLDER, wx.ART_OTHER, isz))
-        self.fldropenidx = il.Add(bitmap(wx.ART_FOLDER_OPEN, wx.ART_OTHER, isz))
-##        self.fileidx = il.Add(bitmap(wx.ART_REPORT_VIEW, wx.ART_OTHER, isz))
-        
-        self.tree.SetImageList(il)
-        self.il = il
-
-        # create some columns
-        self.tree.AddColumn("Account")
-        self.tree.AddColumn("Description")
-        self.tree.AddColumn("Balance")
-        self.tree.SetMainColumn(0) # the one with the tree in it...
-        self.tree.SetColumnWidth(0, 175)
-        self.tree.SetColumnWidth(1, 300)
-        self.tree.SetColumnAlignment(2, wx.LIST_FORMAT_RIGHT)
-
-        self.BuildHierarchy()
-        
-        self.tree.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.OnItemActivated)
-        self.tree.Bind(wx.EVT_TREE_BEGIN_DRAG, self.OnBeginDrag)
-        self.tree.Bind(wx.EVT_TREE_END_DRAG, self.OnEndDrag)
-
-    def OnBeginDrag(self, event):
-        """ Allow drag-and-drop for any node. """
-        event.Allow()
-        self.dragItem = event.GetItem()
-
-    def OnEndDrag(self, event):
-        """ Do the re-organization if possible. """
-        # If we dropped somewhere that isn't on top of an item, ignore the event
-        if event.GetItem().IsOk():
-            target = event.GetItem()
-        else:
-            return
-
-        # Make sure this memeber exists.
-        try:
-            source = self.dragItem
-        except:
-            return
-
-        # Prevent the user from dropping an item inside of itse
-        if self.tree.ItemIsChildOf(target, source):
-            self.log.write("the tree item can not be moved in to itself!")
-            self.tree.UnselectItem(target)
-            return
-
-        self.MoveAccount(source, target)
-        self.Refresh()
-
-    def MoveAccount(self, source, target):
-        movedAccount = self.tree.GetPyData(source)
-        newParentAccount = self.tree.GetPyData(target)
-        # save + delete the source
-        save = self.tree.SaveItemsToList(source)
-        # TODO: should be all sub-treeitems deleted? call DeleteChildren()?
-        self.tree.Delete(source)
-        newitems = self.tree.InsertItemsFromList(save, target)
-        movedAccount.parent = newParentAccount
-
-    def Refresh(self):
-        def refreshAccount(child, depth):
-            account = self.tree.GetPyData(child)
-            self.tree.SetItemText(child, account.description, 1)
-            self.tree.SetItemText(child, str(account.balance), 2)
-        self.tree.Traverse(refreshAccount, self.root, False)
-
-    def OnItemActivated(self, evt):
-        item = evt.GetItem();
-        if item:
-            account = self.tree.GetPyData(item)
-            self.log.write('OnItemActivated: account name %s\n' % account.name)
-            self.parent.OpenAccount(account)
-
-    def OnSize(self, evt):
-        self.tree.SetSize(self.GetSize())
-
-    def BuildHierarchy(self, focus=None):
-        self.tree.DeleteAllItems()
-        self.root = self.tree.AddRoot("The Root of all Accounts")
-        self.tree.SetPyData(self.root, None)  # necessary to sort by node label
-        self.tree.SetItemImage(self.root, self.fldridx, wx.TreeItemIcon_Normal)
-        self.tree.SetItemImage(self.root, self.fldropenidx, wx.TreeItemIcon_Expanded)
-        
-        self.displayOneLevel(self.accRoot, self.root, focus)
-        self.tree.Expand(self.root)
-
-    def displayOneLevel(self, parent, node, focus=None):
-        for account in parent.subAccounts:
-            child = self.createAndAppendAccount(node, account)
-            if focus is None:
-                focus = account
-            if account is focus:
-                self.tree.SelectItem(child)
-            self.displayOneLevel(account, child, focus)
-
-    def createAndAppendAccount(self, parent, account):
-        child = self.tree.AppendItem(parent, account.name, self.fldridx, self.fldropenidx)
-        self.tree.SetPyData(child, account)
-        self.tree.SetItemText(child, account.description, 1)
-        self.tree.SetItemText(child, str(account.balance), 2)
-        return child
-
-    def ValidAnyModification(self):
-        """ No modification to validate, so we can safely pursue the flow. """
-        return True
 
 
 class AccountEditor(wx.Dialog):
@@ -736,6 +609,7 @@ class WxApp(wx.App):
         wx.App.__init__(self)
     
     def OnInit(self):
+        wx.InitAllImageHandlers()
         self.frame = MainFrame(None, 'Magot', self.ctx)
         self.frame.Show()
         self.SetTopWindow(self.frame)
