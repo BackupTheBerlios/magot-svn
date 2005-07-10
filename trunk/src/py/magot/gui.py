@@ -54,7 +54,7 @@ class MainFrame(wx.Frame):
             return
         
         win = AccountEditor(self, tree, -1, "Account details", 
-            size=wx.Size(500, 200), 
+            size=wx.Size(500, 150), 
             style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
         win.CenterOnScreen()
         
@@ -71,12 +71,13 @@ class MainFrame(wx.Frame):
         storage.beginTransaction(self.ctx)
 
     def OnJump(self, evt):
-        accountLedger = self.nb.GetCurrentPage()
-        # TODO: split
-        selectedEntry = accountLedger.GetSelectedEntry()
-        if selectedEntry is not None:
-            oppositeEntry = selectedEntry.oppositeEntry
-            self.nb.OpenAccount(oppositeEntry.account, oppositeEntry)
+        page = self.nb.GetCurrentPage()
+        if isinstance(page, AccountLedgerView):
+            # TODO: split
+            selectedEntry = page.GetSelectedEntry()
+            if selectedEntry is not None:
+                oppositeEntry = selectedEntry.oppositeEntry
+                self.nb.OpenAccount(oppositeEntry.account, oppositeEntry)
 
     def BindMenuItemToHandler(self, menu, title, help, handler):
         item = menu.Append(-1, title, help)
@@ -113,15 +114,6 @@ class AccountEditor(wx.Dialog):
         box.Add(text, 1, wx.ALIGN_CENTRE|wx.ALL, 5)
         sizer.Add(box, 0, wx.GROW|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
 
-        box = wx.BoxSizer(wx.HORIZONTAL)
-        label = wx.StaticText(self, -1, "Parent :")
-        box.Add(label, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
-        parentName = tree.GetPyData(item).parent.name
-        text = wx.TextCtrl(self, -1, parentName)
-        self.parent = text.GetValue
-        box.Add(text, 1, wx.ALIGN_CENTRE|wx.ALL, 5)
-        sizer.Add(box, 0, wx.GROW|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
-
         line = wx.StaticLine(self, -1, size=(20,-1), style=wx.LI_HORIZONTAL)
         sizer.Add(line, 0, wx.GROW|wx.ALIGN_CENTER_VERTICAL|wx.RIGHT|wx.TOP, 5)
 
@@ -131,8 +123,8 @@ class AccountEditor(wx.Dialog):
         box.Add(btn, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
         btn = wx.Button(self, wx.ID_CANCEL, " Cancel ")
         box.Add(btn, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
+        
         sizer.Add(box, 0, wx.ALIGN_CENTER_HORIZONTAL|wx.ALL, 5)
-
         self.SetSizer(sizer)
         self.SetAutoLayout(True)
 
@@ -502,7 +494,7 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
         if self.HasEntryBeenModified():
             self.PostEntry()
             self.Refresh()
-## todo new entry
+## TODO: new entry
 ##        nextRow = self.GetGridCursorRow() + 1
 ##        if nextRow < self.GetTable().GetNumberRows():
 ##            self.SetGridCursor(nextRow, 0)

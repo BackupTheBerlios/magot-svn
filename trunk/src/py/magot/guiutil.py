@@ -408,8 +408,8 @@ class OppositeAccountEditor(gridlib.PyGridCellEditor):
         """
         Reset the value in the control back to its starting value.
         """
-        # todo a better way to do this
-        idx = [a for a,p in self.accPathPairs].index(self.oldOppositeAcc)
+        opp = self.oldOppositeAcc
+        idx = (i for i,(a,p) in enumerate(self.accPathPairs) if a is opp).next()
         self._tc.SetSelection(idx)
 
     def Clone(self):

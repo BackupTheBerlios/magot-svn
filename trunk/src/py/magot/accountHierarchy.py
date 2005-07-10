@@ -281,7 +281,7 @@ class AccountHierarchy(wx.Panel):
         # Prevent the user from dropping an item inside of itself
         if self.tree.ItemIsChildOf(target, source):
             self.log.write("the tree item can not be moved in to itself!\n")
-            self.tree.Unselect()
+            self.tree.UnselectAll()
             return
 
         newItems = self.MoveAccount(source, target)

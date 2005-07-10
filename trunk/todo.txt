@@ -4,6 +4,13 @@ Magot TODO :
 done :
 
 todo :
+- can't open AccountEditor when currrent page is accLedger
+- move accLedger to own module
+- on Windows, balances are truncated when ascenseur vertical is shown
+- remove green when dropping under Root
+- propose all accounts in oppositeAccountEditor
+- bad refresh on windows when sizing a column of an Entry
+
 - can close a Tab account
 - don't open a new Notebook Tab when changing the name of an account
 - add tool bar : JumpToOppositeAccount, OpenAccount/CloseAccount, EditAccount, HierarchyOptions
@@ -12,7 +19,9 @@ todo :
 - alternate color between entries
 - action/memo for entry vs date/num/description for tx
 - better formatted output for command 'gui accounts'
-- dev design : access a notebook page by its view only, not its model ?
+- dev design : 
+    access a notebook page by its view only, not its model ?
+    AccountHierarchy = GeneralLedger?
 - finish RefData module : 
     integrate currency in Money
     rounding decimal.getcontext().rounding="ROUND_HALF_UP" for EURO
@@ -21,7 +30,8 @@ todo :
 - __repr__ of DetailAccount
 
 0.2
-- copy/cut/paste of cell or entry
+- add an empty entry at end of each AccountLedger
+- copy/cut/paste of cell/entry/transaction
 - create/duplicate/delete tx
 - create/delete account
 
