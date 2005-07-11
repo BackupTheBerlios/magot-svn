@@ -1,15 +1,18 @@
 Magot TODO :
 
-0.1 use wxpython 2.6.0.1
+Use wxpython 2.6.0.1
+
+0.1 Navigation 
 
 done :
 - allow openning AccountEditor only when currrent page is accHiearchy
 - move accLedger to its own module
+- change Notebook page text when changing its name from accountEditor
 
 todo :
-- change accName in Notebook Tab when changing the its name in accountEditor
-- allow to close an AccountLedger
+- allow to close an AccountLedger + jump should reopen the closed page
 - propose all accounts in oppositeAccountEditor
+- sort tree item in account Hierarchy
 
 - bad refresh on windows when resizing a Entry column
 - remove green when dropping under Root
@@ -30,27 +33,25 @@ todo :
     use of locale for each currency
 - __repr__ of DetailAccount
 
-0.2
+0.2 : Modification
 - add an empty entry at end of each AccountLedger
 - copy/cut/paste of cell/entry/transaction
 - create/duplicate/delete tx
 - create/delete account
 
-0.3
+0.3 : search + split
+- make multiple entry (aka split)
 - view entries by range date
 - search tx by criteria
 
-0.4
-- create all standard account types
+0.4 : rapports
+- profit and loss = Income Statement
+- balance sheet
+
+0.5 : standardisation
+- import qif and gnucash
+- create all standard account types + standard account hierachy
 - Num column should propose : ATM, Virement, ...
-
-0.5
-- make multiple entry (aka split)
-
-0.6
-- rapports :
-	Profit and loss = Income Statement
-    balance sheet
 
 1.0
 - unicode + i18n + l10n
@@ -61,3 +62,4 @@ post 1.0
 - make true persistence / multi user : SQLlite, DURUS/ZODB/Pypersyst, Metakit, SQLObject, Roundup HyperDB, PyDO ?
 - budgets / accounting periods
 - parties
+- portfolio

@@ -20,6 +20,8 @@ class MainFrame(wx.Frame):
             "Save data", self.OnSave)
         self.BindMenuItemToHandler(menuFile, "&Jump\tAlt-J", 
             "Jump to account", self.OnJump)
+        self.BindMenuItemToHandler(menuFile, "&Close\tAlt-C", 
+            "Close account ledger", self.OnCloseAccount)
         self.BindMenuItemToHandler(menuFile, "E&xit\tAlt-X", 
             "Exit application", self.OnExit)
 
@@ -41,8 +43,12 @@ class MainFrame(wx.Frame):
         # storage.commitTransaction(self.ctx)
         self.Destroy()
 
+    def OnCloseAccount(self, evt):
+        if self.isAccountLedgerCurrentSelection():
+            self.nb.CloseAccount()
+
     def OnEditAccount(self, evt):
-        if not self.nb.GetCurrentPage() is self.nb.hierarchy:
+        if self.isAccountLedgerCurrentSelection():
             return
 
         tree = self.nb.hierarchy.tree
@@ -50,17 +56,19 @@ class MainFrame(wx.Frame):
         if item is None or tree.GetRootItem() == item:
             return
         
-        win = AccountEditor(self, tree, -1, "Account details", 
-            size=wx.Size(500, 150), 
+        account = tree.GetPyData(item)
+        win = AccountEditor(self, account, -1, size=wx.Size(500, 150), 
             style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
         win.CenterOnScreen()
-        
         if win.ShowModal() == wx.ID_OK:
-            account = tree.GetPyData(item)
             account.description = win.desc()
             account.name = win.name()
+            # TODO: call updateAccount on hierarchy and ledger
             tree.SetItemText(item, account.name, 0)
             tree.SetItemText(item, account.description, 1)
+            if account in self.nb.mapAccountToPage:
+                page = self.nb.mapAccountToPage[account]
+                self.nb.SetPageText(page, account.name)
 
     def OnSave(self, evt):
         self.ctx.Accounts.register(self.accRoot)
@@ -68,10 +76,9 @@ class MainFrame(wx.Frame):
         storage.beginTransaction(self.ctx)
 
     def OnJump(self, evt):
-        page = self.nb.GetCurrentPage()
-        if isinstance(page, AccountLedgerView):
+        if self.isAccountLedgerCurrentSelection():
             # TODO: split
-            selectedEntry = page.GetSelectedEntry()
+            selectedEntry = self.nb.GetCurrentPage().GetSelectedEntry()
             if selectedEntry is not None:
                 oppositeEntry = selectedEntry.oppositeEntry
                 self.nb.OpenAccount(oppositeEntry.account, oppositeEntry)
@@ -80,24 +87,26 @@ class MainFrame(wx.Frame):
         item = menu.Append(-1, title, help)
         self.Bind(wx.EVT_MENU, handler, item)
 
+    
+    def isAccountLedgerCurrentSelection(self):
+        return not self.nb.GetCurrentPage() is self.nb.hierarchy
 
 class AccountEditor(wx.Dialog):
     """ 
     This class provides access to all the properties of an account.
     """
     
-    def __init__(self, parent, tree, ID, title, pos=wx.DefaultPosition, 
+    def __init__(self, parent, account, ID, pos=wx.DefaultPosition, 
                  size=wx.DefaultSize, style=wx.DEFAULT_DIALOG_STYLE):
-        wx.Dialog.__init__(self, parent, ID, title, pos, size, style)
+        wx.Dialog.__init__(self, parent, ID, account.name+" account details", 
+                           pos, size, style)
         
-        item = tree.GetSelection()
         sizer = wx.BoxSizer(wx.VERTICAL)
 
         box = wx.BoxSizer(wx.HORIZONTAL)
         label = wx.StaticText(self, -1, "Name :")
         box.Add(label, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
-        name = tree.GetItemText(item, 0)
-        text = wx.TextCtrl(self, -1, name)
+        text = wx.TextCtrl(self, -1, account.name)
         self.name = text.GetValue
         box.Add(text, 1, wx.ALIGN_CENTRE|wx.ALL, 5)
         sizer.Add(box, 0, wx.GROW|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
@@ -105,8 +114,7 @@ class AccountEditor(wx.Dialog):
         box = wx.BoxSizer(wx.HORIZONTAL)
         label = wx.StaticText(self, -1, "Description :")
         box.Add(label, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
-        desc = tree.GetItemText(item, 1)
-        text = wx.TextCtrl(self, -1, desc)
+        text = wx.TextCtrl(self, -1, account.description)
         self.desc = text.GetValue
         box.Add(text, 1, wx.ALIGN_CENTRE|wx.ALL, 5)
         sizer.Add(box, 0, wx.GROW|wx.ALIGN_CENTER_VERTICAL|wx.ALL, 5)
@@ -166,6 +174,14 @@ class MainNotebook(wx.Notebook):
         page.Refresh()
         self.pageShouldRefresh = True
         page.SetCursorOn(focusEntry)
+
+    def CloseAccount(self, account=None, focusEntry=None):
+        if account is None:
+            account = self.GetCurrentPage().account
+            
+        self.DeletePage(self.GetSelection())
+        # TODO: maj self.mapAccountToPage
+##        del self.mapAccountToPage[account]
 
 
 class WxApp(wx.App):

@@ -254,6 +254,7 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
         self.setResizeColumn(3) # description
             
         self.ctx = parent.ctx
+        self.account = account
         self.log = log
         self.sortByCol = 0 # by entry date
         
