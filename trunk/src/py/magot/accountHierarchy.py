@@ -1,7 +1,7 @@
 import sys
-
 import wx
 import wx.gizmos
+
 
 class TreeListCtrlAutoWidthMixin:
     """ A mix-in class that automatically resizes the last column to take up

@@ -4,7 +4,6 @@ import sys
 
 import wx
 import wx.grid as gridlib
-from wx.gizmos import TreeListCtrl
 
 
 def pydate2wxdate(date):

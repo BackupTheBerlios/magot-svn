@@ -1,18 +1,19 @@
 Magot TODO :
 
 0.1 use wxpython 2.6.0.1
+
 done :
+- allow openning AccountEditor only when currrent page is accHiearchy
+- move accLedger to its own module
 
 todo :
-- can't open AccountEditor when currrent page is accLedger
-- move accLedger to own module
-- on Windows, balances are truncated when ascenseur vertical is shown
-- remove green when dropping under Root
+- change accName in Notebook Tab when changing the its name in accountEditor
+- allow to close an AccountLedger
 - propose all accounts in oppositeAccountEditor
-- bad refresh on windows when sizing a column of an Entry
 
-- can close a Tab account
-- don't open a new Notebook Tab when changing the name of an account
+- bad refresh on windows when resizing a Entry column
+- remove green when dropping under Root
+- on Windows, balances are truncated when ascenseur vertical is shown
 - add tool bar : JumpToOppositeAccount, OpenAccount/CloseAccount, EditAccount, HierarchyOptions
 - update web site
 - ask : save modifications before exit ?
