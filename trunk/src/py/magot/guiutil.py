@@ -420,9 +420,15 @@ class OppositeAccountEditor(gridlib.PyGridCellEditor):
     def _getAccountPathPairs(self):
         accPathPairs = []
         self._addSubAccPathPairs(self.ctx.Accounts.root, accPathPairs, [], None)
+        from operator import itemgetter
+        accPathPairs.sort(key=itemgetter(1))
         return accPathPairs
 
     def _addSubAccPathPairs(self, parent, accPathPairs, heap, currentPath):
+        if heap:
+            accountName = heap.pop()
+            accPathPairs.append((parent, currentPath))
+
         for account in parent.subAccounts:
             heap.append(account.name)
             if currentPath is not None:
@@ -430,8 +436,3 @@ class OppositeAccountEditor(gridlib.PyGridCellEditor):
             else:
                 path = account.name
             self._addSubAccPathPairs(account, accPathPairs, heap, path)
-        
-        if heap:
-            accountName = heap.pop()
-            if not parent.subAccounts:
-                accPathPairs.append((parent, currentPath))

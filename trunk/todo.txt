@@ -10,10 +10,9 @@ done :
 - change Notebook page text when changing its name from accountEditor
 - close an AccountLedger with shortcut Ctrl-C
 - sort tree items in account Hierarchy
+- propose all accounts in OppositeAccountEditor
 
 todo :
-- propose all accounts in oppositeAccountEditor
-
 - bad refresh on windows when resizing a Entry column
 - remove green when dropping under Root
 - on Windows, balances are truncated when ascenseur vertical is shown
