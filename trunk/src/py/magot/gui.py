@@ -180,8 +180,12 @@ class MainNotebook(wx.Notebook):
             account = self.GetCurrentPage().account
             
         self.DeletePage(self.GetSelection())
-        # TODO: maj self.mapAccountToPage
-##        del self.mapAccountToPage[account]
+        # update mapAccountToPage
+        removedIndex = self.mapAccountToPage[account]
+        del self.mapAccountToPage[account]
+        for a,i in self.mapAccountToPage.iteritems():
+            if i > removedIndex:
+                self.mapAccountToPage[a] = i - 1
 
 
 class WxApp(wx.App):

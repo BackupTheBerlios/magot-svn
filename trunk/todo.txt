@@ -2,17 +2,17 @@ Magot TODO :
 
 Use wxpython 2.6.0.1
 
-0.1 Navigation 
+0.1 : Navigation 
 
 done :
 - allow openning AccountEditor only when currrent page is accHiearchy
-- move accLedger to its own module
+- move class accountLedger to its own module
 - change Notebook page text when changing its name from accountEditor
+- close an AccountLedger with shortcut Ctrl-C
 
 todo :
-- allow to close an AccountLedger + jump should reopen the closed page
-- propose all accounts in oppositeAccountEditor
 - sort tree item in account Hierarchy
+- propose all accounts in oppositeAccountEditor
 
 - bad refresh on windows when resizing a Entry column
 - remove green when dropping under Root
@@ -39,16 +39,16 @@ todo :
 - create/duplicate/delete tx
 - create/delete account
 
-0.3 : search + split
+0.3 : Search + Split
 - make multiple entry (aka split)
 - view entries by range date
 - search tx by criteria
 
-0.4 : rapports
+0.4 : Reports
 - profit and loss = Income Statement
 - balance sheet
 
-0.5 : standardisation
+0.5 : Standardisation
 - import qif and gnucash
 - create all standard account types + standard account hierachy
 - Num column should propose : ATM, Virement, ...
