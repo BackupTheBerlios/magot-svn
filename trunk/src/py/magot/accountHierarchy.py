@@ -191,6 +191,8 @@ class AccountTreeListCtrl(wx.gizmos.TreeListCtrl, TreeListCtrlAutoWidthMixin):
             newitems.append(node)
             if item.has_key('children'):
                 self.InsertItemsFromList( item['children'], node )
+
+        self.SortChildren(parent)
         return newitems
 
 
@@ -306,6 +308,7 @@ class AccountHierarchy(wx.Panel):
             if account == focus:
                 self.tree.SelectItem(child)
             self.displayOneLevel(account, child, focus)
+        self.tree.SortChildren(node)
 
     def createAndAppendAccount(self, parent, account):
         child = self.tree.AppendItem(parent, account.name, 

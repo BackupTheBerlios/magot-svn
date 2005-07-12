@@ -9,9 +9,9 @@ done :
 - move class accountLedger to its own module
 - change Notebook page text when changing its name from accountEditor
 - close an AccountLedger with shortcut Ctrl-C
+- sort tree items in account Hierarchy
 
 todo :
-- sort tree item in account Hierarchy
 - propose all accounts in oppositeAccountEditor
 
 - bad refresh on windows when resizing a Entry column
