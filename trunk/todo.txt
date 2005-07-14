@@ -2,7 +2,7 @@ Magot TODO :
 
 Use wxpython 2.6.0.1
 
-0.1 : Navigation 
+0.1 : Navigation + Modification
 
 done :
 - allow openning AccountEditor only when currrent page is accHiearchy
@@ -11,15 +11,15 @@ done :
 - close an AccountLedger with shortcut Ctrl-C
 - sort tree items in account Hierarchy
 - propose all accounts in OppositeAccountEditor
+- alternate color between grid lines
 
 todo :
-- bad refresh on windows when resizing a Entry column
-- remove green when dropping under Root
-- on Windows, balances are truncated when ascenseur vertical is shown
+- change blue selection line
+- ask : save modifications before exit ?
 - add tool bar : JumpToOppositeAccount, OpenAccount/CloseAccount, EditAccount, HierarchyOptions
 - update web site
-- ask : save modifications before exit ?
-- alternate color between entries
+- bad refresh on windows when resizing a Entry column : use grid.ForceRefresh() ?
+- on Windows, balances are truncated when ascenseur vertical is shown
 - action/memo for entry vs date/num/description for tx
 - better formatted output for command 'gui accounts'
 - dev design : 
@@ -32,7 +32,7 @@ todo :
     use of locale for each currency
 - __repr__ of DetailAccount
 
-0.2 : Modification
+0.2 : Creation
 - add an empty entry at end of each AccountLedger
 - copy/cut/paste of cell/entry/transaction
 - create/duplicate/delete tx

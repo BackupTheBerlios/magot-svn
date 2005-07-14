@@ -157,7 +157,7 @@ class MainNotebook(wx.Notebook):
 
     def OnPageChanged(self, evt):
         if hasattr(self, 'pageShouldRefresh') and self.pageShouldRefresh:
-            self.GetPage(evt.GetSelection()).Refresh()
+            self.GetPage(evt.GetSelection()).RefreshLedger()
         evt.Skip()
 
     def OpenAccount(self, account, focusEntry=None):
@@ -171,7 +171,7 @@ class MainNotebook(wx.Notebook):
         self.SetSelection(self.mapAccountToPage[account])
 
         page = self.GetCurrentPage()
-        page.Refresh()
+        page.RefreshLedger()
         self.pageShouldRefresh = True
         page.SetCursorOn(focusEntry)
 

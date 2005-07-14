@@ -239,7 +239,7 @@ class AccountHierarchy(wx.Panel):
         self.BuildHierarchy()
         
         self.tree.Bind(wx.EVT_TREE_SEL_CHANGED, self.OnSelChanged)
-        self.tree.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.OnItemActivated)
+        self.tree.Bind(wx.EVT_TREE_ITEM_ACTIVATED, self.OnOpenAccount)
         self.tree.Bind(wx.EVT_TREE_BEGIN_DRAG, self.OnBeginDrag)
         self.tree.Bind(wx.EVT_TREE_END_DRAG, self.OnEndDrag)
 
@@ -252,7 +252,7 @@ class AccountHierarchy(wx.Panel):
             self.lastSelectedItem = event.GetItem()
             self.tree.SetItemBackgroundColour(self.lastSelectedItem, "Green")
 
-    def OnItemActivated(self, evt):
+    def OnOpenAccount(self, evt):
         item = evt.GetItem();
         if item:
             account = self.tree.GetPyData(item)
@@ -287,7 +287,7 @@ class AccountHierarchy(wx.Panel):
             return
 
         newItems = self.MoveAccount(source, target)
-        self.Refresh()
+        self.RefreshLedger()
         self.tree.SelectItem(newItems[0])
 
     def BuildHierarchy(self, focus=None):
@@ -333,7 +333,7 @@ class AccountHierarchy(wx.Panel):
         movedAccount.parent = newParentAccount
         return newitems
 
-    def Refresh(self):
+    def RefreshLedger(self):
         """ Refresh the balance of each account. """
         def refreshAccount(child, depth):
             account = self.tree.GetPyData(child)

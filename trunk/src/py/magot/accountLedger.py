@@ -183,7 +183,7 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
         entryIndex = self.data.index(entry)
         return entryIndex
 
-    def Refresh(self, sortByCol=None, focusEntry=None, sync=True):
+    def RefreshLedger(self, sortByCol=None, focusEntry=None, sync=True):
         if focusEntry is None:
             # try to get the current entry as focus
             focusEntry = self.GetView().GetSelectedEntry()
@@ -329,8 +329,8 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
         self.DisableCellEditControl()
 
         if self.HasEntryBeenModified():
-            self.PostEntry()
-            self.Refresh()
+            self.PostTransaction()
+            self.RefreshLedger()
 ## TODO: new entry
 ##        nextRow = self.GetGridCursorRow() + 1
 ##        if nextRow < self.GetTable().GetNumberRows():
@@ -355,16 +355,16 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
                 self.SelectRow(self.GetGridCursorRow())
                 return False
             if toBeSaved == wx.ID_YES:
-                self.PostEntry()
-                self.Refresh(sync=True, sort=True)
+                self.PostTransaction()
+                self.RefreshLedger(sync=True, sort=True)
             elif toBeSaved == wx.ID_NO:
                 self.InitEntryForModification()
-                self.Refresh(sync=True, sort=False)
+                self.RefreshLedger(sync=True, sort=False)
         return True
 
     def OnLabelLeftClick(self, evt):
         self.sortByCol = evt.GetCol()
-        self.Refresh(sync=False, sort=True)
+        self.RefreshLedger(sync=False, sort=True)
         evt.Skip()
     
     def OnRangeSelect(self, evt):
@@ -374,12 +374,18 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
             self.SelectRow(self.GetGridCursorRow())
         evt.Skip()
 
-    def Refresh(self, focusEntry=None, sync=True, sort=True):
+    def RefreshLedger(self, focusEntry=None, sync=True, sort=True):
         col = None
         if sort:
             col = self.sortByCol
-        self.GetTable().Refresh(focusEntry=focusEntry, 
-                                sync=sync, sortByCol=col)
+        self.GetTable().RefreshLedger(focusEntry=focusEntry, 
+                                      sync=sync, sortByCol=col)
+        for row in xrange(self.GetNumberRows()):
+            for col in xrange(self.GetNumberCols()):
+                if row % 2:
+                    self.SetCellBackgroundColour(row, col, "Ivory2")
+                else:
+                    self.SetCellBackgroundColour(row, col, "Bisque")
 
     def GetSelectedEntry(self):
         row = self.GetGridCursorRow()
@@ -405,7 +411,7 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
         return self._entryProxy
     def GetModifiedEntry(self):
         return self._entryProxy
-    def PostEntry(self):
+    def PostTransaction(self):
         proxy = self._entryProxy
         entry = proxy._obj
         
