@@ -5,19 +5,21 @@ import sys
 import wx
 import wx.grid as gridlib
 
+from magot.refdata import Date
 
-def pydate2wxdate(date):
+
+def date2wxdate(date):
     assert isinstance(date, (datetime.datetime, datetime.date))
     tt = date.timetuple()
     dmy = (tt[2], tt[1]-1, tt[0])
     return wx.DateTimeFromDMY(*dmy)
 
-def wxdate2pydate(date):
+def wxdate2date(date):
     import datetime
     assert isinstance(date, wx.DateTime)
     if date.IsValid():
         ymd = map(int, date.FormatISODate().split('-'))
-        return datetime.date(*ymd)
+        return Date(*ymd)
     else:
         return None
 
@@ -211,7 +213,7 @@ class DateCellEditor(gridlib.PyGridCellEditor):
         *Must Override*
         """
         self.log.write("DateCellEditor: BeginEdit (%d,%d)\n" % (row, col))
-        self.startValue = grid.GetTable().GetValue(row, col)
+        self.startValue = date2wxdate(grid.GetTable().GetValue(row, col))
         self._tc.SetValue(self.startValue)
         self._tc.SetFocus()
 
@@ -226,9 +228,8 @@ class DateCellEditor(gridlib.PyGridCellEditor):
         
         if val != self.startValue:
             changed = True
-            grid.GetTable().SetValue(row, col, val) # update the table
+            grid.GetTable().SetValue(row, col, wxdate2date(val))
 
-        self.startValue = ''
         self.log.write("DateCellEditor: EndEdit (%d,%d) return %s\n" %
                         (row, col, changed))
         return changed
@@ -252,7 +253,6 @@ class DateCellEditor(gridlib.PyGridCellEditor):
 
         ## Oops, there's a bug here, we'll have to do it ourself..
         ##return self.base_IsAcceptedKey(evt)
-
         return (not (evt.ControlDown() or evt.AltDown()) and
                 evt.GetKeyCode() != wx.WXK_SHIFT)
 
@@ -300,44 +300,6 @@ class DateCellEditor(gridlib.PyGridCellEditor):
         """
         self.log.write("DateCellEditor: Clone\n")
         return DateCellEditor(self.log)
-
-
-class DateCellRenderer(gridlib.PyGridCellRenderer):
-    
-    def __init__(self):
-        gridlib.PyGridCellRenderer.__init__(self)
-
-    def Draw(self, grid, attr, dc, rect, row, col, isSelected):
-        dc.DrawRectangleRect(rect)
-        dc.SetFont(attr.GetFont())
-
-        date = grid.GetTable().GetValue(row, col)
-        text = date.FormatDate()
-
-        if isSelected:
-            color = "WHITE"
-        else:
-            color = "BLACK"
-
-        x = rect.x + 1
-        y = rect.y + 1
-        for ch in text:
-            dc.SetTextForeground(color)
-            dc.DrawText(ch, x, y)
-            w, h = dc.GetTextExtent(ch)
-            x = x + w
-            if x > rect.right - 5:
-                break
-
-    def GetBestSize(self, grid, attr, dc, row, col):
-        date = grid.GetTable().GetValue(row, col)
-        text = date.FormatDate()
-        dc.SetFont(attr.GetFont())
-        w, h = dc.GetTextExtent(text)
-        return wx.Size(w, h)
-
-    def Clone(self):
-        return DateCellRenderer()
 
 
 class OppositeAccountEditor(gridlib.PyGridCellEditor):

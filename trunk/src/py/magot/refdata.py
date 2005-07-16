@@ -9,13 +9,10 @@ from peak.model.features import structField
 ZERO = Decimal("0.00")
 
 
-class Date(Immutable):
+class Date(date):
 
-    def mdl_fromString(klass, value):
-        return date.fromtimestamp(value)
-
-    def mdl_toString(klass, value):
-        return str(value)
+    def __str__(self):
+        return self.strftime("%d.%m.%Y")
 
 
 class Currency(Enumeration):

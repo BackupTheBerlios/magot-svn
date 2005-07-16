@@ -12,13 +12,13 @@ done :
 - sort tree items in account Hierarchy
 - propose all accounts in OppositeAccountEditor
 - alternate color between grid lines
+- change colour of selected line from blue to lemon
 
 todo :
-- change blue selection line
 - ask : save modifications before exit ?
 - add tool bar : JumpToOppositeAccount, OpenAccount/CloseAccount, EditAccount, HierarchyOptions
 - update web site
-- bad refresh on windows when resizing a Entry column : use grid.ForceRefresh() ?
+- bad refresh on windows when resizing a Entry column : use grid.ForceRefresh() + EVT_GRID_COL_SIZE ?
 - on Windows, balances are truncated when ascenseur vertical is shown
 - action/memo for entry vs date/num/description for tx
 - better formatted output for command 'gui accounts'

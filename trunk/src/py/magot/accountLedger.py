@@ -27,7 +27,7 @@ class Proxy(object):
 
 def _getdata(col, entry):
     if col == 0:
-        return pydate2wxdate(entry.date)
+        return entry.date
     if col == 1:
         return entry.number
     if col == 2:
@@ -55,7 +55,7 @@ def _getdata(col, entry):
 
 def _setdata(col, entry, value=None):
     if col == 0:
-        entry.date = wxdate2pydate(value)
+        entry.date = value
     elif col == 1:
         entry.number = value
     elif col == 2:
@@ -91,9 +91,9 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
             gridlib.GRID_VALUE_STRING,
             gridlib.GRID_VALUE_CHOICE,
             gridlib.GRID_VALUE_BOOL,
-            gridlib.GRID_VALUE_FLOAT + ':6,2',
-            gridlib.GRID_VALUE_FLOAT + ':6,2',
-            gridlib.GRID_VALUE_FLOAT + ':6,2',
+            gridlib.GRID_VALUE_FLOAT + ':10,2',
+            gridlib.GRID_VALUE_FLOAT + ':10,2',
+            gridlib.GRID_VALUE_FLOAT + ':10,2',
         ]
         # data stores account entries so that we can sort them
         # whithout changing value-date ordered account.entries
@@ -267,10 +267,12 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
         self.SetTable(table, True)
 
         self.SetRowLabelSize(0)
+        self.SetSelectionBackground("LemonChiffon")
+        self.SetSelectionForeground("Black")
 ##        self.AutoSizeColumns(True)
 
         attr = gridlib.GridCellAttr()
-        attr.SetRenderer(DateCellRenderer())
+        attr.SetRenderer(gridlib.GridCellStringRenderer())
         attr.SetEditor(DateCellEditor(log))
         self.SetColAttr(0, attr)
 
@@ -290,7 +292,7 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
         self.Bind(gridlib.EVT_GRID_SELECT_CELL, self.OnSelectCell)
         self.Bind(gridlib.EVT_GRID_LABEL_LEFT_CLICK, self.OnLabelLeftClick)
         self.Bind(gridlib.EVT_GRID_RANGE_SELECT, self.OnRangeSelect)
-  
+    
     def GetTable(self):
         return self.tableRef()
 
@@ -383,9 +385,7 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
         for row in xrange(self.GetNumberRows()):
             for col in xrange(self.GetNumberCols()):
                 if row % 2:
-                    self.SetCellBackgroundColour(row, col, "Ivory2")
-                else:
-                    self.SetCellBackgroundColour(row, col, "Bisque")
+                    self.SetCellBackgroundColour(row, col, "WhiteSmoke")
 
     def GetSelectedEntry(self):
         row = self.GetGridCursorRow()
