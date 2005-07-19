@@ -318,7 +318,7 @@ class AccountHierarchy(wx.Panel):
         self.tree.SetItemText(child, str(account.balance), 2)
         return child
 
-    def ValidAnyModification(self):
+    def CheckTransactionModification(self):
         """ No modification to validate, so we can safely pursue the flow. """
         return True
 

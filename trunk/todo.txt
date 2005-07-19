@@ -13,9 +13,10 @@ done :
 - propose all accounts in OppositeAccountEditor
 - alternate color between grid lines
 - change colour of selected line from blue to lemon
+- ask 'save modifications?' before exit
 
 todo :
-- ask : save modifications before exit ?
+- ask 'save modifications?' on CloseAccount, OnJump, OnSave, OnConfigureAccount
 - add tool bar : JumpToOppositeAccount, OpenAccount/CloseAccount, EditAccount, HierarchyOptions
 - update web site
 - bad refresh on windows when resizing a Entry column : use grid.ForceRefresh() + EVT_GRID_COL_SIZE ?

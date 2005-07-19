@@ -14,15 +14,15 @@ class MainFrame(wx.Frame):
         self.ctx = ctx
 
         menuFile = wx.Menu()
-        self.BindMenuItemToHandler(menuFile, "E&dit\tAlt-E", 
-            "Edit account details", self.OnEditAccount)
-        self.BindMenuItemToHandler(menuFile, "&Save\tAlt-S", 
+        self.bindMenuItemToHandler(menuFile, "E&dit\tAlt-E", 
+            "Edit account details", self.OnConfigureAccount)
+        self.bindMenuItemToHandler(menuFile, "&Save\tAlt-S", 
             "Save data", self.OnSave)
-        self.BindMenuItemToHandler(menuFile, "&Jump\tAlt-J", 
-            "Jump to account", self.OnJump)
-        self.BindMenuItemToHandler(menuFile, "&Close\tAlt-C", 
+        self.bindMenuItemToHandler(menuFile, "&Jump\tAlt-J", 
+            "Jump to account", self.OnJumpToOppositeAccount)
+        self.bindMenuItemToHandler(menuFile, "&Close\tAlt-C", 
             "Close account ledger", self.OnCloseAccount)
-        self.BindMenuItemToHandler(menuFile, "E&xit\tAlt-X", 
+        self.bindMenuItemToHandler(menuFile, "E&xit\tAlt-X", 
             "Exit application", self.OnExit)
 
         menuBar = wx.MenuBar()
@@ -38,17 +38,25 @@ class MainFrame(wx.Frame):
         self.CreateStatusBar()
 
     def OnExit(self, evt):
-        self.Close(True)
-        # TODO: save modification before commit ?
-        # storage.commitTransaction(self.ctx)
+        if self.isSelectedTabAnAccountLedger():
+            if not self.nb.GetCurrentPage().CheckTransactionModification():
+                return
+
+        self.OnSave(None)
+        self.Close(True)       
         self.Destroy()
 
+    def OnSave(self, evt):
+        self.ctx.Accounts.register(self.accRoot)
+        storage.commitTransaction(self.ctx)
+        storage.beginTransaction(self.ctx)
+
     def OnCloseAccount(self, evt):
-        if self.isAccountLedgerCurrentSelection():
+        if self.isSelectedTabAnAccountLedger():
             self.nb.CloseAccount()
 
-    def OnEditAccount(self, evt):
-        if self.isAccountLedgerCurrentSelection():
+    def OnConfigureAccount(self, evt):
+        if self.isSelectedTabAnAccountLedger():
             return
 
         tree = self.nb.hierarchy.tree
@@ -70,26 +78,21 @@ class MainFrame(wx.Frame):
                 page = self.nb.mapAccountToPage[account]
                 self.nb.SetPageText(page, account.name)
 
-    def OnSave(self, evt):
-        self.ctx.Accounts.register(self.accRoot)
-        storage.commitTransaction(self.ctx)
-        storage.beginTransaction(self.ctx)
-
-    def OnJump(self, evt):
-        if self.isAccountLedgerCurrentSelection():
+    def OnJumpToOppositeAccount(self, evt):
+        if self.isSelectedTabAnAccountLedger():
             # TODO: split
             selectedEntry = self.nb.GetCurrentPage().GetSelectedEntry()
             if selectedEntry is not None:
                 oppositeEntry = selectedEntry.oppositeEntry
                 self.nb.OpenAccount(oppositeEntry.account, oppositeEntry)
 
-    def BindMenuItemToHandler(self, menu, title, help, handler):
+    def bindMenuItemToHandler(self, menu, title, help, handler):
         item = menu.Append(-1, title, help)
         self.Bind(wx.EVT_MENU, handler, item)
-
     
-    def isAccountLedgerCurrentSelection(self):
+    def isSelectedTabAnAccountLedger(self):
         return not self.nb.GetCurrentPage() is self.nb.hierarchy
+
 
 class AccountEditor(wx.Dialog):
     """ 
@@ -147,15 +150,17 @@ class MainNotebook(wx.Notebook):
         self.mapAccountToPage = {'root':0}
 
         self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGING, self.OnPageChanging)
-        self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGED, self.OnPageChanged)
 
     def OnPageChanging(self, evt):
         oldPage = self.GetPage(evt.GetOldSelection())
-        if not oldPage.ValidAnyModification():
-            evt.Veto()
-        evt.Skip()
+        if not oldPage.CheckTransactionModification():
+            if oldPage.IsCellEditControlEnabled():
+                oldPage.HideCellEditControl()
+            evt.Veto()  # Cancel was clicked, so don't pursue the page change
+        else:
+            evt.Skip()
 
-    def OnPageChanged(self, evt):
+    def OnSelChange(self, evt):
         if hasattr(self, 'pageShouldRefresh') and self.pageShouldRefresh:
             self.GetPage(evt.GetSelection()).RefreshLedger()
         evt.Skip()

@@ -80,7 +80,6 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
     def __init__(self, view, account, log):
         gridlib.PyGridTableBase.__init__(self)
         
-        self.view = view
         self.account = account
         self.log = log
         self.colLabels = ['Date', 'Num', 'Description', 'Account', 
@@ -188,8 +187,12 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
             # try to get the current entry as focus
             focusEntry = self.GetView().GetSelectedEntry()
 
-        self.log.write("Refresh called on ledger "+self.account.name+
-            " with focus on entry "+str(focusEntry)+"\n")
+        msg = "Refresh called on ledger "+self.account.name
+        if focusEntry is None:
+            msg += " with no focus.\n"
+        else:
+            msg += " with focus on entry "+focusEntry.description+"\n"
+        self.log.write(msg)
         
         if sync:
             self._syncModelAgainstAccount()
@@ -201,8 +204,7 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
             self, wx.grid.GRIDTABLE_REQUEST_VIEW_GET_VALUES)
         self.GetView().ProcessTableMessage(msg)
 
-        # TODO: should really the model access the view ?
-        # is the model a controler ?
+        # TODO: should really the model access the view ? is the model a controler ?
         self.GetView().SetCursorOn(focusEntry)
 
     def Sort(self, byCol=0, descending=False, updateView=True):
@@ -242,7 +244,7 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
         else:
             msg = None
         if msg is not None:
-            self.view.ProcessTableMessage(msg)
+            self.GetView().ProcessTableMessage(msg)
 
 
 class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
@@ -290,7 +292,7 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
         self.Bind(wx.EVT_IDLE, self.OnIdle)
 
         self.Bind(gridlib.EVT_GRID_SELECT_CELL, self.OnSelectCell)
-        self.Bind(gridlib.EVT_GRID_LABEL_LEFT_CLICK, self.OnLabelLeftClick)
+        self.Bind(gridlib.EVT_GRID_LABEL_LEFT_CLICK, self.OnSort)
         self.Bind(gridlib.EVT_GRID_RANGE_SELECT, self.OnRangeSelect)
     
     def GetTable(self):
@@ -311,28 +313,23 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
         if self.IsCellEditControlEnabled():
             self.HideCellEditControl()
             self.DisableCellEditControl()
-            
+        
         if self.GetGridCursorRow() != evt.GetRow():
-            if not self.ValidAnyModification():
+            # when changing line, check any tx modifications
+            if not self.CheckTransactionModification():
                 return
         self.SelectRow(evt.GetRow())
         self.__enableEdit = 1
         evt.Skip()
-   
-    def OnKeyDown(self, evt):
-        if evt.KeyCode() != wx.WXK_RETURN:
-            evt.Skip()
-            return
 
-        if evt.ControlDown():   # the edit control needs this key
+    def OnKeyDown(self, evt):
+        if evt.KeyCode() != wx.WXK_RETURN or evt.ControlDown():
             evt.Skip()
             return
 
         self.DisableCellEditControl()
+        self.CheckTransactionModification(askConfirmation=False)
 
-        if self.HasEntryBeenModified():
-            self.PostTransaction()
-            self.RefreshLedger()
 ## TODO: new entry
 ##        nextRow = self.GetGridCursorRow() + 1
 ##        if nextRow < self.GetTable().GetNumberRows():
@@ -343,28 +340,7 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
 ##            # needs to do that
 ##            pass
 
-    def ValidAnyModification(self):
-        """ Return True if validation is OK to pursue the flow. False else. """
-        if self.HasEntryBeenModified():
-            dlg = wx.MessageDialog(self, 
-                'Do you want to save entry modifications?',
-                'Question',
-                wx.YES_NO | wx.CANCEL | wx.ICON_QUESTION | wx.STAY_ON_TOP
-            )
-            toBeSaved = dlg.ShowModal()
-            dlg.Destroy()
-            if toBeSaved == wx.ID_CANCEL:
-                self.SelectRow(self.GetGridCursorRow())
-                return False
-            if toBeSaved == wx.ID_YES:
-                self.PostTransaction()
-                self.RefreshLedger(sync=True, sort=True)
-            elif toBeSaved == wx.ID_NO:
-                self.InitEntryForModification()
-                self.RefreshLedger(sync=True, sort=False)
-        return True
-
-    def OnLabelLeftClick(self, evt):
+    def OnSort(self, evt):
         self.sortByCol = evt.GetCol()
         self.RefreshLedger(sync=False, sort=True)
         evt.Skip()
@@ -375,17 +351,6 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
             evt.Veto()
             self.SelectRow(self.GetGridCursorRow())
         evt.Skip()
-
-    def RefreshLedger(self, focusEntry=None, sync=True, sort=True):
-        col = None
-        if sort:
-            col = self.sortByCol
-        self.GetTable().RefreshLedger(focusEntry=focusEntry, 
-                                      sync=sync, sortByCol=col)
-        for row in xrange(self.GetNumberRows()):
-            for col in xrange(self.GetNumberCols()):
-                if row % 2:
-                    self.SetCellBackgroundColour(row, col, "WhiteSmoke")
 
     def GetSelectedEntry(self):
         row = self.GetGridCursorRow()
@@ -402,16 +367,58 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
         self.SetGridCursor(row, 0)
         self.SelectRow(self.GetGridCursorRow())
 
+    def RefreshLedger(self, focusEntry=None, sync=True, sort=True):
+        col = None
+        if sort:
+            col = self.sortByCol
+        self.GetTable().RefreshLedger(focusEntry=focusEntry, 
+                                      sync=sync, sortByCol=col)
+        for row in xrange(self.GetNumberRows()):
+            for col in xrange(self.GetNumberCols()):
+                if row % 2:
+                    self.SetCellBackgroundColour(row, col, "WhiteSmoke")
+
+    def CheckTransactionModification(self, askConfirmation=True):
+        """ Return True if we can can pursue the flow. False else. 
+            Force Save if askConfirmation is False.
+        """
+
+        if self.HasEntryBeenModified():
+            toBeSaved = wx.ID_YES 
+            if askConfirmation:
+                dlg = wx.MessageDialog(self, 
+                    'Do you want to save entry modifications?', 'Question',
+                    wx.YES_NO | wx.CANCEL | wx.ICON_QUESTION | wx.STAY_ON_TOP
+                )
+                toBeSaved = dlg.ShowModal()
+                dlg.Destroy()
+
+            if toBeSaved == wx.ID_CANCEL:
+                self.SelectRow(self.GetGridCursorRow())
+                return False
+            if toBeSaved == wx.ID_YES:
+                self.PostTransaction()
+                self.RefreshLedger()
+            elif toBeSaved == wx.ID_NO:
+                self.InitEntryForModification()
+                self.RefreshLedger(sort=False)
+        return True
+
     def HasEntryBeenModified(self):
         return hasattr(self, '_entryProxy')
+
     def InitEntryForModification(self):
         del self._entryProxy
+
     def RegisterEntryForModification(self, entry):
         self._entryProxy = Proxy(entry)
         return self._entryProxy
+
     def GetModifiedEntry(self):
         return self._entryProxy
+
     def PostTransaction(self):
+        """ Return the account Entry whose Transaction has been modified. """
         proxy = self._entryProxy
         entry = proxy._obj
         
