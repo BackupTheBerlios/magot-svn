@@ -1,65 +1,74 @@
 Magot TODO :
 
-Use wxpython 2.6.0.1
+Use wxpython 2.6.0.1 + python 2.4
 
 0.1 : Navigation + Modification
 
 done :
-- allow openning AccountEditor only when currrent page is accHiearchy
-- move class accountLedger to its own module
-- change Notebook page text when changing its name from accountEditor
+- move the class AccountLedger to its own module
+- change Notebook page text when changing its name from AccountEditor
 - close an AccountLedger with shortcut Ctrl-C
-- sort tree items in account Hierarchy
+- sort tree items in AccountHierarchy
 - propose all accounts in OppositeAccountEditor
-- alternate color between grid lines
-- change colour of selected line from blue to lemon
-- ask 'save modifications?' before exit
+- alternate colors between AccountLedger lines/entries
+- change colour of the selected line from blue to lemon
+- ask 'save modifications?' before Exit, CloseAccount, Save, EditAccount, JumpToOppositeAccount
+- allow opening the AccountEditor from a selected AccountLedger
 
 todo :
-- ask 'save modifications?' on CloseAccount, OnJump, OnSave, OnConfigureAccount
 - add tool bar : JumpToOppositeAccount, OpenAccount/CloseAccount, EditAccount, HierarchyOptions
-- update web site
 - bad refresh on windows when resizing a Entry column : use grid.ForceRefresh() + EVT_GRID_COL_SIZE ?
-- on Windows, balances are truncated when ascenseur vertical is shown
-- action/memo for entry vs date/num/description for tx
+- on Windows, balances are truncated when vertical scroll bar is shown
 - better formatted output for command 'gui accounts'
+- update web site
+
+0.2 : Improve the Accounting Model
+- Split : allow transaction to have more than 2 entries (aka split)
+- add action/memo for entry
 - dev design : 
     access a notebook page by its view only, not its model ?
     AccountHierarchy = GeneralLedger?
-- finish RefData module : 
+- finish RefData module :
     integrate currency in Money
     rounding decimal.getcontext().rounding="ROUND_HALF_UP" for EURO
     __str__
     use of locale for each currency
 - __repr__ of DetailAccount
 
-0.2 : Creation
+0.3 : Creation/Deletion
 - add an empty entry at end of each AccountLedger
 - copy/cut/paste of cell/entry/transaction
 - create/duplicate/delete tx
+- add/remove entry
 - create/delete account
 
-0.3 : Search + Split
-- make multiple entry (aka split)
-- view entries by range date
-- search tx by criteria
+0.4 : Data Mining
+- SELECT transactions/entries by multi-criteria (period/date, amount, desc, ...)
+- NAVIGATE/MODIFY any item of the selection as usually
+- REFINE/UNION/MINUS on the whole selection
+- ORGANIZE, sort/group/filter/hide the selection
+- DUMP a report of the selection
+- 
+- APPLY behaviour on items of the selection : check, print, update field/entry,
 
-0.4 : Reports
-- profit and loss = Income Statement
+0.5 : Official Reports
+- income statement (profit and loss)
 - balance sheet
+- cash flow
 
-0.5 : Standardisation
-- import qif and gnucash
+0.6 : Standardization
+- import qif and gnucash format
 - create all standard account types + standard account hierachy
 - Num column should propose : ATM, Virement, ...
+- unicode + i18n + l10n
 
 1.0
-- unicode + i18n + l10n
+- better command lines
 - unit tests with http://www.access.wvu.edu/class/acctutor/tableofc.htm + doctest
 - doc
 
 post 1.0
 - make true persistence / multi user : SQLlite, DURUS/ZODB/Pypersyst, Metakit, SQLObject, Roundup HyperDB, PyDO ?
-- budgets / accounting periods
-- parties
-- portfolio
+- manage financial instrument; equity/debt/option portfolio
+- budgets/accounting periods
+- Invoices/Payment/Parties

@@ -14,14 +14,14 @@ class MainFrame(wx.Frame):
         self.ctx = ctx
 
         menuFile = wx.Menu()
-        self.bindMenuItemToHandler(menuFile, "E&dit\tAlt-E", 
-            "Edit account details", self.OnConfigureAccount)
+        self.bindMenuItemToHandler(menuFile, "E&dit account\tAlt-E", 
+            "Configure account details", self.OnConfigureAccount)
         self.bindMenuItemToHandler(menuFile, "&Save\tAlt-S", 
-            "Save data", self.OnSave)
-        self.bindMenuItemToHandler(menuFile, "&Jump\tAlt-J", 
-            "Jump to account", self.OnJumpToOppositeAccount)
-        self.bindMenuItemToHandler(menuFile, "&Close\tAlt-C", 
-            "Close account ledger", self.OnCloseAccount)
+            "Save modified data", self.OnSave)
+        self.bindMenuItemToHandler(menuFile, "&Jump to opposite account\tAlt-J",
+            "Jump to the opposite account", self.OnJumpToOppositeAccount)
+        self.bindMenuItemToHandler(menuFile, "&Close account ledger\tAlt-C", 
+            "Close the selected account ledger", self.OnCloseAccount)
         self.bindMenuItemToHandler(menuFile, "E&xit\tAlt-X", 
             "Exit application", self.OnExit)
 
@@ -38,33 +38,41 @@ class MainFrame(wx.Frame):
         self.CreateStatusBar()
 
     def OnExit(self, evt):
-        if self.isSelectedTabAnAccountLedger():
-            if not self.nb.GetCurrentPage().CheckTransactionModification():
-                return
+        if self.isActionRefused():
+            return
 
-        self.OnSave(None)
-        self.Close(True)       
+        self.OnSave()
+        self.Close(True)
         self.Destroy()
 
-    def OnSave(self, evt):
+    def OnSave(self, evt=None):
+        if self.isActionRefused():
+            return
+
         self.ctx.Accounts.register(self.accRoot)
         storage.commitTransaction(self.ctx)
         storage.beginTransaction(self.ctx)
 
     def OnCloseAccount(self, evt):
-        if self.isSelectedTabAnAccountLedger():
+        if self.isActionRefused():
+            return
+
+        if self.isCurrentSelectionAnAccountLedger():
             self.nb.CloseAccount()
 
     def OnConfigureAccount(self, evt):
-        if self.isSelectedTabAnAccountLedger():
+        if self.isActionRefused():
             return
 
-        tree = self.nb.hierarchy.tree
-        item = tree.GetSelection()
-        if item is None or tree.GetRootItem() == item:
-            return
-        
-        account = tree.GetPyData(item)
+        if self.isCurrentSelectionAnAccountLedger():
+            account = self.nb.GetCurrentPage().account
+        else:
+            tree = self.nb.hierarchy.tree
+            item = tree.GetSelection()
+            if item is None or tree.GetRootItem() == item:
+                return           
+            account = tree.GetPyData(item)
+            
         win = AccountEditor(self, account, -1, size=wx.Size(500, 150), 
             style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
         win.CenterOnScreen()
@@ -79,18 +87,25 @@ class MainFrame(wx.Frame):
                 self.nb.SetPageText(page, account.name)
 
     def OnJumpToOppositeAccount(self, evt):
-        if self.isSelectedTabAnAccountLedger():
+        if self.isActionRefused():
+            return
+
+        if self.isCurrentSelectionAnAccountLedger():
             # TODO: split
             selectedEntry = self.nb.GetCurrentPage().GetSelectedEntry()
             if selectedEntry is not None:
                 oppositeEntry = selectedEntry.oppositeEntry
                 self.nb.OpenAccount(oppositeEntry.account, oppositeEntry)
 
+    def isActionRefused(self):
+        return self.isCurrentSelectionAnAccountLedger() and \
+           not self.nb.GetCurrentPage().CheckTransactionModification()
+
     def bindMenuItemToHandler(self, menu, title, help, handler):
         item = menu.Append(-1, title, help)
         self.Bind(wx.EVT_MENU, handler, item)
     
-    def isSelectedTabAnAccountLedger(self):
+    def isCurrentSelectionAnAccountLedger(self):
         return not self.nb.GetCurrentPage() is self.nb.hierarchy
 
 
@@ -149,14 +164,14 @@ class MainNotebook(wx.Notebook):
         self.AddPage(self.hierarchy, 'accounts')
         self.mapAccountToPage = {'root':0}
 
-        self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGING, self.OnPageChanging)
+        self.Bind(wx.EVT_NOTEBOOK_PAGE_CHANGING, self.OnSelChanging)
 
-    def OnPageChanging(self, evt):
+    def OnSelChanging(self, evt):
         oldPage = self.GetPage(evt.GetOldSelection())
         if not oldPage.CheckTransactionModification():
             if oldPage.IsCellEditControlEnabled():
                 oldPage.HideCellEditControl()
-            evt.Veto()  # Cancel was clicked, so don't pursue the page change
+            evt.Veto()  # The button Cancel was clicked, so stop the page change
         else:
             evt.Skip()
 
