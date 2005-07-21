@@ -82,8 +82,8 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
         
         self.account = account
         self.log = log
-        self.colLabels = ['Date', 'Num', 'Description', 'Account', 
-                          'Reconciled', 'Debit', 'Credit', 'Balance']
+        self.colLabels = ['Date', 'Num', 'Description', 'Opposite Account', 
+                          'R', 'Debit', 'Credit', 'Balance']
         self.dataTypes = [
             gridlib.GRID_VALUE_DATETIME,
             gridlib.GRID_VALUE_STRING,
@@ -253,8 +253,9 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
     def __init__(self, parent, account, log):
         super(AccountLedgerView, self).__init__(parent, -1)
         GridCtrlAutoWidthMixin.__init__(self)
-        self.setResizeColumn(3) # description
-            
+        # TODO: not working perfectly
+##        self.setResizeColumn(3) # description
+
         self.ctx = parent.ctx
         self.account = account
         self.log = log
@@ -271,19 +272,39 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
         self.SetRowLabelSize(0)
         self.SetSelectionBackground("LemonChiffon")
         self.SetSelectionForeground("Black")
-##        self.AutoSizeColumns(True)
 
+        # column date
+        self.SetColSize(0, 80)
         attr = gridlib.GridCellAttr()
         attr.SetRenderer(gridlib.GridCellStringRenderer())
         attr.SetEditor(DateCellEditor(log))
         self.SetColAttr(0, attr)
 
+        # column num
+        self.SetColSize(1, 50)
+        # column description
+        self.SetColSize(2, 300)
+        
+        # column opposite account
+        self.SetColSize(3, 230)
         attr = gridlib.GridCellAttr()
         attr.SetEditor(OppositeAccountEditor(self.ctx))
+        attr.SetAlignment(wx.ALIGN_RIGHT, wx.ALIGN_CENTRE)
         self.SetColAttr(3, attr)
 
+        # column reconciled
+        self.SetColSize(4, 30)
+
+        # column debit
+        self.SetColSize(5, 80)
+
+        # column credit
+        self.SetColSize(6, 80)
+
+        # column account balance
+        self.SetColSize(7, 80)
         attr = gridlib.GridCellAttr()
-        attr.SetReadOnly(True)  # account balance is readonly
+        attr.SetReadOnly(True)  # balance is readonly
         self.SetColAttr(7, attr)
 
         self.__enableEdit = 0
@@ -291,10 +312,10 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
         self.Bind(wx.EVT_KEY_DOWN, self.OnKeyDown)
         self.Bind(wx.EVT_IDLE, self.OnIdle)
 
-        self.Bind(gridlib.EVT_GRID_SELECT_CELL, self.OnSelectCell)
         self.Bind(gridlib.EVT_GRID_LABEL_LEFT_CLICK, self.OnSort)
+        self.Bind(gridlib.EVT_GRID_SELECT_CELL, self.OnSelectCell)
         self.Bind(gridlib.EVT_GRID_RANGE_SELECT, self.OnRangeSelect)
-    
+
     def GetTable(self):
         return self.tableRef()
 
@@ -310,6 +331,9 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
         evt.Skip()
 
     def OnSelectCell(self, evt):
+##        if :
+##            return
+        
         if self.IsCellEditControlEnabled():
             self.HideCellEditControl()
             self.DisableCellEditControl()
@@ -343,7 +367,7 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
     def OnSort(self, evt):
         self.sortByCol = evt.GetCol()
         self.RefreshLedger(sync=False, sort=True)
-        evt.Skip()
+##        evt.Skip()
     
     def OnRangeSelect(self, evt):
         if evt.Selecting() and evt.GetBottomRow() !=  evt.GetTopRow():

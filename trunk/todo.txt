@@ -14,11 +14,12 @@ done :
 - change colour of the selected line from blue to lemon
 - ask 'save modifications?' before Exit, CloseAccount, Save, EditAccount, JumpToOppositeAccount
 - allow opening the AccountEditor from a selected AccountLedger
+- fixe bad refresh when resizing an Entry column
 
 todo :
-- add tool bar : JumpToOppositeAccount, OpenAccount/CloseAccount, EditAccount, HierarchyOptions
-- bad refresh on windows when resizing a Entry column : use grid.ForceRefresh() + EVT_GRID_COL_SIZE ?
+- don't ask save modifications? when sorting
 - on Windows, balances are truncated when vertical scroll bar is shown
+- add tool bar : JumpToOppositeAccount, OpenAccount/CloseAccount, EditAccount, HierarchyOptions
 - better formatted output for command 'gui accounts'
 - update web site
 

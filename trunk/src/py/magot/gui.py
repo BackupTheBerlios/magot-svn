@@ -10,7 +10,7 @@ class MainFrame(wx.Frame):
 
     def __init__(self, parent, title, ctx):
         wx.Frame.__init__(self, parent, -1, title, 
-                          pos=(150, 150), size=(850, 500))
+                          pos=(150, 150), size=(1000, 500))
         self.ctx = ctx
 
         menuFile = wx.Menu()
