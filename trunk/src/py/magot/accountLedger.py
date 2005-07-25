@@ -12,13 +12,15 @@ class Proxy(object):
     def __init__(self, obj):
         """The initializer."""
         super(Proxy, self).__init__(obj)
-        #Set attribute.
+        # Set attribute.
         self._obj = obj
-        
+
     def __getattr__(self, attrib):
         try:
+            # Is this attribute overridden in the proxy?
             return self.__dict__[attrib]
         except KeyError:
+            # If not, then return the attribute value from the original object
             return getattr(self._obj, attrib)
 
     def getModifiedAttr(self, key):
