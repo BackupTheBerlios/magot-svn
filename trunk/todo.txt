@@ -1,31 +1,14 @@
 Magot TODO :
 
-Use wxpython 2.6.0.1 + python 2.4
 
-0.1 : Navigation + Modification
+0.2 : Improve the Accounting Model
 
-done :
-- move the class AccountLedger to its own module
-- change Notebook page text when changing its name from AccountEditor
-- close an AccountLedger with shortcut Ctrl-C
-- sort tree items in AccountHierarchy
-- propose all accounts in OppositeAccountEditor
-- alternate colors between AccountLedger lines/entries
-- change colour of the selected line from blue to lemon
-- ask 'save modifications?' before Exit, CloseAccount, Save, EditAccount, JumpToOppositeAccount
-- allow opening the AccountEditor from a selected AccountLedger
-- fixe bad refresh when resizing an Entry column
-
-todo :
+- Split : allow transaction to have more than 2 entries (aka split)
+- add action/memo for entry
 - don't ask save modifications? when sorting
 - on Windows, balances are truncated when vertical scroll bar is shown
 - add tool bar : JumpToOppositeAccount, OpenAccount/CloseAccount, EditAccount, HierarchyOptions
 - better formatted output for command 'gui accounts'
-- update web site
-
-0.2 : Improve the Accounting Model
-- Split : allow transaction to have more than 2 entries (aka split)
-- add action/memo for entry
 - dev design : 
     access a notebook page by its view only, not its model ?
     AccountHierarchy = GeneralLedger?
@@ -36,37 +19,46 @@ todo :
     use of locale for each currency
 - __repr__ of DetailAccount
 
+
 0.3 : Creation/Deletion
+
 - add an empty entry at end of each AccountLedger
 - copy/cut/paste of cell/entry/transaction
 - create/duplicate/delete tx
 - add/remove entry
 - create/delete account
 
+
 0.4 : Data Mining
+
 - SELECT transactions/entries by multi-criteria (period/date, amount, desc, ...)
 - NAVIGATE/MODIFY any item of the selection as usually
 - REFINE/UNION/MINUS on the whole selection
 - ORGANIZE, sort/group/filter/hide the selection
 - DUMP a report of the selection
-- 
 - APPLY behaviour on items of the selection : check, print, update field/entry,
 
+
 0.5 : Official Reports
+
 - income statement (profit and loss)
 - balance sheet
 - cash flow
 
 0.6 : Standardization
+
 - import qif and gnucash format
 - create all standard account types + standard account hierachy
 - Num column should propose : ATM, Virement, ...
 - unicode + i18n + l10n
 
+
 1.0
+
 - better command lines
 - unit tests with http://www.access.wvu.edu/class/acctutor/tableofc.htm + doctest
 - doc
+
 
 post 1.0
 - make true persistence / multi user : SQLlite, DURUS/ZODB/Pypersyst, Metakit, SQLObject, Roundup HyperDB, PyDO ?

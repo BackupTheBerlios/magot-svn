@@ -1,5 +1,21 @@
 Magot History
 
+
+version 0.1 : 2005/07/27
+========================
+
+- move the class AccountLedger to its own module
+- change Notebook page text when changing its name from AccountEditor
+- close an AccountLedger with shortcut Ctrl-C
+- sort tree items in AccountHierarchy
+- propose all accounts in OppositeAccountEditor
+- alternate colors between AccountLedger lines/entries
+- change colour of the selected line from blue to lemon
+- ask 'save modifications?' before Exit, CloseAccount, Save, EditAccount, JumpToOppositeAccount
+- allow opening the AccountEditor from a selected AccountLedger
+- fixe bad refresh when resizing an Entry column
+
+
 version 0.0.3, 2005/07/07
 =========================
 
