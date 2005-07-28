@@ -272,7 +272,7 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
         self.SetTable(table, True)
 
         self.SetRowLabelSize(0)
-        self.SetSelectionBackground("LemonChiffon")
+        self.SetSelectionBackground(wx.Colour(255, 250, 205)) # LemonChiffon
         self.SetSelectionForeground("Black")
 
         # column date
@@ -355,7 +355,7 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
 
         self.DisableCellEditControl()
         self.CheckTransactionModification(askConfirmation=False)
-
+        evt.Skip()
 ## TODO: new entry
 ##        nextRow = self.GetGridCursorRow() + 1
 ##        if nextRow < self.GetTable().GetNumberRows():
@@ -402,7 +402,8 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
         for row in xrange(self.GetNumberRows()):
             for col in xrange(self.GetNumberCols()):
                 if row % 2:
-                    self.SetCellBackgroundColour(row, col, "WhiteSmoke")
+                    self.SetCellBackgroundColour(row, col, 
+                        wx.Colour(245, 245, 245))  # "WhiteSmoke"
 
     def CheckTransactionModification(self, askConfirmation=True):
         """ Return True if we can can pursue the flow. False else. 
