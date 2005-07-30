@@ -2,11 +2,9 @@ Magot TODO :
 
 0.1 final :
 - create standard account hierarchy
-- add a link to berlios from Magot home page
-- add documentation about command lines
 - faire la release : version windows + src
 - setup a build tool for unit tests, web site generation/deployment and release packaging
-- register Magot on freshmeat, PiPy, planetpython.org
+- register Magot on freshmeat, PiPy
 
 
 0.2 : Improve the Accounting Model

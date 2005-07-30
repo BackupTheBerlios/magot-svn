@@ -1,5 +1,5 @@
 set PYTHONPATH=..\src\py
 set PYTHON=C:\tools\python241\python
 
-%PYTHON% peak runIni magot %1
+%PYTHON% peak runIni magot gui
 pause
