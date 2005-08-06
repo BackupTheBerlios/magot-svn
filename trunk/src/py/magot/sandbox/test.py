@@ -1,5 +1,13 @@
 from peak.api import *
 
+class E(model.Element):
+    class name(model.Attribute):
+        pass
+e=E(name="toto")
+e.name
+class B(model.Attribute):
+    pass
+
 # ###############################################################
 # DATA CONSOLIDATION FROM MUTIPLE PROVIDERS INTO A SINGLE CONSUMER.
 # EACH NODE OF THE HIERARCHY CAN HAVE ITS OWN CONSOLIDATION.
@@ -47,7 +55,28 @@ class ComputedOnlyWhenNotSet(model.Attribute):
     def compute(feature, element):
         raise NotImplementedError
 
-class GetFromParentWhenNotSet(ComputedOnlyWhenNotSet):
+
+# ############### attribute formula #######################
+
+class OnLocal(model.Attribute):
+    pass
+
+class OnGold(ComputedEvenIfSet):
+    def compute(feature, element):
+        try:
+            value = feature.get(element.manual)
+            if value is not None:
+                return value
+        except AttributeError:
+            pass 
+        try:
+            value = feature.get(element.reuters)
+            if value is not None:
+                return value
+        except AttributeError:
+            return None
+
+class OnParent(ComputedOnlyWhenNotSet):
     """ Pull value from parent when not locally set. """
     def compute(feature, element):
         if element.parent is None:
@@ -55,80 +84,51 @@ class GetFromParentWhenNotSet(ComputedOnlyWhenNotSet):
         else:
             return getattr(element.parent, feature.attrName)
 
-
-# ############### attribute formula #######################
-
-def getOnLocal(name):
-    class attr(model.Attribute):
-        pass
-    attr.attrName = name
-    return attr
-
-def getOnParent(name):
-    class attr(GetFromParentWhenNotSet):
-        pass
-    attr.attrName = name
-    return attr
-
-def getOnGold(name):
-    class attr(ComputedEvenIfSet):
-        def compute(feature, element):
-            goldAttr = getOnGold(name)
-            try:
-                value = goldAttr.get(element.manual)
-                if value is not None:
-                    return value
-            except AttributeError:
-                pass 
-            try:
-                value = goldAttr.get(element.reuters)
-                if value is not None:
-                    return value
-            except AttributeError:
-                return None
-    attr.attrName = name
-    return attr
-
-def getOnGoldOrOnParent(name):
-    class attr(ComputedEvenIfSet):
-        def compute(feature, element):
-            value = getOnGold(name).get(element)
-            if value is None:
-                value = getOnParent(name).get(element)
-            return value
-    attr.attrName = name
-    return attr
+class OnGoldOrOnParent(ComputedEvenIfSet):
+    def compute(feature, element):
+        OnGold.attrName = feature.attrName
+        value = OnGold.get(element)
+        if value is None:
+            OnParent.attrName = feature.attrName
+            value = OnParent.get(element)
+        return value
 
 
 # ############### TEMPLATE OF OBJECTS #######################
 
 class SUPER_OPTION_CONTRACT(Node, model.Element):
-    # TODO: try to gess the name from the function result 
-    cycle = getOnGold('cycle')
-    year = getOnGold('year')
+    class cycle(OnGold):pass
+    class year(OnGold):pass
+
 class MA_SUPER_OPTION_CONTRACT(model.Element):
-    cycle = getOnLocal('cycle')
-    year = getOnLocal('year')
+    class cycle(OnLocal):pass
+    class year(OnLocal):pass
+
 class RT_SUPER_OPTION_CONTRACT(model.Element):
-    cycle = getOnLocal('cycle')
+    class cycle(OnLocal):pass
+
 
 class OPTION_CONTRACT(Node, model.Element):
-    cycle = getOnGoldOrOnParent('cycle')
-    year = getOnGoldOrOnParent('year')
+    class cycle(OnGoldOrOnParent):pass
+    class year(OnGoldOrOnParent):pass
+
 class MA_OPTION_CONTRACT(model.Element):
-    cycle = getOnLocal('cycle')
-    year = getOnLocal('year')
+    class cycle(OnLocal):pass
+    class year(OnLocal):pass
+
 class RT_OPTION_CONTRACT(model.Element):
-    cycle = getOnLocal('cycle')
+    class cycle(OnLocal):pass
+
 
 class OPTION(Node, model.Element):
-    cycle = getOnGoldOrOnParent('cycle')
-    year = getOnGoldOrOnParent('year')
+    class cycle(OnGoldOrOnParent):pass
+    class year(OnGoldOrOnParent):pass
+
 class MA_OPTION(model.Element):
-    cycle = getOnLocal('cycle')
-    year = getOnLocal('year')
+    class cycle(OnLocal):pass
+    class year(OnLocal):pass
 class RT_OPTION(model.Element):
-    cycle = getOnLocal('cycle')
+    class cycle(OnLocal):pass
 
 
 if __name__ == '__main__':
@@ -144,7 +144,7 @@ if __name__ == '__main__':
 
     contract = OPTION_CONTRACT()
     assert contract.cycle is None  # due to no child to consolidate from
-    contract.parent = super # give it a parent to get any value from
+    contract.parent = super # give it a parent to get any value from it
     # consolidated value is None so get the value from parent
     assert contract.cycle == contract.parent.cycle
     contract.reuters = RT_OPTION_CONTRACT(cycle="rt contract")
