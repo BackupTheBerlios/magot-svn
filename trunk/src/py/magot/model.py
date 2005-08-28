@@ -17,7 +17,9 @@ class Account(model.Element):
 
     class type(model.Attribute):
         referencedType = MovementType
-        isChangeable = False
+##        isChangeable = False
+        # todo isChangeable = False ???
+        # how to initialize unchangeable feature ?
 
     class parent(model.Attribute):
         referencedType = 'Account'
@@ -79,6 +81,15 @@ class EntryAccount(Account):
             for account in account.subAccounts:
                 balance += account.balance
             return balance
+
+    def __init__(self, parent, name=None, type=None):
+        assert parent is not None
+        self.parent = parent
+        self.name = name
+        if type is None:
+            self.type = self.parent.type
+        else:
+            self.setType(type)
 
     def makeInitialTransaction(self, equity, amount, date=None):
         

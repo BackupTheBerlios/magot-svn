@@ -1,7 +1,9 @@
 Magot History
 
 
-version 0.1 : 2005/07/27
+- create standard account hierarchy
+
+version 0.1 beta1 : 2005/07/27
 ========================
 
 - move the class AccountLedger to its own module

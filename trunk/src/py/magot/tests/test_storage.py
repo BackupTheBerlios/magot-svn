@@ -10,36 +10,95 @@ from magot.storage import *
 filename = config.fileNearModule('magot', 'account.list')
 
 def makeDB():
-    # create all accounts
+
+    CREDIT = MovementType.CREDIT
+    DEBIT = MovementType.DEBIT
+
+    # root of all accounts
     root = Account(name='root')
+
+    # ##################
     # debit accounts
-    equity = EntryAccount(parent=root, name='equity', type=MovementType.CREDIT, description="")
-    asset = EntryAccount(parent=root, name='asset', type=MovementType.DEBIT, description="")
-    checking = EntryAccount(parent=asset, name='checking', type=MovementType.DEBIT, description="")
-    computer = EntryAccount(parent=asset, name='computer', type=MovementType.DEBIT, description="")
-    expense = EntryAccount(parent=root, name='expense', type=MovementType.DEBIT, description="")
-    warranty = EntryAccount(parent=expense, name='warranty', type=MovementType.DEBIT, description="")
-    cash = EntryAccount(parent=expense, name='cash', type=MovementType.DEBIT, description="")
-    # credit accounts
-    income = EntryAccount(parent=root, name='income', type=MovementType.CREDIT, description="")
-    salary = EntryAccount(parent=income, name='salary', type=MovementType.CREDIT, description="")
-    liability = EntryAccount(parent=root, name='liability', type=MovementType.CREDIT, description="")
-    loan = EntryAccount(parent=liability, name='loan', type=MovementType.CREDIT, description="")
+    # ##################
+
+    # asset accounts
+    assets = EntryAccount(root, 'Assets', DEBIT)
     
+    currentAssets = EntryAccount(assets, 'Current assets')
+
+    cash = EntryAccount(currentAssets, 'Cash')
+    tBills = EntryAccount(currentAssets, 'T-Bills')
+    receivable = EntryAccount(currentAssets, 'Accounts Receivable')
+    
+    inventory = EntryAccount(assets, 'Inventory')
+    
+    rawMaterials = EntryAccount(inventory, 'Raw Materials')
+    wip = EntryAccount(inventory, 'Work-in-progress')
+    finishedGoods = EntryAccount(inventory, 'Finished Goods')
+   
+    longTermAssets = EntryAccount(assets, 'Long-Term assets')
+
+    land = EntryAccount(longTermAssets, 'Land')
+    machinery = EntryAccount(longTermAssets, 'Machinery')
+    depreciation = EntryAccount(longTermAssets, 'Depreciation', CREDIT)
+    patents = EntryAccount(longTermAssets, 'Patents')
+    
+    # Expense accounts
+    expense = EntryAccount(root, 'Expenses', DEBIT)
+    warranty = EntryAccount(expense, 'Warranty')
+
+    
+    # ##################
+    # credit accounts
+    # ##################
+
+    # Debt accounts
+    liabilities = EntryAccount(root, "Liabilitie and Owners' Equity", CREDIT)
+
+    currentLiabilities = EntryAccount(liabilities, 'Short-Term liabilities')
+    accPayable = EntryAccount(currentLiabilities, 'Accounts Payable')
+    divPayable = EntryAccount(currentLiabilities, 'Dividend Payable')
+    taxesPayable = EntryAccount(currentLiabilities, 'Taxes Payable')
+    
+    longTermLiabilities = EntryAccount(liabilities, 'Long-Term liabilities')
+    loans = EntryAccount(longTermLiabilities, 'Bank Loans')
+
+    equity = EntryAccount(root, "Owners' Equity", CREDIT)
+    capital = EntryAccount(equity, "Capital")
+    retainedEarnings = EntryAccount(equity, "Retained Earnings")
+    
+    # Revenue accounts
+    income = EntryAccount(root, 'Income', CREDIT)
+    salary = EntryAccount(income, 'Salaries')
+
+
     # set all initial balances
-    checking.makeInitialTransaction(equity, Money(1), Date(2005,2,1))
-    assert checking.balance == Money(1)
-    computer.makeInitialTransaction(equity, Money(2), Date(2005,1,1))
-    assert computer.balance == Money(2)
-    assert asset.balance == Money(3)
-    warranty.makeInitialTransaction(equity, Money(3), Date(2005,1,1))
-    assert warranty.balance == Money(3)
-    cash.makeInitialTransaction(equity, Money(4), Date(2005,2,1))
-    assert cash.balance == Money(4)
-    assert expense.balance == Money(7)       
-    salary.makeInitialTransaction(equity, Money(100.5), Date(2005,1,1))
-    assert salary.balance == Money(100.5)
-    assert equity.balance == Money(-90.5)    
+    cash.makeInitialTransaction(capital, Money(500000), Date(2005,2,1))
+    tBills.makeInitialTransaction(capital, Money(1000000), Date(2005,2,1))
+    receivable.makeInitialTransaction(capital, Money(7000000), Date(2005,2,1))
+
+    rawMaterials.makeInitialTransaction(capital, Money(825000), Date(2005,2,1))
+    wip.makeInitialTransaction(capital, Money(750000), Date(2005,2,1))
+    finishedGoods.makeInitialTransaction(capital, Money(1200000), Date(2005,2,1))
+    
+    land.makeInitialTransaction(capital, Money(30000000), Date(2005,2,1))
+    machinery.makeInitialTransaction(capital, Money(20000000), Date(2005,2,1))
+    depreciation.makeInitialTransaction(capital, Money(5000000), Date(2005,2,1))
+    patents.makeInitialTransaction(capital, Money(1000000), Date(2005,2,1))
+    
+##    computer.makeInitialTransaction(capital, Money(2), Date(2005,1,1))
+##    warranty.makeInitialTransaction(capital, Money(3), Date(2005,1,1))
+##    cash.makeInitialTransaction(capital, Money(4), Date(2005,2,1))
+##    salary.makeInitialTransaction(capital, Money(100.5), Date(2005,1,1))
+##
+##    assert checking.balance == Money(1)
+##    assert computer.balance == Money(2)
+##    assert assets.balance == Money(3)
+##    assert warranty.balance == Money(3)
+##    assert cash.balance == Money(4)
+##    assert expense.balance == Money(7)       
+##    assert salary.balance == Money(100.5)
+##    assert equity.balance == Money(-90.5)    
 
     cPickle.dump(root, open(filename,'w'))
 
