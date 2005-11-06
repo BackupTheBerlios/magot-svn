@@ -9,16 +9,16 @@ class Magot(commands.Bootstrap):
     acceptURLs = False
     
     usage = """
-Usage: run <command> [<arguments>]
+Usage: peak magot <command> [<arguments>]
 
 Available commands:
 
-    gui -- launch user interface
-    newdb -- creates a new database
+    gui      -- launchs user interface
+    newdb    -- creates a new database
     accounts -- displays all accounts with their balances
-    account accountName -- displays one account
-    check -- check the accounting equation
-    addTx desc debit credit amount [date, num]-- add a new Transaction
+    account <accountName> -- displays one account
+    check    -- checks the accounting equation
+    addTx <desc debit credit amount [date, num]> -- adds a new Transaction
 """
 
     Accounts = binding.Make(
@@ -56,14 +56,15 @@ Displays all accounts.
     def _run(self):
         if len(self.argv)<1:
             raise commands.InvocationError("Missing command")
-        storage.beginTransaction(self)
+
+        storage.begin(self)
         
         for acc1 in self.Accounts.root.subAccounts:
             print >>self.stdout, repr(acc1)
             for acc2 in acc1.subAccounts:
                 print >>self.stdout, '\t' + repr(acc2)
 
-        storage.commitTransaction(self)
+        storage.abort(self)
 
 
 class checkEquationCmd(commands.AbstractCommand):
@@ -79,7 +80,9 @@ Checks the accounting equation : Assets + Expenses = Equity + Liabilities + Inco
     def _run(self):
         if len(self.argv)<1:
             raise commands.InvocationError("Missing command")
-        storage.beginTransaction(self)
+
+        storage.begin(self)
+        
         debit = credit = Money.Zero
         for account in self.Accounts.root.subAccounts:
             if account.type is MovementType.DEBIT:
@@ -88,7 +91,8 @@ Checks the accounting equation : Assets + Expenses = Equity + Liabilities + Inco
                 credit += account.balance
         assert debit == credit, 'The accounting equation is not correct'
         print 'The accounting equation is correct'
-        storage.commitTransaction(self)
+
+        storage.abort(self)
 
 
 class displayAccountCmd(commands.AbstractCommand):
@@ -104,7 +108,8 @@ Displays one account.
     def _run(self):
         if len(self.argv)<2:
             raise commands.InvocationError("Missing account name")
-        storage.beginTransaction(self)
+
+        storage.begin(self)
 
         account = self.Accounts.get(self.argv[1])
         print >>self.stdout, str(account)
@@ -112,7 +117,7 @@ Displays one account.
             for entry in account.entries:
                 print >>self.stdout, str(entry)
 
-        storage.commitTransaction(self)
+        storage.abort(self)
 
 
 class addTransactionCmd(commands.AbstractCommand):
@@ -136,10 +141,10 @@ Add a new Transaction.
             
         desc, debit, credit, amount = [part.strip() for part in parts]
         
-        storage.beginTransaction(self)
+        storage.begin(self)
         
         debitAcc = self.Accounts.get(debit)
         creditAcc = self.Accounts.get(credit)
         tx = Transaction(date.today(), desc, debitAcc, creditAcc, amount)
 
-        storage.commitTransaction(self)
+        storage.commit(self)
