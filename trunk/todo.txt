@@ -1,6 +1,7 @@
 Magot TODO :
 
 0.1 final :
+- document PEAK_CONFIG=.../magot.ini
 - refresh accountTree when expanding the first account
 - display vertical bar on accountTree between Account & desc & balance
 - display well balances in accountTree when the vertical scroll-bar is here
