@@ -8,7 +8,7 @@ setup(
     name = "Magot",
     version = "0.1",
 
-    # scripts = ['bin/magot'],
+    scripts = ['bin/magot'],
     
     packages = find_packages('src/py', exclude=['*.sandbox']),
     package_dir = {'':'src/py'},

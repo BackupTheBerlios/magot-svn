@@ -18,10 +18,11 @@ def makeDB():
     root = Account(name='root')
 
     # ##################
-    # debit accounts
+    # Debit accounts
     # ##################
 
-    # asset accounts
+    # Asset accounts
+    
     assets = EntryAccount(root, 'Assets', DEBIT)
     
     currentAssets = EntryAccount(assets, 'Current assets')
@@ -44,15 +45,17 @@ def makeDB():
     patents = EntryAccount(longTermAssets, 'Patents')
     
     # Expense accounts
+    
     expense = EntryAccount(root, 'Expenses', DEBIT)
     warranty = EntryAccount(expense, 'Warranty')
 
     
     # ##################
-    # credit accounts
+    # Credit accounts
     # ##################
 
     # Debt accounts
+    
     liabilities = EntryAccount(root, "Liabilitie and Owners' Equity", CREDIT)
 
     currentLiabilities = EntryAccount(liabilities, 'Short-Term liabilities')
@@ -67,7 +70,8 @@ def makeDB():
     capital = EntryAccount(equity, "Capital")
     retainedEarnings = EntryAccount(equity, "Retained Earnings")
     
-    # Revenue accounts
+    # Income accounts
+    
     income = EntryAccount(root, 'Income', CREDIT)
     salary = EntryAccount(income, 'Salaries')
 
@@ -108,5 +112,5 @@ def readDB():
     assert root.name == 'root'
 
 if __name__ == '__main__':   
-##~     makeDB()
+    #makeDB()
     readDB()
