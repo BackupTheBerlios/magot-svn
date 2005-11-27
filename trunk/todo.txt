@@ -1,14 +1,17 @@
 Magot TODO :
 
 0.1 final :
-- document PEAK_CONFIG=.../magot.ini
-- refresh accountTree when expanding the first account
+- fixe the check accouting equation
+- refresh accountTree when expanding an account
 - display vertical bar on accountTree between Account & desc & balance
 - display well balances in accountTree when the vertical scroll-bar is here
-- faire la release : version windows + src
-- setup a build tool for unit tests, web site generation/deployment and release packaging
-- register Magot on freshmeat, PiPy, planetPython
-- how to initialize unchangeable feature ?
+- test with PEAK 0.5a4
+- add a link to the SVN magot repo
+- add 2 screenshots on berlios
+- update install doc against setuptools/easyInstall
+- make a link to the projects group page on BerliOS.
+- add a web counter
+- make the release (windows + src) + register freshmeat, PiPy, planetPython
 
 0.2 : Improve the Accounting Model
 

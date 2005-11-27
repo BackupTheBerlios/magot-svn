@@ -4,13 +4,14 @@ from peak.api import *
 from peak.storage.files import EditableFile
 
 from magot.model import *
+from magot.commands import DB_FILEPATH
 
 
 class AccountDM(storage.EntityDM):
 
     defaultClass = EntryAccount
 
-    filename = binding.Obtain(PropertyName('magot.accountfile'))
+    filename = binding.Obtain(DB_FILEPATH)
     file = binding.Make(lambda self: EditableFile(filename=self.filename))
    
     def root(self):

@@ -3,13 +3,15 @@ from peak.api import *
 from magot.model import *
 from magot.refdata import *
 
+DB_FILENAME = PropertyName("magot.db.filename")
+DB_FILEPATH = PropertyName("magot.db.filepath")
 
 class Magot(commands.Bootstrap): 
 
     acceptURLs = False
     
     usage = """
-Usage: peak magot <command> [<arguments>]
+Usage: magot <command> [<arguments>]
 
 Available commands:
 
@@ -21,9 +23,20 @@ Available commands:
     addTx <desc debit credit amount [date, num]> -- adds a new Transaction
 """
 
+    db_filename = binding.Obtain(DB_FILENAME)
+
+    def db_filepath(self):
+        import os, user
+        result = user.home + '/.magot'
+        if not os.path.exists(result):
+            os.mkdir(result)
+        return result + "/" + self.db_filename
+    db_filepath = binding.Make(db_filepath, offerAs=[DB_FILEPATH])
+    
     Accounts = binding.Make(
         'magot.storage.AccountDM', offerAs=[storage.DMFor(EntryAccount)]
     )
+    
 
 class newDatabaseCmd(commands.AbstractCommand):
 
@@ -35,12 +48,14 @@ create a new database.
 
     Accounts = binding.Obtain(storage.DMFor(EntryAccount))
 
+    db_filepath = binding.Obtain(DB_FILEPATH)
+
     def _run(self):
         if len(self.argv)<1:
             raise commands.InvocationError("Missing command")
             
         from magot.tests import test_storage
-        test_storage.makeDB()
+        test_storage.makeDB(self.db_filepath)
 
 
 class displayAccountsCmd(commands.AbstractCommand):
