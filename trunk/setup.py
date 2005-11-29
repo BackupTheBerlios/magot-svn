@@ -8,11 +8,11 @@ setup(
     name = "Magot",
     version = "0.1",
 
-    scripts = ['bin/magot'],
+    scripts = ['bin/magot', 'bin/magot.bat'],
     
     packages = find_packages('src/py', exclude=['*.sandbox']),
     package_dir = {'':'src/py'},
-    package_data = {'magot': ['*.list', '*.ini']},
+    package_data = {'magot': ['*.ini']},
 
     # install_requires = ['PEAK>=0.5a3'],
 
@@ -24,6 +24,6 @@ setup(
     license = "LGPL",
     platforms = ['UNIX', 'Windows'],    
     keywords = ['accounting', 'finance', 'python', 'wxpython', 'PEAK'],
-    
+	
     zip_safe = False
 )

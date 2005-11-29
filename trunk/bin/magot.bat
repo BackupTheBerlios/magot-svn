@@ -1,5 +1,3 @@
-set PYTHONPATH=..\src\py
-set PYTHON=C:\tools\python241\python
+@echo off
 
-%PYTHON% peak runIni magot %1
-pause
+python.exe magot %1 %2 %3 %4 %5 %6 %7 %8 %9
