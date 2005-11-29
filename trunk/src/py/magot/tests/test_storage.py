@@ -7,9 +7,7 @@ from magot.model import *
 from magot.refdata import *
 from magot.storage import *
 
-filename = config.fileNearModule('magot', 'account.list')
-
-def makeDB():
+def makeDB(filename):
 
     CREDIT = MovementType.CREDIT
     DEBIT = MovementType.DEBIT
