@@ -1,19 +1,21 @@
 Magot TODO :
 
 0.1 final :
-- fixe the check accouting equation
-- refresh accountTree when expanding an account
-- display vertical bar on accountTree between Account & desc & balance
-- display well balances in accountTree when the vertical scroll-bar is here
-
-- add a link to the SVN magot repo
-- add 2 screenshots on berlios
-- update install doc against setuptools/easyInstall
+- make the 0.1 release + register freshmeat, PiPy, planetPython
 - make a link to the projects group page on BerliOS.
-- make the release (windows + src) + register freshmeat, PiPy, planetPython
+- add 2 screenshots on berlios
+- add a link to the SVN magot repo
 
 0.2 : Improve the Accounting Model
 
+- improve display:
+    date display is not uniform
+    amount should deal with 000 000
+    opposite account editor should be right justified
+    None should be displayed as empty, not 'None'
+    refresh accountTree when expanding an account
+    display vertical bar on accountTree between Account & desc & balance
+    display well balances in accountTree when the vertical scroll-bar is here
 - Split : allow transaction to have more than 2 entries (aka split)
 - add action/memo for entry
 - don't ask save modifications? when sorting

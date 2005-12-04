@@ -20,7 +20,7 @@ Available commands:
     accounts -- displays all accounts with their balances
     account <accountName> -- displays one account
     check    -- checks the accounting equation
-    addTx <desc debit credit amount [date, num]> -- adds a new Transaction
+    addTx <desc debitAccount creditAccount amount [date num]> -- adds a new Transaction
 """
 
     db_filename = binding.Obtain(DB_FILENAME)
@@ -138,7 +138,7 @@ Displays one account.
 class addTransactionCmd(commands.AbstractCommand):
 
     usage = """
-Usage: addTx desc debit credit amount [date num]
+Usage: addTx desc debitAccount creditAccount amount [date num]
 
 Add a new Transaction.
 """
@@ -163,3 +163,11 @@ Add a new Transaction.
         tx = Transaction(date.today(), desc, debitAcc, creditAcc, amount)
 
         storage.commit(self)
+
+def runMain():
+        root = config.makeRoot(iniFiles=(('peak','peak.ini'), ('magot','magot.ini')))
+        Magot(root).run()
+
+        
+if __name__ == '__main__':	
+        runMain()

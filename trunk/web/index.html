@@ -4,6 +4,8 @@
 
 
 
+
+  
   
   
   
@@ -11,6 +13,9 @@
 
 
 
+
+  
+  
   
   
   
@@ -23,6 +28,7 @@
 
 
 <body style="direction: ltr;">
+
 
 
 
@@ -43,8 +49,10 @@ google_color_text = "333333";
 
 
 
+
 <p>
 <table border="0" cellpadding="0" cellspacing="0" width="100%">
+
 
 
 
@@ -52,7 +60,9 @@ google_color_text = "333333";
 
 
 
+
     <tr valign="top">
+
 
 
 
@@ -60,12 +70,17 @@ google_color_text = "333333";
       
       
       
-      <h2><br>
+      
+      <h2><a href="#News"><br>
+      </a>
 
       </h2>
+
 
       
-      <h2><a href="http://developer.berlios.de/projects/magot/"><font size="+1">Magot project</font></a><br>
+      
+      <h2><a href="http://developer.berlios.de/projects/magot/"><font size="+1">Magot project</font></a><a href="#News"><br>
+      </a>
 
 
 
@@ -73,324 +88,374 @@ google_color_text = "333333";
 
 
 
+
+      
       
       
       
       <p>A cross-platform personal finance manager written in Python.</p>
 
 
+
       
       
-      <p></p>
+      
+      <p style="text-align: left;"><a href="#News"></a></p>
+
+
+
+
+      
+      
+      
+      
+      <div style="text-align: left;"><a href="#News">News</a><br>
+      <a href="#Roadmap">Roadmap</a><br>
+      <a href="#Features">Features</a><br>
+      <a href="#Documentation">Documentation</a><br>
+      <a href="#Screenshots">Screenshots</a><br>
+      <a href="#Installation">Installation</a></div>
+      <h1 style="text-align: left; margin-left: 40px;"><a name="News"></a>News :</h1>
 
 
 
       
       
       
-      <h1 style="text-align: left; margin-left: 40px;">News :</h1>
+      <div style="text-align: left; margin-left: 40px;"><a href="#Installation">Magot 0.1</a> has been released. It allows to :<br>
+
 
 
       
-      
-      <div style="text-align: left; margin-left: 40px;"><a href="#DOWNLOAD">Magot 0.1 Beta1</a> has been released. It allows to :<br>
-
-
       
       
       <ul>
+
 
 
         <li>Drag&amp;Drop Accounts in the hierarchy.</li>
 
 
+
         <li>Modify all fields of an Account, a Transaction or an Entry.</li>
+
 
 
         <li>Change the opposite Account of an Entry.</li>
 
 
+
         <li>Jump between Accounts following each Entry of a Transaction.</li>
+
 
 
         <li>Sort Entries of an Account by clicking on any column headers.</li>
 
 
+
+      
       
       
       </ul>
+
 
 
 For details, look at the <a href="../history.txt">history file</a>.<br>
 
 
+
       <br>
+
 
 
       </div>
 
 
+
       
       
-      <h1 style="text-align: left; margin-left: 40px;">Roadmap :</h1>
+      
+      <h1 style="text-align: left; margin-left: 40px;"><a name="Roadmap"></a>Roadmap :</h1>
 
 
+
+      
       
       
       <p style="text-align: left; margin-left: 40px;">See <a href="../todo.txt">TODO file</a>.</p>
 
 
+
+      
       
       
       <p style="text-align: left; margin-left: 40px;"><br>
 
 
+
       </p>
 
 
+
       
       
-      <h1 style="text-align: left; margin-left: 40px;">Features :</h1>
+      
+      <h1 style="text-align: left; margin-left: 40px;"><a name="Features"></a>Features :</h1>
 
 
+
+      
       
       
       <div style="text-align: left; margin-left: 40px;">
+      
       
       
       <h3>Functional :</h3>
 
 
+
       </div>
 
 
+
+      
       
       
       <div style="text-align: left; margin-left: 40px;">
       
       
+      
       <ul>
+
 
 
         <li>Double-entry book-keeping, respecting the equation : <b>assets + expenses = liabilities + equity + revenue.</b></li>
 
 
+
         <li>Hierarchy of drag-and-droppable <span style="font-weight: bold;">Accounts&nbsp;</span>that compute their own balance as the sum of nested balances.</li>
+
 
 
         <li>Each Account holds <span style="font-weight: bold;">Transactions</span>.</li>
 
 
+
         <li>Each&nbsp;Transactions holds <span style="font-weight: bold;">Entries </span>that link several Accounts for this Transaction.</li>
 
 
+
+      
       
       
       </ul>
 
 
+
+      
       
       
       <h3>Technical :</h3>
 
 
+
+      
       
       
       <div style="text-align: left;">
       
       
+      
       <ul>
+
 
 
         <li>Define a Business Domain Model, implemented with the framework PEAK.</li>
 
 
+
         <li>Use wxPython as the cross-platform GUI toolkit. Tested on Linux and Windows.</li>
+
 
 
         <li>Use <a href="http://jdutreve.free.fr/agileTrends.html">Agile technics</a> like YAGNI, DRY, Test-Driven and Domain-Driven&nbsp;development, OOP and Python of course!</li>
 
 
+
         <li>Object Persistence is done with Python&nbsp;Pickling.</li>
+
 
 
         <li>Saves are transactionable with <span style="font-style: italic;">EditableFile</span>.</li>
 
 
+
         <li>Command lines.</li>
 
 
+
+      
       
       
       </ul>
 
 
+
       <br>
 
 
-      </div>
-
 
       </div>
 
 
-      
-      
-      <h1 style="text-align: left; margin-left: 40px;">Documentation :</h1>
+
+      </div>
 
 
+
+      
+      
+      
+      <h1 style="text-align: left; margin-left: 40px;"><a name="Documentation"></a>Documentation :</h1>
+
+
+
+      
       
       
       <div style="text-align: left; margin-left: 40px;">The Business Model can be found <a href="../doc/model.png">here</a>.<br>
+      <br>
+      <span style="font-weight: bold;"><span style="font-weight: bold;"><span style="font-weight: bold;"></span></span></span>After the <a href="#Installation">installation</a> of Magot, type&nbsp;in a console  <span style="font-weight: bold;">magot newdb </span>to create a new database and <span style="font-weight: bold;">magot gui</span><span style="font-weight: bold;"> </span>to launch the user interface.<br>
+All Magot&nbsp;commands are shown below:<br>
+
 
       <br>
 
-      <span style="font-weight: bold;">bin/magotGUI.bat </span>launchs the GUI. But Magot can also be managed by commands :<br>
-
-      <br>
-
-&nbsp;&nbsp;&nbsp; gui -- launch user interface<br>
 
 &nbsp;&nbsp;&nbsp; newdb -- creates a new default database<br>
 
+
+&nbsp;&nbsp;&nbsp; gui -- launchs user interface<br>
 &nbsp;&nbsp;&nbsp; accounts -- displays all accounts with their balances<br>
 
-&nbsp;&nbsp;&nbsp; account accountName -- displays one account<br>
 
-&nbsp;&nbsp;&nbsp; check -- check the accounting equation<br>
+&nbsp;&nbsp;&nbsp; account &lt;accountName&gt; -- displays all entries of the account<br>
 
-&nbsp;&nbsp;&nbsp; addTx desc debit credit amount [date, num] -- add a new Transaction<br>
+
+&nbsp;&nbsp;&nbsp; check -- checks the accounting equation<br>
+
+
+&nbsp;&nbsp;&nbsp; addTx &lt;desc debitAccount creditAccount amount [date, num]&gt; -- adds a new Transaction<br>
+
+
+      <br>
+
+
+Example to list all entries of the&nbsp;account named 'Capital', just type in a console :<br>
+
+
+      &gt;&nbsp;magot account Capital<br>
+
 
       <br>
 
-Example to list all entries of an account, just type in a console :<br>
-
-      <br>
-
-&gt; bin/magot.bat account equity<br>
-
-      <br>
 
 
       </div>
 
 
+
       
       
-      <h1 style="text-align: left; margin-left: 40px;">Screenshots :</h1>
+      
+      <h1 style="text-align: left; margin-left: 40px;"><a name="Screenshots"></a>Screenshots :</h1>
 
 
+
+      
       
       
       <div style="text-align: left; margin-left: 40px;">On Linux Fedora 3 :<br>
 
 
+
+      
       
       
       <ul>
 
 
+
         <li>The <a href="AccountHierarchy.png">Account hierarchy</a>.</li>
+
 
 
         <li>All Entries of the <a href="AccountLedger.png">Equity ledger</a>.</li>
 
 
+
+      
       
       
       </ul>
 
 
+
       </div>
 
 
+
+      
       
       
       <div style="text-align: left; margin-left: 40px;"><br>
 
 
+
       </div>
 
 
-      
-      
-      <div style="text-align: left;">
-      
-      
-      <h1 style="text-align: left; margin-left: 40px;">Installation :</h1>
-
 
       
-      
-      <p style="text-align: left; margin-left: 40px;">You have to use exactly <a href="https://sourceforge.net/project/showfiles.php?group_id=10718&amp;package_id=10559&amp;release_id=331184">WxPython 2.6.0.1</a> and at least <a href="http://www.python.org/2.4.1/">Python 2.4</a>.</p>
-
-
-      
-      
-      <div style="margin-left: 40px;">After that, download a Magot archive and unzip it in a directory.<br>
-
-
-Modify the file <span style="font-weight: bold;">bin/magot.bat</span> and change the line&nbsp;<span style="font-style: italic;">set PYTHON=C:\tools\python241\python</span>&nbsp;in order to use your own Python interpreter.<br>
-
-
-      <br>
-
-
-Then, you can launch the Magot GUI by clicking on&nbsp;<span style="font-weight: bold;">magot.bat.<br>
-
-      </span></div>
-
-
       
       
       <div style="text-align: left;">
       
       
       
-      <div style="margin-left: 40px;"><br>
+      <h1 style="text-align: left; margin-left: 40px;"><a name="Installation"></a>Installation :</h1>
 
-      </div>
-
-
-      
-      
-      <h1 style="text-align: left; margin-left: 40px;"><a name="DOWNLOAD"></a>Download :</h1>
 
 
       
       
-      <div style="margin-left: 40px;">Magot releases can be found <a href="http://developer.berlios.de/project/showfiles.php?group_id=2647">here</a>. <br>
+      
+      <p style="text-align: left; margin-left: 40px;">Magot needs <a href="http://www.python.org/2.4.1/">Python 2.4</a> &nbsp;and depend<span style="font-weight: bold;">s </span>on <a href="https://sourceforge.net/project/showfiles.php?group_id=10718&amp;package_id=10559&amp;release_id=331184">WxPython 2.6.0.1</a> and&nbsp;<a href="http://peak.telecommunity.com/">PEAK</a> (&gt;=5.0a3).</p>
+      <p style="text-align: left; margin-left: 40px;">Magot is built with <a href="http://peak.telecommunity.com/DevCenter/setuptools">setuptools</a> and can be installed with <a href="http://peak.telecommunity.com/DevCenter/EasyInstall">easy_install</a> by typing in a console : <span style="font-weight: bold;">easy_install <a href="http://developer.berlios.de/project/showfiles.php?group_id=2647">Magot-0.1-py2.4.egg</a></span>.</p>
+      <p style="text-align: left; margin-left: 40px;">You can now use Magot after reading the <a href="#Documentation">documentation</a><span style="font-weight: bold;">.<br>
 
 
-      <a href="http://peak.telecommunity.com/">PEAK</a> is already included in the Windows archive.<br>
+      </span></p>
 
-
-      </div>
-
-
-      </div>
 
 
       
       
-      <h1 style="text-align: left;"><br>
-
-
-      </h1>
-
-
       <br>
-
-
       </div>
 
 
+
+      
       
       
       <div style="text-align: center;">Hosted by<br>
 
 
+
 &nbsp;<a href="http://developer.berlios.de"><img src="http://developer.berlios.de/bslogo.php?group_id=0&amp;type=1" alt="BerliOS Logo" border="0" height="32" width="124"></a></div>
+
 
 
 
@@ -398,10 +463,13 @@ Then, you can launch the Magot GUI by clicking on&nbsp;<span style="font-weight:
 
 
 
+
     </tr>
 
 
 
+
+  
   
   
   
@@ -410,12 +478,15 @@ Then, you can launch the Magot GUI by clicking on&nbsp;<span style="font-weight:
 
 
 
+
 </p>
+
 
 
 
 <p>&nbsp;
 <!-- end content --><!-- footer --><!-- end footer --></p>
+
 
 
 

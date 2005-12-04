@@ -1,7 +1,4 @@
 #!/usr/bin/python2.4
 
-from peak.api import config
-from magot.commands import Magot
-
-root = config.makeRoot(iniFiles=(('peak','peak.ini'), ('magot','magot.ini')))
-Magot(root).run()
+from magot import commands
+commands.runMain()
