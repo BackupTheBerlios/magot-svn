@@ -1,10 +1,7 @@
 Magot TODO :
 
 0.1 final :
-- make the 0.1 release + register freshmeat, PiPy, planetPython
-- make a link to the projects group page on BerliOS.
-- add 2 screenshots on berlios
-- add a link to the SVN magot repo
+- register PiPy, freshmeat, planetPython
 
 0.2 : Improve the Accounting Model
 

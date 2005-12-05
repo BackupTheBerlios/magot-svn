@@ -14,7 +14,7 @@ setup(
     author = "Jean-Philippe Dutrève",
     author_email = "jdutreve@users.berlios.de",
     url = "http://developer.berlios.de/projects/magot/",
-	download_url="http://developer.berlios.de/projects/magot/",
+	download_url="http://download.berlios.de/magot/",
     license = "LGPL",
     platforms = ['UNIX', 'Windows'],
 
