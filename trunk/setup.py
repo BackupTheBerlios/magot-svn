@@ -17,6 +17,14 @@ setup(
 	download_url="http://download.berlios.de/magot/",
     license = "LGPL",
     platforms = ['UNIX', 'Windows'],
+	classifiers=[
+		"Development Status :: 4 - Beta",
+		"Intended Audience :: Developers",
+		"License :: OSI Approved :: GNU Library or Lesser General Public License (LGPL)",
+		"Operating System :: OS Independent",
+		"Programming Language :: Python",	
+		"Topic :: Office/Business :: Financial :: Accounting",
+	],
 
 	scripts = ['bin/magot'],
 
@@ -32,8 +40,8 @@ setup(
 	zip_safe = False,
 	
     long_description = """\
-A cross-platform personal finance manager written in a agile way with Python.
+Magot is a cross-platform personal finance manager written in Python. A check-book like register GUI allows you to enter transactions and track bank accounts, incomes and expenses. It's based on formal accounting principles, PEAK and WxPython.
 """,
     
-	keywords = "accounting,finance,Python,WxPython,PEAK,component,framework",
+	keywords = "accounting,finance,Python,WxPython,PEAK,component,framework,agile",
 )
