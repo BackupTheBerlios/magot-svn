@@ -1,10 +1,16 @@
 Magot History
 
 
-- create standard account hierarchy
+version 0.1 final : 2005/12/05
+==============================
+
+- create standard account hierarchy for the new database
+- packaging with setuptools and easy_install
+- documentation cleanup
+
 
 version 0.1 beta1 : 2005/07/27
-========================
+==============================
 
 - move the class AccountLedger to its own module
 - change Notebook page text when changing its name from AccountEditor
