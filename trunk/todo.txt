@@ -1,8 +1,5 @@
 Magot TODO :
 
-0.1 final :
-- register PiPy, freshmeat, planetPython
-
 0.2 : Improve the Accounting Model
 
 - improve display:
