@@ -1,9 +1,7 @@
 from datetime import date
 from decimal import Decimal
 
-from peak.model.elements import Immutable, Struct
-from peak.model.enumerations import Enumeration, enum
-from peak.model.features import structField
+from peak.api import *
 
 
 ZERO = Decimal("0.00")
@@ -15,21 +13,31 @@ class Date(date):
         return self.strftime("%d.%m.%Y")
 
 
-class Currency(Enumeration):
+class DateRange(object):
 
-    USD = enum('USD')
-    EUR = enum('EUR')  
+    def __init__(self, d1, d2):
+        self.d1 = d1
+        self.d2 = d2
+        
+    def contains(self, date):
+        return self.d1 <= date <= self.d2
 
 
-class Money(Struct):
+class Currency(model.Enumeration):
+
+    USD = model.enum('USD')
+    EUR = model.enum('EUR')  
+
+
+class Money(model.Struct):
 
     """Immutable Money type containing amount and currency."""
 
-    class amount(structField):
+    class amount(model.structField):
         referencedType = Decimal
         defaultValue = ZERO
 
-    class currency(structField):
+    class currency(model.structField):
         referencedType = Currency
         defaultValue = Currency.EUR
     
@@ -72,10 +80,10 @@ class Money(Struct):
 Money.Zero = Money()
 
 
-class MovementType(Enumeration):
+class MovementType(model.Enumeration):
 
-    CREDIT = enum()
-    DEBIT = enum()
+    CREDIT = model.enum()
+    DEBIT = model.enum()
 
 
 def moneyformat(value, places=2, curr='', sep='.', dp=',', pos='', 
