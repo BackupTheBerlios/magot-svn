@@ -2,6 +2,69 @@ Magot TODO :
 
 0.2 : Improve the Accounting Model
 
+=========================================
+- multi-view, typed entries, entry events
+=========================================
+
+    account.subAccounts should be a view filtered by analysis codes, not the true hierarchy
+	
+	Flow:
+	=====
+	entry event : content has changed (amount, type, isReconciled)
+	account event : content has changed (entry added/removed, date, nb, description
+		--> account listener that unset account balance as well as for all its account ancestors
+		--> ledger and hierarchy listeners to refresh views
+	Transaction -> Account - Transaction can post all its entries to set of Accounts
+	Account -> Entry - Account sorts its entries 
+	Account -> Attribute - Account retrieves the value of an attribute at a particular time by delegating to the Attribute object
+	Attribute -> Transaction - AccountAttribute knows how to fetch value from a set of Transactions
+	
+	AccountAttribute:
+	================
+	account attributes are first class objects
+		time as parameter (==> the set of entries to operate on!)
+		YTDAttribute, MTDAttribute, TotalAttribute
+	generic funtion valueAsOf(account, time=None, field, operator?)
+	account attributes can be combined with others attributes: 
+		OnHandAttribute in an inventory is (purchased - sold - lost).
+		==> BinaryFunctionOfTime : 	PlusNode, DifferenceNode, ConstantFunctionOfTime	
+		
+	Posting:
+	========
+		entries know what account they have to be posted to: asked them the post them to their account	
+		account as an entry template for prototype programming?
+		Define all attributes of a Business Transaction. Then dispatch each one on Entry fields
+	
+	MultiView by filtering analysis codes:
+	=====================================
+		all entries of an account match the account analysis codes + their specific values	
+		but account structure can be different between accounts
+		VendorAccount sorts its entries two ways : by received date and by due date
+		Define all analysis codes defining uniquely each account
+		Journal == charts of accounts == a (possibly filtered) view on all accounts
+	Examples:
+		/Asset/Real-Estate/@1, /Expense/Real-Estate/@1, /Liability/Real-Estate/@1/First-Mortgage 
+			--> /@1/{Asset,Expense,Liability}
+		Motorola/401K, Motorola/Pension, Motorola/ESPP, 
+		Intel/401K, Intel/SERP, Intel/ESPP, Intel/Options 
+		AMD/401K, AMD/ProfitSharing, AMD/ESPP, AMD/Options
+		==> 401K/{Motorola,Intel,AMD}, Options/{Intel,AMDD}
+		==> Fidelity/{Intel/401K,/Motorola/Options}
+
+- introduce controler/presenter between view and model
+- propagate tx changes to ANY views interested in. 
+the program should in essence be fully functional even without a View/Controller attached.
+The View/Controller layer *pushes instructions* to the Model layer and *pulls information* from the Model layer.
+To set up a notifications system, providing the Model layer with a place it can announce to no-one 
+in particular that it has just done something interesting. Other layers can then post listeners with that notification system to listen for those announcements that they're actually interested in
+The Model just lists what notifications it sends as part of its API definition making sure all text views 
+are displaying up-to-date values
+Model's can be shared between controllers so that when the model is updated, all associated views are updated.
+Presenter behavior to be tested without UI + for different UI controls to be used with the same basic behavior.
+
+- Split : allow transaction to have more than 2 entries (aka split)
+- fixe DateCtrl edition
+- improve display performance
 - improve display:
     date display is not uniform
     amount should deal with 000 000
@@ -10,7 +73,6 @@ Magot TODO :
     refresh accountTree when expanding an account
     display vertical bar on accountTree between Account & desc & balance
     display well balances in accountTree when the vertical scroll-bar is here
-- Split : allow transaction to have more than 2 entries (aka split)
 - add action/memo for entry
 - don't ask save modifications? when sorting
 - on Windows, balances are truncated when vertical scroll bar is shown
@@ -68,7 +130,7 @@ Magot TODO :
 
 
 post 1.0
-- make true persistence / multi user : SQLlite, DURUS/ZODB/Pypersyst, Metakit, SQLObject, Roundup HyperDB, PyDO ?
+- make true persistence / multi user : SQLlite, DURUS/ZODB/Pypersyst, Schevo, SQLObject, Roundup HyperDB, PyDO ?
 - manage financial instrument; equity/debt/option portfolio
-- budgets/accounting periods
+- budgets/accounting periods : see http://wiki.gnucash.org/wiki/Budgets
 - Invoices/Payment/Parties

@@ -3,7 +3,7 @@ import cPickle
 from peak.api import *
 from datetime import *
 
-from magot.model import *
+from magot.model2 import *
 from magot.refdata import *
 from magot.storage import *
 
@@ -13,38 +13,38 @@ def makeDB(filename):
     DEBIT = MovementType.DEBIT
 
     # Root of all accounts
-    root = Account(name='root')
+    root = RootAccount(name='root')
 
     # ##################
     # Debit accounts
     # ##################
 
     # Asset accounts
-    assets = EntryAccount(root, 'Assets', DEBIT)
+    assets = Account(root, 'Assets', DEBIT)
 
     # Current assets
-    currentAssets = EntryAccount(assets, 'Current Assets')
-    cash = EntryAccount(currentAssets, 'Cash')
-    tBills = EntryAccount(currentAssets, 'T-Bills')
-    receivable = EntryAccount(currentAssets, 'Accounts Receivable')
+    currentAssets = Account(assets, 'Current Assets')
+    cash = Account(currentAssets, 'Cash')
+    tBills = Account(currentAssets, 'T-Bills')
+    receivable = Account(currentAssets, 'Accounts Receivable')
 
     # Inventory
-    inventory = EntryAccount(assets, 'Inventory')
-    rawMaterials = EntryAccount(inventory, 'Raw Materials')
-    wip = EntryAccount(inventory, 'Work-In-Progress')
-    finishedGoods = EntryAccount(inventory, 'Finished Goods')
+    inventory = Account(assets, 'Inventory')
+    rawMaterials = Account(inventory, 'Raw Materials')
+    wip = Account(inventory, 'Work-In-Progress')
+    finishedGoods = Account(inventory, 'Finished Goods')
 
     # LongTerm assets
-    longTermAssets = EntryAccount(assets, 'Long-Term Assets')
-    land = EntryAccount(longTermAssets, 'Land')
-    machinery = EntryAccount(longTermAssets, 'Machinery')
-    depreciation = EntryAccount(longTermAssets, 'Depreciation')
-    patents = EntryAccount(longTermAssets, 'Patents')
+    longTermAssets = Account(assets, 'Long-Term Assets')
+    land = Account(longTermAssets, 'Land')
+    machinery = Account(longTermAssets, 'Machinery')
+    depreciation = Account(longTermAssets, 'Depreciation')
+    patents = Account(longTermAssets, 'Patents')
     
     # Expense accounts
-    expense = EntryAccount(root, 'Expenses', DEBIT)
-    warranty = EntryAccount(expense, 'Warranty')
-    computer = EntryAccount(expense, 'Computer')
+    expense = Account(root, 'Expenses', DEBIT)
+    warranty = Account(expense, 'Warranty')
+    computer = Account(expense, 'Computer')
 
     
     # ##################
@@ -52,23 +52,23 @@ def makeDB(filename):
     # ##################
 
     # Debt accounts
-    liabilities = EntryAccount(root, "Liabilities and Owners' Equity", CREDIT)
+    liabilities = Account(root, "Liabilities and Owners' Equity", CREDIT)
 
-    currentLiabilities = EntryAccount(liabilities, 'Short-Term liabilities')
-    accPayable = EntryAccount(currentLiabilities, 'Accounts Payable')
-    divPayable = EntryAccount(currentLiabilities, 'Dividend Payable')
-    taxesPayable = EntryAccount(currentLiabilities, 'Taxes Payable')
+    currentLiabilities = Account(liabilities, 'Short-Term liabilities')
+    accPayable = Account(currentLiabilities, 'Accounts Payable')
+    divPayable = Account(currentLiabilities, 'Dividend Payable')
+    taxesPayable = Account(currentLiabilities, 'Taxes Payable')
     
-    longTermLiabilities = EntryAccount(liabilities, 'Long-Term liabilities')
-    loans = EntryAccount(longTermLiabilities, 'Bank Loans')
+    longTermLiabilities = Account(liabilities, 'Long-Term liabilities')
+    loans = Account(longTermLiabilities, 'Bank Loans')
 
-    equity = EntryAccount(liabilities, "Owners' Equity")
-    capital = EntryAccount(equity, "Capital")
-    retainedEarnings = EntryAccount(equity, "Retained Earnings")
+    equity = Account(liabilities, "Owners' Equity")
+    capital = Account(equity, "Capital")
+    retainedEarnings = Account(equity, "Retained Earnings")
 
     # Income accounts
-    income = EntryAccount(root, 'Income', CREDIT)
-    salary = EntryAccount(income, 'Salaries')
+    income = Account(root, 'Income', CREDIT)
+    salary = Account(income, 'Salaries')
 
 
     # ##################

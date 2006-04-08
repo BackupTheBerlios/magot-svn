@@ -76,6 +76,9 @@ class Money(model.Struct):
     def mdl_toString(klass, value):
         return value.amount + value.currency
 
+    def __neg__(self):
+        return Money(-self.amount, self.currency)
+
 
 Money.Zero = Money()
 

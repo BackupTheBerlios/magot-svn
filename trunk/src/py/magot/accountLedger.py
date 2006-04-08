@@ -6,27 +6,6 @@ from magot.guiutil import *
 from magot.refdata import *
 
 
-class Proxy(object):
-    """The Proxy base class."""
-
-    def __init__(self, obj):
-        """The initializer."""
-        super(Proxy, self).__init__(obj)
-        # Set attribute.
-        self._obj = obj
-
-    def __getattr__(self, attrib):
-        try:
-            # Is this attribute overridden in the proxy?
-            return self.__dict__[attrib]
-        except KeyError:
-            # If not, then return the attribute value from the original object
-            return getattr(self._obj, attrib)
-
-    def getModifiedAttr(self, key):
-        return self.__dict__.get(key, None)
-
-
 def _getdata(col, entry):
     if col == 0:
         return entry.date
@@ -128,7 +107,7 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
             if not self.GetView().HasEntryBeenModified():
                 e = self.GetEntry(row)
                 # first modification on this entry, so register it in the view
-                modifiedEntry = self.GetView().RegisterEntryForModification(e)
+                modifiedEntry = self.GetView().PrepareEntryForModification(e)
                 # display now the modified entry instead of the original
                 self.SetEntry(row, modifiedEntry)
 
@@ -427,45 +406,33 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
                 self.PostTransaction()
                 self.RefreshLedger()
             elif toBeSaved == wx.ID_NO:
-                self.InitEntryForModification()
+                self.ReleaseEntryForModification()
                 self.RefreshLedger(sort=False)
         return True
 
     def HasEntryBeenModified(self):
         return hasattr(self, '_entryProxy')
 
-    def InitEntryForModification(self):
+    def ReleaseEntryForModification(self):
         del self._entryProxy
-
-    def RegisterEntryForModification(self, entry):
-        self._entryProxy = Proxy(entry)
-        return self._entryProxy
 
     def GetModifiedEntry(self):
         return self._entryProxy
 
+    def PrepareEntryForModification(self, entry):
+        self._entryProxy = entry.getProxy()
+        return self._entryProxy
+
     def PostTransaction(self):
         """ Return the account Entry whose Transaction has been modified. """
-        proxy = self._entryProxy
-        entry = proxy._obj
+        modified = self.GetModifiedEntry()
+        original = modified.getOriginalObject()
+
+        original.transaction.post(modified)
         
-        # modifications on the transaction
-        entry.transaction.update(
-            date=proxy.getModifiedAttr('date'),
-            nb=proxy.getModifiedAttr('number'),
-            desc=proxy.getModifiedAttr('description'),
-            amount=proxy.getModifiedAttr('amount'))
-        # modifications on the entry
-        entry.update(
-            isReconciled=proxy.getModifiedAttr('isReconciled'),
-            type=proxy.getModifiedAttr('type'))
-        # modifications on the opposite entry
-        entry.oppositeEntry.update(
-            account=proxy.getModifiedAttr('oppositeAccount'))
-        
-        # get ready to register next entry modifications with a new proxy
-        self.InitEntryForModification()
+        # get ready to register next entry modifications
+        self.ReleaseEntryForModification()
         
         # modifications OK, so replace in the model the proxy by the entry
-        self.GetTable().SetEntry(self.GetGridCursorRow(), entry)
-        return entry
+        self.GetTable().SetEntry(self.GetGridCursorRow(), original)
+        return original

@@ -1,6 +1,6 @@
 from datetime import *
 from peak.api import *
-from magot.model import *
+from magot.model2 import *
 from magot.refdata import *
 
 DB_FILENAME = PropertyName("magot.db.filename")
@@ -34,7 +34,7 @@ Available commands:
     db_filepath = binding.Make(db_filepath, offerAs=[DB_FILEPATH])
     
     Accounts = binding.Make(
-        'magot.storage.AccountDM', offerAs=[storage.DMFor(EntryAccount)]
+        'magot.storage.AccountDM', offerAs=[storage.DMFor(Account)]
     )
     
 
@@ -46,7 +46,7 @@ Usage: newdb
 create a new database.
 """
 
-    Accounts = binding.Obtain(storage.DMFor(EntryAccount))
+    Accounts = binding.Obtain(storage.DMFor(Account))
 
     db_filepath = binding.Obtain(DB_FILEPATH)
 
@@ -66,7 +66,7 @@ Usage: accounts
 Displays all accounts.
 """
 
-    Accounts = binding.Obtain(storage.DMFor(EntryAccount))
+    Accounts = binding.Obtain(storage.DMFor(Account))
 
     def _run(self):
         if len(self.argv)<1:
@@ -90,7 +90,7 @@ Usage: check
 Checks the accounting equation : Assets + Expenses = Equity + Liabilities + Income
 """
 
-    Accounts = binding.Obtain(storage.DMFor(EntryAccount))
+    Accounts = binding.Obtain(storage.DMFor(Account))
 
     def _run(self):
         if len(self.argv)<1:
@@ -118,7 +118,7 @@ Usage: account accountName
 Displays one account.
 """
 
-    Accounts = binding.Obtain(storage.DMFor(EntryAccount))
+    Accounts = binding.Obtain(storage.DMFor(Account))
 
     def _run(self):
         if len(self.argv)<2:
@@ -128,7 +128,7 @@ Displays one account.
 
         account = self.Accounts.get(self.argv[1])
         print >>self.stdout, str(account)
-        if isinstance(account, EntryAccount):
+        if isinstance(account, Account):
             for entry in account.entries:
                 print >>self.stdout, str(entry)
 
@@ -143,7 +143,7 @@ Usage: addTx desc debitAccount creditAccount amount [date num]
 Add a new Transaction.
 """
 
-    Accounts = binding.Obtain(storage.DMFor(EntryAccount))
+    Accounts = binding.Obtain(storage.DMFor(Account))
    
     def _run(self):
    
@@ -166,6 +166,7 @@ Add a new Transaction.
 
 def runMain():
         root = config.makeRoot(iniFiles=(('peak','peak.ini'), ('magot','magot.ini')))
+        import wingdbstub
         Magot(root).run()
 
         
