@@ -347,7 +347,7 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
 
     def OnSort(self, evt):
         self.sortByCol = evt.GetCol()
-        self.RefreshLedger(sync=False, sort=True)
+        self.Refresh(sync=False, sort=True)
 ##        evt.Skip()
     
     def OnRangeSelect(self, evt):
@@ -372,7 +372,7 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
         self.SetGridCursor(row, 0)
         self.SelectRow(self.GetGridCursorRow())
 
-    def RefreshLedger(self, focusEntry=None, sync=True, sort=True):
+    def Refresh(self, focusEntry=None, sync=True, sort=True):
         col = None
         if sort:
             col = self.sortByCol
@@ -404,10 +404,10 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
                 return False
             if toBeSaved == wx.ID_YES:
                 self.PostTransaction()
-                self.RefreshLedger()
+                self.Refresh()
             elif toBeSaved == wx.ID_NO:
                 self.ReleaseEntryForModification()
-                self.RefreshLedger(sort=False)
+                self.Refresh(sort=False)
         return True
 
     def HasEntryBeenModified(self):

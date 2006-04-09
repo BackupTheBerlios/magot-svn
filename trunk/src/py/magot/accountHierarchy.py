@@ -2,6 +2,8 @@ import sys
 import wx
 import wx.gizmos
 
+from magot.model2 import Entry, Account
+
 
 class TreeListCtrlAutoWidthMixin:
     """ A mix-in class that automatically resizes the last column to take up
@@ -287,7 +289,7 @@ class AccountHierarchy(wx.Panel):
             return
 
         newItems = self.MoveAccount(source, target)
-        self.RefreshLedger()
+        self.Refresh()
         self.tree.SelectItem(newItems[0])
 
     def BuildHierarchy(self, focus=None):
@@ -302,6 +304,7 @@ class AccountHierarchy(wx.Panel):
 
     def displayOneLevel(self, parent, node, focus=None):
         for account in parent.subAccounts:
+            Account.balance.addCallback(account, self.Refresh)            
             child = self.createAndAppendAccount(node, account)
             if focus is None:
                 focus = account
@@ -333,10 +336,11 @@ class AccountHierarchy(wx.Panel):
         movedAccount.parent = newParentAccount
         return newitems
 
-    def RefreshLedger(self):
+    def Refresh(self, source=None, event=None):
         """ Refresh the balance of each account. """
         def refreshAccount(child, depth):
             account = self.tree.GetPyData(child)
             self.tree.SetItemText(child, account.description, 1)
             self.tree.SetItemText(child, str(account.balance), 2)
         self.tree.Traverse(refreshAccount, self.tree.GetRootItem(), False)
+        return True
