@@ -21,6 +21,7 @@ Magot TODO :
 	
 	AccountAttribute:
 	================
+	fixe entry type change that does not change entry balance
 	account attributes are first class objects
 		time as parameter (==> the set of entries to operate on!)
 		YTDAttribute, MTDAttribute, TotalAttribute

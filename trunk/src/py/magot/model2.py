@@ -74,26 +74,41 @@ class Entry(model.Element):
 
     class amount(model.Attribute):
         referencedType = Money
-        newVerbs = [('get_event', '%(singularName)sEvent')]
 
-        def get_event(feature, element):
+        def delSource(feature, element):
+            key = feature.attrName+'__event'
+            try:
+                del element.__dict__[key]
+            except KeyError:
+                pass
+            
+        def getSource(feature, element):
             key = feature.attrName+'__event'
             try:
                 source = element.__dict__[key]
                 return source
             except KeyError:
-                source = element.__dict__.setdefault(key, events.Broadcaster())
+                source = element.__dict__.setdefault(key, events.Value())
                 return source
 
         def _onLink(feature, element, item, posn=None):
-            source = feature.get_event(element)
-            source.send(item)
+            source = feature.getSource(element)
+            source.set(item)
 
         def addCallback(feature, element, callback):
-            source = feature.get_event(element)
-            unsubscribe = events.subscribe(source, callback)
-            return unsubscribe
+            source = feature.getSource(element)
+            return events.subscribe(source, callback)
      
+    def __setstate__(self, dict):
+        """ Restore state from pickleable content. """
+        self.__dict__ = dict
+        Entry.amount.addCallback(self, self.account.emptyBalanceCacheCallback)
+
+    def __getstate__(self):
+        """ Purge state for pickleable content. """
+        Entry.amount.delSource(self)      
+        return self.__dict__
+    
     class account(model.Attribute):
         #referencedType = Account
         referencedEnd = 'entries'
@@ -155,23 +170,7 @@ class Entry(model.Element):
         super(Entry, self).__init__(type=type, amount=amount, 
                                     transaction=transaction)
         account.addEntry(self)
-
-    def __getstate__(self):
-        """ Purge state for picklable content. """
-        odict = self.__dict__
-        key = 'amount__event'
-        try:
-            del odict[key]
-        except KeyError:
-            pass
-        return odict
-
-    def __setstate__(self, dict):
-        """ Restore state from picklable content. """
-        self.__dict__ = dict
-        Entry.amount.addCallback(self, self.account.emptyBalanceCacheCallback)
-        evt = self.amountEvent()
-        evt.send(self.amount)
+        Entry.amount.addCallback(self, account.emptyBalanceCacheCallback)
 
     def __str__(self):
         return "%s\t%s\t%s\t%s" % (str(self.date), str(self.type),
@@ -203,8 +202,8 @@ class Entry(model.Element):
         
 
 class AccountAttribute(DerivedAndCached):
-    
     """ Derived account attribute from local entries plus sub-account entries."""
+    
     def compute(self, account):
         value = self.__localValue(account)
         for subAccount in account.subAccounts:
@@ -255,6 +254,8 @@ class RootAccount(model.Element):
 
 class Account(RootAccount):
     
+    source = events.Broadcaster()
+    
     class type(model.Attribute):
         """ debit or credit. """
         referencedType = MovementType
@@ -287,23 +288,6 @@ class Account(RootAccount):
     class balance(AccountAttribute):
         """ Total amount of all entries (local & sub-accounts). No period. """       
         getField = Entry.amount.get
-        
-        def get_event(feature, element):
-            key = feature.attrName+'__event'
-            try:
-                source = element.__dict__[key]
-                return source
-            except KeyError:
-                source = element.__dict__.setdefault(key, events.Distributor())
-                return source
-
-        def _onLink(feature, element, item, posn=None):
-            source = feature.get_event(element)
-
-        def addCallback(feature, element, callback):
-            source = feature.get_event(element)
-            unsubscribe = events.subscribe(source, callback)
-            return unsubscribe      
 
     class balanceMTD(balance):
         """ Balance since start of the current Month. """
@@ -311,20 +295,33 @@ class Account(RootAccount):
              # todo true formula
             return DateRange(date(2006, 4, 3), date(2006, 4, 4))
 
+    def emptyBalanceCacheCallback(self, source, event):
+        self.unsetBalance()
+        if self.parent is not None and isinstance(self.parent, Account):
+            # @todo just unset local parent balance?
+            self.parent.unsetBalance()
+        for entry in self.entries:
+            entry.unsetBalance()
+            
+        # notify any views that account balances have changed
+        #Account.source.send(self.name)
 
-    def __init__(self, parent, name=None, type=None):
+    def __init__(self, parent, name=None, type=None, description=''):
+        super(Account, self).__init__(name, description)
         assert parent is not None
         self.parent = parent
-        self.name = name
         if type is None:
             self.type = self.parent.type
         else:
-            self.setType(type)
+            self.type = type
 
     def __repr__(self):
         # todo better formatted repr
-        return self.name.ljust(10) + self.description.rjust(25) + \
-            str(self.balance).rjust(8)
+        name = 'NO_NAME'
+        if hasattr(self, 'name'):
+            name = self.name
+        return name.ljust(10) 
+    #+ self.description.rjust(25) + str(self.balance).rjust(8)
         
     def __str__(self):
         return self.name
@@ -338,16 +335,6 @@ class Account(RootAccount):
             return Transaction(date, 'initial balance', self, equity, amount)
         else:
             return Transaction(date, 'initial balance', equity, self, amount)    
-
-    def emptyBalanceCacheCallback(self, source, event):
-        self.unsetBalance()
-        if self.parent is not None and not isinstance(self.parent, Account):
-            self.parent.emptyBalanceCacheCallback(source, event)
-        for entry in self.entries:
-            entry.unsetBalance()
-            
-        source = Account.balance.get_event(self)
-        source.send(None)
 
 
 class Transaction(model.Element):
@@ -403,7 +390,9 @@ class Transaction(model.Element):
         """ Always use this method to post a transaction. """        
         # todo split
         entry = entries[0]
-                
+
+        Account.source.disable()
+        
         # modifications on tx attributes
         self._update(
             date=entry.getModifiedAttr('date'),
@@ -419,6 +408,11 @@ class Transaction(model.Element):
         # modifications on the opposite entry attributes
         entry.oppositeEntry._update(
             account=entry.getModifiedAttr('oppositeAccount'))
+        
+        # @todo : don't send event before all model changes are done
+        Account.source.send(None)
+        
+        Account.source.enable()
         
     def _addDebitEntry(self, account, amount):        
         return Entry(MovementType.DEBIT, self, account, amount)
