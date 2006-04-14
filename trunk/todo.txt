@@ -29,6 +29,8 @@ Magot TODO :
 	account attributes can be combined with others attributes: 
 		OnHandAttribute in an inventory is (purchased - sold - lost).
 		==> BinaryFunctionOfTime : 	PlusNode, DifferenceNode, ConstantFunctionOfTime	
+	add 'third party' or 'partner' field on account column
+	add account types & transaction types
 		
 	Posting:
 	========
@@ -51,6 +53,7 @@ Magot TODO :
 		AMD/401K, AMD/ProfitSharing, AMD/ESPP, AMD/Options
 		==> 401K/{Motorola,Intel,AMD}, Options/{Intel,AMDD}
 		==> Fidelity/{Intel/401K,/Motorola/Options}
+	add account codes
 
 - introduce controler/presenter between view and model
 - propagate tx changes to ANY views interested in. 

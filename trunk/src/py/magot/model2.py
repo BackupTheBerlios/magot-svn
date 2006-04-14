@@ -69,7 +69,7 @@ class Entry(model.Element):
                 self = value
 
     class type(model.Attribute):
-        # todo type is reserved key choose anoth
+        # todo type is a reserved key choose another one
         referencedType = MovementType
 
     class amount(model.Attribute):
@@ -122,24 +122,9 @@ class Entry(model.Element):
         referencedType = model.Boolean
         defaultValue = False
 
-    class balance(DerivedAndCached):
-        """ Account balance at the entry update/insert date. 
-            todo : improved algorithm using memoized balances"""
+    class balance(model.Attribute):
+        """ Account balance at the entry update/insert date. """
         referencedType = Money        
-        def compute(self, entry):
-            entries = entry.account.entries
-            previousBalance = Money.Zero
-            i = entries.index(entry)
-            if i > 0:
-                # recursif
-                previousBalance = entries[i-1].balance
-            
-            if entry.type is entry.account.type:
-                previousBalance += entry.amount
-            else:
-                previousBalance -= entry.amount
-            
-            return previousBalance
 
     class date(model.DerivedFeature):
         referencedType = Date        
@@ -202,18 +187,18 @@ class Entry(model.Element):
         
 
 class AccountAttribute(DerivedAndCached):
-    """ Derived account attribute from local entries plus sub-account entries."""
+    """ Derived account attribute from local entries plus sub-account attributes."""
     
     def compute(self, account):
-        value = self.__localValue(account)
+        totalValue = self.localValue(account)
         for subAccount in account.subAccounts:
-            value += self.get(subAccount)        
-        return value
+            totalValue += self.get(subAccount)
+        return totalValue
 
-    def getPeriod(self):                      
+    def getPeriod(self):
         return None
 
-    def __localValue(self, account):
+    def localValue(self, account):
         entries = account.entries
         period = self.getPeriod()
         if period is not None:
@@ -221,16 +206,16 @@ class AccountAttribute(DerivedAndCached):
         
         result = Money.Zero
         for entry in entries:
-            if entry.type is MovementType.DEBIT:
-                result += self.getField(entry)
-            else:
-                result -= self.getField(entry)
+            result += self.getSignedValue(self.getField(entry), entry.type)
+            entry.balance = self.getSignedValue(result, account.type)
         
-        if account.type is MovementType.CREDIT:
-            return -result
-        else:
-            return result 
+        return self.getSignedValue(result, account.type)
 
+    def getSignedValue(self, value, movementType):
+        if movementType is MovementType.DEBIT:
+            return value
+        else:
+            return -value
 
 class RootAccount(model.Element):
     """ Root Account without parent and entries. """
@@ -289,6 +274,13 @@ class Account(RootAccount):
         """ Total amount of all entries (local & sub-accounts). No period. """       
         getField = Entry.amount.get
 
+        def _onUnlink(self, account, item, posn):
+            parent = account.parent
+            while parent and isinstance(parent, Account):
+                # @todo just unset local parent balance?
+                self.unset(parent)
+                parent = parent.parent
+
     class balanceMTD(balance):
         """ Balance since start of the current Month. """
         def getPeriod(self):
@@ -297,9 +289,6 @@ class Account(RootAccount):
 
     def emptyBalanceCacheCallback(self, source, event):
         self.unsetBalance()
-        if self.parent is not None and isinstance(self.parent, Account):
-            # @todo just unset local parent balance?
-            self.parent.unsetBalance()
         for entry in self.entries:
             entry.unsetBalance()
             

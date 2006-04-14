@@ -1,11 +1,13 @@
 import datetime
 import string
 import sys
+from decimal import Decimal
 
 import wx
 import wx.grid as gridlib
+from wx.lib import masked
 
-from magot.refdata import Date
+from magot.refdata import Date, Money
 
 
 def date2wxdate(date):
@@ -302,6 +304,57 @@ class DateCellEditor(gridlib.PyGridCellEditor):
         return DateCellEditor(self.log)
 
 
+class MoneyEditor(gridlib.PyGridCellEditor):
+    def __init__(self):
+        gridlib.PyGridCellEditor.__init__(self)
+        
+    def Create(self, parent, id, evtHandler):        
+        self._tc = masked.NumCtrl(parent, id, fractionWidth=2, 
+            autoSize=False, selectOnEntry=False, groupDigits=False)
+        self.SetControl(self._tc)
+        if evtHandler:
+            self._tc.PushEventHandler(evtHandler)
+        
+        self._tc.Bind(wx.EVT_KEY_DOWN, self.OnChar)
+
+    def BeginEdit(self, row, col, grid):
+        self.startValue = grid.GetTable().GetValue(row, col).amount
+        self._tc.SetValue(str(self.startValue))
+        self._tc.SetFocus()
+
+    def EndEdit(self, row, col, grid):
+        changed = False
+        val = self._tc.GetValue()
+        if Decimal(str(val)) != self.startValue:
+            changed = True
+            grid.GetTable().SetValue(row, col, val)
+        return changed
+
+    def Reset(self):
+        self._tc.SetValue(str(self.startValue))
+
+    def Clone(self):
+        return MoneyEditor()
+
+    def OnChar(self, evt):
+        key = evt.GetKeyCode()
+        if key == wx.WXK_DOWN:
+            evt.ResumePropagation(1)
+        evt.Skip()
+        return
+
+
+class MoneyRenderer(gridlib.PyGridCellRenderer):
+    def __init__(self):
+        gridlib.PyGridCellRenderer.__init__(self)
+        
+    def Draw(self, grid, attr, dc, rect, row, col, isSelected):
+        money = grid.GetTable().GetValue(row, col)
+        value = str(money)
+        a,b = attr.GetAlignment()        
+        grid.DrawTextRectangle(dc, value, rect, a, b)
+
+
 class OppositeAccountEditor(gridlib.PyGridCellEditor):
     """
     Editor for choosing the opposite account of a selected entry.
@@ -314,25 +367,19 @@ class OppositeAccountEditor(gridlib.PyGridCellEditor):
         self.log = sys.stdout
 
     def Create(self, parent, id, evtHandler):
-        """
-        Called to create the control, which must derive from wxControl.
-        """
+        """Called to create the control, which must derive from wxControl. """
         self._tc = wx.Choice(parent, id)
         self.SetControl(self._tc)
-
         if evtHandler:
             self._tc.PushEventHandler(evtHandler)
 
     def BeginEdit(self, row, col, grid):
-        """
-        Fetch the value from the table and prepare the edit control
+        """ Fetch the value from the table and prepare the edit control
         to begin editing. Set the focus to the edit control.
         """
         self.log.write("OppositeAccountEditor:BeginEdit (%d,%d)\n" % (row, col))
-
         self.oldOppositeAcc = grid.GetTable().GetValue(row, col)
         self.accPathPairs = self._getAccountPathPairs()
-
         self._tc.Clear()
         for acc, path in self.accPathPairs:
             self._tc.Append(path, acc)
@@ -341,24 +388,20 @@ class OppositeAccountEditor(gridlib.PyGridCellEditor):
         self._tc.SetFocus()
 
     def EndEdit(self, row, col, grid):
-        """
-        Complete the editing of the current cell. 
+        """ Complete the editing of the current cell. 
         Returns true if the value has changed.
         """
         self.log.write("OppositeAccountEditor:EndEdit (%d,%d)\n" % (row, col))
         changed = False
-
         selectedAcc = self._tc.GetClientData(self._tc.GetSelection())
 
         if not selectedAcc is self.oldOppositeAcc:
             changed = True
             grid.GetTable().SetValue(row, col, selectedAcc)
-
         return changed
 
     def SetSize(self, rect):
-        """
-        Called to position/size the edit control within the cell rectangle.
+        """ Called to position/size the edit control within the cell rectangle.
         If you don't fill the cell (the rect) then be sure to override
         PaintBackground and do something meaningful there.
         """
@@ -366,17 +409,13 @@ class OppositeAccountEditor(gridlib.PyGridCellEditor):
                                wx.SIZE_ALLOW_MINUS_ONE)
 
     def Reset(self):
-        """
-        Reset the value in the control back to its starting value.
-        """
+        """ Reset the value in the control back to its starting value. """
         opp = self.oldOppositeAcc
         idx = (i for i,(a,p) in enumerate(self.accPathPairs) if a is opp).next()
         self._tc.SetSelection(idx)
 
     def Clone(self):
-        """
-        Create a new object which is the copy of this one
-        """
+        """ Create a new object which is the copy of this one. """
         return OppositeAccountEditor(self.ctx)
 
     def _getAccountPathPairs(self):

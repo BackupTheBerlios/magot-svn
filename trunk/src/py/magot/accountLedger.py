@@ -23,16 +23,16 @@ def _getdata(col, entry):
         return entry.isReconciled
     if col == 5:
         if entry.type == MovementType.DEBIT:
-            return entry.amount.amount
+            return entry.amount
         else:
-            return ZERO
+            return Money.Zero
     if col == 6:
         if entry.type == MovementType.CREDIT:
-            return entry.amount.amount
+            return entry.amount
         else:
-            return ZERO
+            return Money.Zero
     if col == 7:
-        return entry.balance.amount
+        return entry.balance
 
 def _setdata(col, entry, value=None):
     if col == 0:
@@ -71,9 +71,9 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
             gridlib.GRID_VALUE_STRING,
             gridlib.GRID_VALUE_CHOICE,
             gridlib.GRID_VALUE_BOOL,
-            gridlib.GRID_VALUE_FLOAT + ':10,2',
-            gridlib.GRID_VALUE_FLOAT + ':10,2',
-            gridlib.GRID_VALUE_FLOAT + ':10,2',
+            'MoneyRenderer',
+            'MoneyRenderer',
+            'MoneyRenderer',
         ]
         # data stores account entries so that we can sort them
         # whithout changing value-date ordered account.entries
@@ -263,8 +263,9 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
 
         # column num
         self.SetColSize(1, 50)
+        
         # column description
-        self.SetColSize(2, 300)
+        self.SetColSize(2, 240)
         
         # column opposite account
         self.SetColSize(3, 230)
@@ -277,15 +278,27 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
         self.SetColSize(4, 30)
 
         # column debit
-        self.SetColSize(5, 80)
+        self.SetColSize(5, 100)
+        attr = gridlib.GridCellAttr()
+        attr.SetRenderer(MoneyRenderer())
+        attr.SetEditor(MoneyEditor())
+        attr.SetAlignment(wx.ALIGN_RIGHT, wx.ALIGN_CENTRE)
+        self.SetColAttr(5, attr)
 
         # column credit
-        self.SetColSize(6, 80)
+        self.SetColSize(6, 100)
+        attr = gridlib.GridCellAttr()
+        attr.SetRenderer(MoneyRenderer())
+        attr.SetEditor(MoneyEditor())
+        attr.SetAlignment(wx.ALIGN_RIGHT, wx.ALIGN_CENTRE)
+        self.SetColAttr(6, attr)
 
         # column account balance
-        self.SetColSize(7, 80)
+        self.SetColSize(7, 100)
         attr = gridlib.GridCellAttr()
         attr.SetReadOnly(True)  # balance is readonly
+        attr.SetRenderer(MoneyRenderer())
+        attr.SetAlignment(wx.ALIGN_RIGHT, wx.ALIGN_CENTRE)
         self.SetColAttr(7, attr)
 
         self.__enableEdit = 0

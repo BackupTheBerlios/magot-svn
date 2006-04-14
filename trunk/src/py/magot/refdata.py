@@ -58,7 +58,10 @@ class Money(model.Struct):
                             currency=self.currency)
     
     def __str__(self):
-        return moneyformat(self.amount)
+        if self.amount == ZERO:
+            return "0.00"
+        else:
+            return moneyformat(self.amount, overall=None)
 
     def __nonzero__(self):
         return self.amount != 0
