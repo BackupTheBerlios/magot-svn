@@ -344,13 +344,27 @@ class MoneyEditor(gridlib.PyGridCellEditor):
         return
 
 
+colourLemonChiffon = wx.Colour(255, 250, 205)
+colourWhiteSmoke = wx.Colour(245, 245, 245)
+
+
 class MoneyRenderer(gridlib.PyGridCellRenderer):
     def __init__(self):
         gridlib.PyGridCellRenderer.__init__(self)
         
     def Draw(self, grid, attr, dc, rect, row, col, isSelected):
-        money = grid.GetTable().GetValue(row, col)
-        value = str(money)
+        colour = None
+        if isSelected:
+            colour = colourLemonChiffon
+        elif row % 2:
+            colour = colourWhiteSmoke
+
+        if colour:
+            dc.SetBrush(wx.Brush(colour, wx.SOLID)) 
+            dc.SetPen(wx.TRANSPARENT_PEN) 
+            dc.DrawRectangle(rect.x, rect.y, rect.width, rect.height) 
+        
+        value = str(grid.GetTable().GetValue(row, col))
         a,b = attr.GetAlignment()        
         grid.DrawTextRectangle(dc, value, rect, a, b)
 

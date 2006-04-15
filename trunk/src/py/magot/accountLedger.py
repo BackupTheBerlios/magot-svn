@@ -230,7 +230,7 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
 
 class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
     """ It's a page of the notebook that displays all entries of an account. """
-    
+
     def __init__(self, parent, account, log):
         super(AccountLedgerView, self).__init__(parent, -1)
         GridCtrlAutoWidthMixin.__init__(self)
@@ -251,7 +251,7 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
         self.SetTable(table, True)
 
         self.SetRowLabelSize(0)
-        self.SetSelectionBackground(wx.Colour(255, 250, 205)) # LemonChiffon
+        self.SetSelectionBackground(colourLemonChiffon)
         self.SetSelectionForeground("Black")
 
         # column date
@@ -277,6 +277,7 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
         # column reconciled
         self.SetColSize(4, 30)
 
+        # todo refactor into a money column
         # column debit
         self.SetColSize(5, 100)
         attr = gridlib.GridCellAttr()
@@ -325,9 +326,6 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
         evt.Skip()
 
     def OnSelectCell(self, evt):
-##        if :
-##            return
-        
         if self.IsCellEditControlEnabled():
             self.HideCellEditControl()
             self.DisableCellEditControl()
@@ -389,13 +387,12 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
         col = None
         if sort:
             col = self.sortByCol
-        self.GetTable().RefreshLedger(focusEntry=focusEntry, 
-                                      sync=sync, sortByCol=col)
-        for row in xrange(self.GetNumberRows()):
-            for col in xrange(self.GetNumberCols()):
-                if row % 2:
-                    self.SetCellBackgroundColour(row, col, 
-                        wx.Colour(245, 245, 245))  # "WhiteSmoke"
+        self.GetTable().RefreshLedger(focusEntry=focusEntry, sync=sync, sortByCol=col)
+
+        colNb = self.GetNumberCols()
+        for oddrow in xrange(1, self.GetNumberRows(), 2):
+            for col in xrange(colNb):
+                self.SetCellBackgroundColour(oddrow, col, colourWhiteSmoke)
 
     def CheckTransactionModification(self, askConfirmation=True):
         """ Return True if we can can pursue the flow. False else. 
