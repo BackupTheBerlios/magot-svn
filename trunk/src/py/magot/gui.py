@@ -1,9 +1,6 @@
 import sys
-
 import wx
 from wx.lib.splitter import MultiSplitterWindow
-
-from reloadinstance import AutoReloader
 
 from magot.storage import *
 from magot.accountHierarchy import *
@@ -77,7 +74,7 @@ class MainFrame(wx.Frame):
             account = tree.GetPyData(item)
             
         win = AccountEditor(self, account, -1, size=wx.Size(500, 150), 
-            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+                            style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
         win.CenterOnScreen()
         if win.ShowModal() == wx.ID_OK:
             account.description = win.desc()
@@ -98,7 +95,18 @@ class MainFrame(wx.Frame):
             selectedEntry = self.nb.GetCurrentPage().GetSelectedEntry()
             if selectedEntry is not None:
                 oppositeEntry = selectedEntry.oppositeEntry
+                # jump to the other notebook
+                self.nb = self.getOtherNotebook()
                 self.nb.OpenAccount(oppositeEntry.account, oppositeEntry)
+
+    def isCurrentSelectionAnAccountLedger(self):
+        return not self.nb.GetCurrentPage() is self.nb.hierarchy
+
+    def getOtherNotebook(self):
+        if self.nb is self.nb1:
+            return self.nb2
+        if self.nb is self.nb2:
+            return self.nb1
 
     def isActionRefused(self):
         return self.isCurrentSelectionAnAccountLedger() and \
@@ -107,9 +115,6 @@ class MainFrame(wx.Frame):
     def bindMenuItemToHandler(self, menu, title, help, handler):
         item = menu.Append(-1, title, help)
         self.Bind(wx.EVT_MENU, handler, item)
-    
-    def isCurrentSelectionAnAccountLedger(self):
-        return not self.nb.GetCurrentPage() is self.nb.hierarchy
 
 
 class MultiSplitterPanel(wx.Panel):
@@ -123,33 +128,11 @@ class MultiSplitterPanel(wx.Panel):
         sizer.Add(self.splitter, 1, wx.EXPAND)
         self.SetSizer(sizer)
 
-        self.nb1 = parent.nb = AccountNotebook(self.splitter, accRoot, parent.ctx)
+        self.nb1 = parent.nb = parent.nb1 = AccountNotebook(self.splitter, accRoot, parent.ctx)
         self.splitter.AppendWindow(self.nb1, 340)
         
-        self.nb2 = AccountNotebook(self.splitter, accRoot, parent.ctx)
+        self.nb2 = parent.nb2 = AccountNotebook(self.splitter, accRoot, parent.ctx)
         self.splitter.AppendWindow(self.nb2, 340)
-
-        self.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED, self.OnChanged)
-        self.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGING, self.OnChanging)
-
-    def OnChanging(self, evt):
-        i = evt.GetSashIdx()
-        p = evt.GetSashPosition()
-        win1 = self.splitter.GetWindow(0)
-        win2 = self.splitter.GetWindow(1)
-        # This is one way to control the sash limits
-        #if evt.GetSashPosition() < 50:
-        #    evt.Veto()
-
-        # Or you can reset the sash position to whatever you want
-        #if evt.GetSashPosition() < 5:
-        #    evt.SetSashPosition(25)
-
-    def OnChanged(self, evt):
-        i = evt.GetSashIdx()
-        p = evt.GetSashPosition()
-        win1 = self.splitter.GetWindow(0)
-        win2 = self.splitter.GetWindow(1)
 
 
 class AccountEditor(wx.Dialog):
@@ -157,8 +140,8 @@ class AccountEditor(wx.Dialog):
     This class provides access to all the properties of an account.
     """
     
-    def __init__(self, parent, account, ID, pos=wx.DefaultPosition, 
-                 size=wx.DefaultSize, style=wx.DEFAULT_DIALOG_STYLE):
+    def __init__(self, parent, account, ID, pos=wx.DefaultPosition, size=wx.DefaultSize, 
+                 style=wx.DEFAULT_DIALOG_STYLE):
         wx.Dialog.__init__(self, parent, ID, account.name+" account details", pos, size, style)
         
         sizer = wx.BoxSizer(wx.VERTICAL)

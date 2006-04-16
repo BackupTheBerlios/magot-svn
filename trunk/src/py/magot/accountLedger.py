@@ -237,6 +237,7 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
         # TODO: not working perfectly
 ##        self.setResizeColumn(3) # description
 
+        self.mainFrame = self.GetParent().GetParent().GetParent().GetParent()
         self.ctx = parent.ctx
         self.account = account
         self.log = log
@@ -338,9 +339,19 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
             if not self.CheckTransactionModification():
                 return
         self.SelectRow(evt.GetRow())
+
+        if self.isNotebookChanged():
+            # todo deselect last page row
+            self.mainFrame.nb = self.GetParent()
+
         self.__enableEdit = 1
         evt.Skip()
 
+    def isNotebookChanged(self):
+        currentNotebook = self.GetParent()
+        lastNotebook = self.mainFrame.nb
+        return currentNotebook is not lastNotebook
+        
     def OnKeyDown(self, evt):
         if evt.KeyCode() != wx.WXK_RETURN or evt.ControlDown():
             evt.Skip()
