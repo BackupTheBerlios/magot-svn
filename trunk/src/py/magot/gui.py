@@ -1,5 +1,9 @@
 import sys
+
 import wx
+from wx.lib.splitter import MultiSplitterWindow
+
+from reloadinstance import AutoReloader
 
 from magot.storage import *
 from magot.accountHierarchy import *
@@ -9,8 +13,7 @@ from magot.accountLedger import *
 class MainFrame(wx.Frame):
 
     def __init__(self, parent, title, ctx):
-        wx.Frame.__init__(self, parent, -1, title, 
-                          pos=(150, 150), size=(1000, 500))
+        wx.Frame.__init__(self, parent, -1, title, pos=(150, 150), size=(1000, 1000))
         self.ctx = ctx
 
         menuFile = wx.Menu()
@@ -32,8 +35,8 @@ class MainFrame(wx.Frame):
         # begin one long transaction between each save
         storage.beginTransaction(self.ctx)
         self.accRoot = self.ctx.Accounts.root
-
-        self.nb = MainNotebook(self, -1, self.accRoot)
+        
+        self.sp = MultiSplitterPanel(self, self.accRoot)
 
         self.CreateStatusBar()
 
@@ -109,6 +112,46 @@ class MainFrame(wx.Frame):
         return not self.nb.GetCurrentPage() is self.nb.hierarchy
 
 
+class MultiSplitterPanel(wx.Panel):
+    
+    def __init__(self, parent, accRoot):
+        wx.Panel.__init__(self, parent, -1)
+
+        self.splitter = MultiSplitterWindow(self)
+        self.splitter.SetOrientation(wx.VERTICAL)
+        sizer = wx.BoxSizer(wx.HORIZONTAL)
+        sizer.Add(self.splitter, 1, wx.EXPAND)
+        self.SetSizer(sizer)
+
+        self.nb1 = parent.nb = AccountNotebook(self.splitter, accRoot, parent.ctx)
+        self.splitter.AppendWindow(self.nb1, 340)
+        
+        self.nb2 = AccountNotebook(self.splitter, accRoot, parent.ctx)
+        self.splitter.AppendWindow(self.nb2, 340)
+
+        self.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGED, self.OnChanged)
+        self.Bind(wx.EVT_SPLITTER_SASH_POS_CHANGING, self.OnChanging)
+
+    def OnChanging(self, evt):
+        i = evt.GetSashIdx()
+        p = evt.GetSashPosition()
+        win1 = self.splitter.GetWindow(0)
+        win2 = self.splitter.GetWindow(1)
+        # This is one way to control the sash limits
+        #if evt.GetSashPosition() < 50:
+        #    evt.Veto()
+
+        # Or you can reset the sash position to whatever you want
+        #if evt.GetSashPosition() < 5:
+        #    evt.SetSashPosition(25)
+
+    def OnChanged(self, evt):
+        i = evt.GetSashIdx()
+        p = evt.GetSashPosition()
+        win1 = self.splitter.GetWindow(0)
+        win2 = self.splitter.GetWindow(1)
+
+
 class AccountEditor(wx.Dialog):
     """ 
     This class provides access to all the properties of an account.
@@ -116,8 +159,7 @@ class AccountEditor(wx.Dialog):
     
     def __init__(self, parent, account, ID, pos=wx.DefaultPosition, 
                  size=wx.DefaultSize, style=wx.DEFAULT_DIALOG_STYLE):
-        wx.Dialog.__init__(self, parent, ID, account.name+" account details", 
-                           pos, size, style)
+        wx.Dialog.__init__(self, parent, ID, account.name+" account details", pos, size, style)
         
         sizer = wx.BoxSizer(wx.VERTICAL)
 
@@ -152,13 +194,13 @@ class AccountEditor(wx.Dialog):
         self.SetAutoLayout(True)
 
 
-class MainNotebook(wx.Notebook):
+class AccountNotebook(wx.Notebook):
     
-    def __init__(self, parent, id, accRoot):
+    def __init__(self, parent, accRoot, ctx, id=-1):
         # TODO: size=(21,21) is mandatory on windows ???
-        wx.Notebook.__init__(self, parent, id, size=(21,21), style=wx.NB_LEFT)
-        self.ctx = parent.ctx
+        wx.Notebook.__init__(self, parent, id, size=(21,21), style=wx.NB_TOP)
 
+        self.ctx = ctx
         self.hierarchy = AccountHierarchy(self, accRoot)
         self.hierarchy.Layout()
         self.AddPage(self.hierarchy, 'accounts')

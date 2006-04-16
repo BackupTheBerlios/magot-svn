@@ -250,6 +250,9 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
         # a reference to it and call it's Destroy method later.
         self.SetTable(table, True)
 
+        #self.SetDefaultCellFont(wx.Font(8, wx.ROMAN, wx.NORMAL, wx.NORMAL))
+        self.SetDefaultRowSize(20)
+        
         self.SetRowLabelSize(0)
         self.SetSelectionBackground(colourLemonChiffon)
         self.SetSelectionForeground("Black")
@@ -265,7 +268,7 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
         self.SetColSize(1, 50)
         
         # column description
-        self.SetColSize(2, 240)
+        self.SetColSize(2, 300)
         
         # column opposite account
         self.SetColSize(3, 230)
@@ -389,7 +392,7 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
             col = self.sortByCol
         self.GetTable().RefreshLedger(focusEntry=focusEntry, sync=sync, sortByCol=col)
 
-        colNb = self.GetNumberCols()
+        colNb = self.GetNumberCols() - 3  # 3 lasts have special renderer
         for oddrow in xrange(1, self.GetNumberRows(), 2):
             for col in xrange(colNb):
                 self.SetCellBackgroundColour(oddrow, col, colourWhiteSmoke)
