@@ -4,7 +4,7 @@ import wx.grid as gridlib
 
 from magot.guiutil import *
 from magot.refdata import *
-
+from magot.model2 import Entry
 
 def _getdata(col, entry):
     if col == 0:
@@ -163,7 +163,7 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
         entryIndex = self.data.index(entry)
         return entryIndex
 
-    def RefreshLedger(self, sortByCol=None, focusEntry=None, sync=True):
+    def RefreshModel(self, sortByCol=None, focusEntry=None, sync=True):
         if focusEntry is None:
             # try to get the current entry as focus
             focusEntry = self.GetView().GetSelectedEntry()
@@ -186,7 +186,7 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
         self.GetView().ProcessTableMessage(msg)
 
         # TODO: should really the model access the view ? is the model a controler ?
-        self.GetView().SetCursorOn(focusEntry)
+        #self.GetView().SetCursorOn(focusEntry)
 
     def Sort(self, byCol=0, descending=False, updateView=True):
         self.log.write("Sort() called on ledger "+self.account.name+
@@ -240,9 +240,10 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
         self.mainFrame = self.GetParent().GetParent().GetParent().GetParent()
         self.ctx = parent.ctx
         self.account = account
+        self.account.addCallback(self.RefreshView)
         self.log = log
         self.sortByCol = 0 # by entry date
-        
+
         self.CreateGrid(25, 25, gridlib.Grid.SelectRows)
         
         table = AccountLedgerModel(self, account, log)
@@ -372,7 +373,7 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
 
     def OnSort(self, evt):
         self.sortByCol = evt.GetCol()
-        self.Refresh(sync=False, sort=True)
+        self.RefreshView(sync=False, sort=True)
 ##        evt.Skip()
     
     def OnRangeSelect(self, evt):
@@ -397,11 +398,11 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
         self.SetGridCursor(row, 0)
         self.SelectRow(self.GetGridCursorRow())
 
-    def Refresh(self, focusEntry=None, sync=True, sort=True):
+    def RefreshView(self, source=None, event=None, focusEntry=None, sync=True, sort=True):
         col = None
         if sort:
             col = self.sortByCol
-        self.GetTable().RefreshLedger(focusEntry=focusEntry, sync=sync, sortByCol=col)
+        self.GetTable().RefreshModel(focusEntry=focusEntry, sync=sync, sortByCol=col)
 
         colNb = self.GetNumberCols() - 3  # 3 lasts have special renderer
         for oddrow in xrange(1, self.GetNumberRows(), 2):
@@ -428,10 +429,9 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
                 return False
             if toBeSaved == wx.ID_YES:
                 self.PostTransaction()
-                self.Refresh()
             elif toBeSaved == wx.ID_NO:
                 self.ReleaseEntryForModification()
-                self.Refresh(sort=False)
+                self.RefreshView(sort=False)
         return True
 
     def HasEntryBeenModified(self):

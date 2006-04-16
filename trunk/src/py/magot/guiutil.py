@@ -169,10 +169,7 @@ class DateCellEditor(gridlib.PyGridCellEditor):
         gridlib.PyGridCellEditor.__init__(self)
 
     def Create(self, parent, id, evtHandler):
-        """
-        Called to create the control, which must derive from wxControl.
-        *Must Override*
-        """
+        """ Called to create the control, which must derive from wxControl. """
         self.log.write("DateCellEditor: Create\n")
         self._tc = wx.DatePickerCtrl(parent, id, size=(120,-1),
                 style=wx.DP_DROPDOWN | wx.DP_SHOWCENTURY)
@@ -212,7 +209,6 @@ class DateCellEditor(gridlib.PyGridCellEditor):
         """
         Fetch the value from the table and prepare the edit control
         to begin editing.  Set the focus to the edit control.
-        *Must Override*
         """
         self.log.write("DateCellEditor: BeginEdit (%d,%d)\n" % (row, col))
         self.startValue = date2wxdate(grid.GetTable().GetValue(row, col))
@@ -223,7 +219,6 @@ class DateCellEditor(gridlib.PyGridCellEditor):
         """
         Complete the editing of the current cell. Returns True if the value
         has changed.  If necessary, the control may be destroyed.
-        *Must Override*
         """
         changed = False
         val = self._tc.GetValue()
@@ -239,7 +234,6 @@ class DateCellEditor(gridlib.PyGridCellEditor):
     def Reset(self):
         """
         Reset the value in the control back to its starting value.
-        *Must Override*
         """
         self.log.write("DateCellEditor: Reset\n")
         self._tc.SetValue(self.startValue)
@@ -298,19 +292,19 @@ class DateCellEditor(gridlib.PyGridCellEditor):
     def Clone(self):
         """
         Create a new object which is the copy of this one
-        *Must Override*
         """
         self.log.write("DateCellEditor: Clone\n")
         return DateCellEditor(self.log)
 
 
 class MoneyEditor(gridlib.PyGridCellEditor):
+
     def __init__(self):
         gridlib.PyGridCellEditor.__init__(self)
         
     def Create(self, parent, id, evtHandler):        
-        self._tc = masked.NumCtrl(parent, id, fractionWidth=2, 
-            autoSize=False, selectOnEntry=False, groupDigits=False)
+        self._tc = masked.NumCtrl(parent, id, fractionWidth=2, autoSize=False, 
+                                  selectOnEntry=False, groupDigits=False)
         self.SetControl(self._tc)
         if evtHandler:
             self._tc.PushEventHandler(evtHandler)
@@ -349,6 +343,7 @@ colourWhiteSmoke = wx.Colour(245, 245, 245)
 
 
 class MoneyRenderer(gridlib.PyGridCellRenderer):
+    
     def __init__(self):
         gridlib.PyGridCellRenderer.__init__(self)
         
@@ -386,13 +381,14 @@ class OppositeAccountEditor(gridlib.PyGridCellEditor):
         self.SetControl(self._tc)
         if evtHandler:
             self._tc.PushEventHandler(evtHandler)
+            evtHandler.SetEvtHandlerEnabled(False)
 
     def BeginEdit(self, row, col, grid):
         """ Fetch the value from the table and prepare the edit control
         to begin editing. Set the focus to the edit control.
         """
-        self.log.write("OppositeAccountEditor:BeginEdit (%d,%d)\n" % (row, col))
         self.oldOppositeAcc = grid.GetTable().GetValue(row, col)
+        self.log.write("OppositeAccountEditor:BeginEdit %s\n" % (self.oldOppositeAcc.name))
         self.accPathPairs = self._getAccountPathPairs()
         self._tc.Clear()
         for acc, path in self.accPathPairs:
@@ -405,9 +401,9 @@ class OppositeAccountEditor(gridlib.PyGridCellEditor):
         """ Complete the editing of the current cell. 
         Returns true if the value has changed.
         """
-        self.log.write("OppositeAccountEditor:EndEdit (%d,%d)\n" % (row, col))
-        changed = False
         selectedAcc = self._tc.GetClientData(self._tc.GetSelection())
+        self.log.write("OppositeAccountEditor:EndEdit %s\n" % (selectedAcc.name))
+        changed = False
 
         if not selectedAcc is self.oldOppositeAcc:
             changed = True
@@ -419,8 +415,8 @@ class OppositeAccountEditor(gridlib.PyGridCellEditor):
         If you don't fill the cell (the rect) then be sure to override
         PaintBackground and do something meaningful there.
         """
-        self._tc.SetDimensions(rect.x, rect.y, rect.width+4, rect.height+4,
-                               wx.SIZE_ALLOW_MINUS_ONE)
+        self.log.write("OppositeAccountEditor:SetSize\n")
+        self._tc.SetDimensions(rect.x, rect.y, rect.width+4, rect.height+4, wx.SIZE_ALLOW_MINUS_ONE)
 
     def Reset(self):
         """ Reset the value in the control back to its starting value. """

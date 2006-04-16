@@ -102,7 +102,7 @@ class Entry(model.Element):
     def __setstate__(self, dict):
         """ Restore state from pickleable content. """
         self.__dict__ = dict
-        Entry.amount.addCallback(self, self.account.emptyBalanceCacheCallback)
+        Entry.amount.addCallback(self, self.account.entryChangedCallback)
 
     def __getstate__(self):
         """ Purge state for pickleable content. """
@@ -152,13 +152,12 @@ class Entry(model.Element):
             return entry.siblings[0]
 
     def __init__(self, type, transaction, account=None, amount=0):
-        super(Entry, self).__init__(type=type, amount=amount, 
-                                    transaction=transaction)
+        super(Entry, self).__init__(type=type, amount=amount, transaction=transaction)
         account.addEntry(self)
-        Entry.amount.addCallback(self, account.emptyBalanceCacheCallback)
+        Entry.amount.addCallback(self, account.entryChangedCallback)
 
     def __str__(self):
-        return "%s\t%s\t%s\t%s" % (str(self.date), str(self.type),
+        return "%s\t%s\t%s\t%s" % (str(self.date), str(self.type), 
                                    str(self.amount), str(self.balance))
     def _changeType(self):
         if self.type == MovementType.CREDIT:
@@ -166,12 +165,13 @@ class Entry(model.Element):
         else:
             self.type = MovementType.CREDIT
         
-    def _update(self, account=None, type=None, amount=None, desc=None, 
-               isReconciled=None):
+    def _update(self, account=None, type=None, amount=None, desc=None, isReconciled=None):
         """ Update entry  attributes. """
         if account is not None:
-            self.account.removeEntry(self)
+            oldAccount = self.account
+            oldAccount.removeEntry(self)
             account.addEntry(self)
+            oldAccount.changedEvent.send(None)
         if type is not None:
             self._changeType()
             self.oppositeEntry._changeType()
@@ -239,12 +239,12 @@ class RootAccount(model.Element):
 
 class Account(RootAccount):
     
-    source = events.Broadcaster()
+    hierarchyChanged = events.Broadcaster()
     
     class type(model.Attribute):
         """ debit or credit. """
         referencedType = MovementType
-##        isChangeable = False
+#        isChangeable = False
         # todo isChangeable = False ???
         # how to initialize unchangeable feature ?
         # todo derived from parent if not set?
@@ -287,22 +287,30 @@ class Account(RootAccount):
              # todo true formula
             return DateRange(date(2006, 4, 3), date(2006, 4, 4))
 
-    def emptyBalanceCacheCallback(self, source, event):
+    def entryChangedCallback(self, source, event):
         self.unsetBalance()
         for entry in self.entries:
             entry.unsetBalance()
-            
-        # notify any views that account balances have changed
-        #Account.source.send(self.name)
 
     def __init__(self, parent, name=None, type=None, description=''):
         super(Account, self).__init__(name, description)
         assert parent is not None
         self.parent = parent
+        self.changedEvent = events.Broadcaster()
         if type is None:
             self.type = self.parent.type
         else:
             self.type = type
+
+    def __setstate__(self, dict):
+        """ Restore state from pickleable content. """
+        self.__dict__ = dict
+        self.changedEvent = events.Broadcaster()
+
+    def __getstate__(self):
+        """ Purge state for pickleable content. """
+        del self.changedEvent
+        return self.__dict__
 
     def __repr__(self):
         # todo better formatted repr
@@ -324,6 +332,9 @@ class Account(RootAccount):
             return Transaction(date, 'initial balance', self, equity, amount)
         else:
             return Transaction(date, 'initial balance', equity, self, amount)    
+
+    def addCallback(self, callback):
+        return events.subscribe(self.changedEvent, callback)
 
 
 class Transaction(model.Element):
@@ -375,34 +386,28 @@ class Transaction(model.Element):
             self._addDebitEntry(debit, amount)
             self._addCreditEntry(credit, amount)
 
-    def post(self, *entries):
+    def post(self, *modifiedEntries):
         """ Always use this method to post a transaction. """        
         # todo split
-        entry = entries[0]
+        entry = modifiedEntries[0]
 
-        Account.source.disable()
-        
         # modifications on tx attributes
-        self._update(
-            date=entry.getModifiedAttr('date'),
-            nb=entry.getModifiedAttr('number'),
-            desc=entry.getModifiedAttr('description'),
-            amount=entry.getModifiedAttr('amount'))
+        self._update(date=entry.getModifiedAttr('date'),
+                     nb=entry.getModifiedAttr('number'),
+                     desc=entry.getModifiedAttr('description'),
+                     amount=entry.getModifiedAttr('amount'))
 
         # modifications on entry attributes
-        entry._update(
-            isReconciled=entry.getModifiedAttr('isReconciled'),
-            type=entry.getModifiedAttr('type'))
+        entry._update(isReconciled=entry.getModifiedAttr('isReconciled'),
+                      type=entry.getModifiedAttr('type'))
 
         # modifications on the opposite entry attributes
-        entry.oppositeEntry._update(
-            account=entry.getModifiedAttr('oppositeAccount'))
-        
-        # @todo : don't send event before all model changes are done
-        Account.source.send(None)
-        
-        Account.source.enable()
-        
+        entry.oppositeEntry._update(account=entry.getModifiedAttr('oppositeAccount'))
+
+        Account.hierarchyChanged.send(None)
+        for e in self.entries:
+            e.account.changedEvent.send(None)
+
     def _addDebitEntry(self, account, amount):        
         return Entry(MovementType.DEBIT, self, account, amount)
 
