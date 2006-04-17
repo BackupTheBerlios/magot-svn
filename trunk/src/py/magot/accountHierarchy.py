@@ -315,8 +315,7 @@ class AccountHierarchy(wx.Panel):
         self.tree.SortChildren(node)
 
     def createAndAppendAccount(self, parent, account):
-        child = self.tree.AppendItem(parent, account.name, 
-                                     self.fldridx, self.fldropenidx)
+        child = self.tree.AppendItem(parent, account.name, self.fldridx, self.fldropenidx)
         self.tree.SetPyData(child, account)
         self.tree.SetItemText(child, account.description, 1)
         self.tree.SetItemText(child, str(account.balance), 2)

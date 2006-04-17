@@ -72,43 +72,21 @@ class Entry(model.Element):
         # todo type is a reserved key choose another one
         referencedType = MovementType
 
+        def _onLink(feature, element, item, posn=None):
+            element.account.balanceChanged.set(True)
+
     class amount(model.Attribute):
         referencedType = Money
 
-        def delSource(feature, element):
-            key = feature.attrName+'__event'
-            try:
-                del element.__dict__[key]
-            except KeyError:
-                pass
-            
-        def getSource(feature, element):
-            key = feature.attrName+'__event'
-            try:
-                source = element.__dict__[key]
-                return source
-            except KeyError:
-                source = element.__dict__.setdefault(key, events.Value())
-                return source
-
         def _onLink(feature, element, item, posn=None):
-            source = feature.getSource(element)
-            source.set(item)
+            element.account.balanceChanged.set(True)
 
-        def addCallback(feature, element, callback):
-            source = feature.getSource(element)
-            return events.subscribe(source, callback)
-     
-    def __setstate__(self, dict):
-        """ Restore state from pickleable content. """
-        self.__dict__ = dict
-        Entry.amount.addCallback(self, self.account.entryChangedCallback)
+    class date(model.DerivedFeature):
+        referencedType = Date
 
-    def __getstate__(self):
-        """ Purge state for pickleable content. """
-        Entry.amount.delSource(self)      
-        return self.__dict__
-    
+        def get(feature, element):
+            return element.transaction.date
+
     class account(model.Attribute):
         #referencedType = Account
         referencedEnd = 'entries'
@@ -122,14 +100,14 @@ class Entry(model.Element):
         referencedType = model.Boolean
         defaultValue = False
 
-    class balance(model.Attribute):
-        """ Account balance at the entry update/insert date. """
-        referencedType = Money        
-
-    class date(model.DerivedFeature):
-        referencedType = Date        
-        def get(self, entry):
-            return entry.transaction.date
+    class balance(DerivedAndCached):
+        """ Account balance at the current date of this entry. """
+        referencedType = Money
+        
+        def compute(feature, element):
+            # entry balance is computed by calling account.balance
+            b = element.account.balance
+            return feature.get(element)
 
     class number(model.DerivedFeature):
         referencedType = model.Integer        
@@ -151,10 +129,11 @@ class Entry(model.Element):
         def get(self, entry):
             return entry.siblings[0]
 
-    def __init__(self, type, transaction, account=None, amount=0):
-        super(Entry, self).__init__(type=type, amount=amount, transaction=transaction)
+    def __init__(self, type, transaction, account, amount=0):
+        super(Entry, self).__init__(transaction=transaction)
         account.addEntry(self)
-        Entry.amount.addCallback(self, account.entryChangedCallback)
+        self.amount = amount
+        self.type = type
 
     def __str__(self):
         return "%s\t%s\t%s\t%s" % (str(self.date), str(self.type), 
@@ -171,7 +150,9 @@ class Entry(model.Element):
             oldAccount = self.account
             oldAccount.removeEntry(self)
             account.addEntry(self)
-            oldAccount.changedEvent.send(None)
+            # Notify that old and new account have their balances changed.
+            account.balanceChanged.set(True)
+            oldAccount.balanceChanged.set(True)
         if type is not None:
             self._changeType()
             self.oppositeEntry._changeType()
@@ -287,16 +268,23 @@ class Account(RootAccount):
              # todo true formula
             return DateRange(date(2006, 4, 3), date(2006, 4, 4))
 
-    def entryChangedCallback(self, source, event):
+    class balanceChanged(model.Attribute):
+        referencedType = events.Condition
+
+    def balanceChangedCallback(self, source, event):
+        # Unset all balances for this account is sufficient to recompute them on demand.
         self.unsetBalance()
         for entry in self.entries:
             entry.unsetBalance()
+
+        self.changedEvent.send(None)
 
     def __init__(self, parent, name=None, type=None, description=''):
         super(Account, self).__init__(name, description)
         assert parent is not None
         self.parent = parent
         self.changedEvent = events.Broadcaster()
+        self.balanceChanged = events.Condition(False)
         if type is None:
             self.type = self.parent.type
         else:
@@ -306,10 +294,15 @@ class Account(RootAccount):
         """ Restore state from pickleable content. """
         self.__dict__ = dict
         self.changedEvent = events.Broadcaster()
+        self.balanceChanged = events.Condition(False)
 
     def __getstate__(self):
         """ Purge state for pickleable content. """
-        del self.changedEvent
+        try:
+            del self.changedEvent
+        except:
+            pass
+        del self.balanceChanged
         return self.__dict__
 
     def __repr__(self):
@@ -332,9 +325,6 @@ class Account(RootAccount):
             return Transaction(date, 'initial balance', self, equity, amount)
         else:
             return Transaction(date, 'initial balance', equity, self, amount)    
-
-    def addCallback(self, callback):
-        return events.subscribe(self.changedEvent, callback)
 
 
 class Transaction(model.Element):
@@ -391,6 +381,18 @@ class Transaction(model.Element):
         # todo split
         entry = modifiedEntries[0]
 
+        accounts = set(e.account for e in self.entries)
+        
+        newOppositeAccount = entry.getModifiedAttr('oppositeAccount')
+        if newOppositeAccount:
+            accounts.add(newOppositeAccount)
+        
+        for acc in accounts:
+            source = acc.balanceChanged
+            source.set(False)
+            source.disable()
+            source.addCallback(acc.balanceChangedCallback)
+
         # modifications on tx attributes
         self._update(date=entry.getModifiedAttr('date'),
                      nb=entry.getModifiedAttr('number'),
@@ -402,11 +404,14 @@ class Transaction(model.Element):
                       type=entry.getModifiedAttr('type'))
 
         # modifications on the opposite entry attributes
-        entry.oppositeEntry._update(account=entry.getModifiedAttr('oppositeAccount'))
+        entry.oppositeEntry._update(account=newOppositeAccount)
 
+        for acc in accounts:
+            # recompute balance if date, amount, type or opposite account have changed.
+            acc.balanceChanged.enable()
+
+        # todo send this event only once if any account balance has changed.
         Account.hierarchyChanged.send(None)
-        for e in self.entries:
-            e.account.changedEvent.send(None)
 
     def _addDebitEntry(self, account, amount):        
         return Entry(MovementType.DEBIT, self, account, amount)
@@ -417,11 +422,13 @@ class Transaction(model.Element):
     def _update(self, date=None, nb=None, desc=None, amount=None):
         """ Always use this method to post a transaction. """
         if date is not None:
+            assert self.date != date
             self.date = date
             for e in self.entries:
                 account = e.account
                 account.removeEntry(e)
                 account.addEntry(e)
+                account.balanceChanged.set(True)
         if nb is not None:
             self.number = nb
         if desc is not None:

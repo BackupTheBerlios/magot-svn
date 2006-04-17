@@ -171,12 +171,13 @@ class DateCellEditor(gridlib.PyGridCellEditor):
     def Create(self, parent, id, evtHandler):
         """ Called to create the control, which must derive from wxControl. """
         self.log.write("DateCellEditor: Create\n")
-        self._tc = wx.DatePickerCtrl(parent, id, size=(120,-1),
-                style=wx.DP_DROPDOWN | wx.DP_SHOWCENTURY)
+        self._tc = wx.DatePickerCtrl(parent, id, size=(120,-1), 
+                                     style=wx.DP_DROPDOWN|wx.DP_SHOWCENTURY)
         self.SetControl(self._tc)
         
         if evtHandler:
             self._tc.PushEventHandler(evtHandler)
+            evtHandler.SetEvtHandlerEnabled(False)
 
     def SetSize(self, rect):
         """
@@ -185,8 +186,7 @@ class DateCellEditor(gridlib.PyGridCellEditor):
         PaintBackground and do something meaningful there.
         """
         self.log.write("DateCellEditor: SetSize %s\n" % rect)
-        self._tc.SetDimensions(rect.x, rect.y, rect.width+2, rect.height+2,
-                               wx.SIZE_ALLOW_MINUS_ONE)
+        self._tc.SetDimensions(rect.x, rect.y, rect.width+2, rect.height+2, wx.SIZE_ALLOW_MINUS_ONE)
 
     def Show(self, show, attr):
         """
@@ -210,8 +210,8 @@ class DateCellEditor(gridlib.PyGridCellEditor):
         Fetch the value from the table and prepare the edit control
         to begin editing.  Set the focus to the edit control.
         """
-        self.log.write("DateCellEditor: BeginEdit (%d,%d)\n" % (row, col))
         self.startValue = date2wxdate(grid.GetTable().GetValue(row, col))
+        self.log.write("DateCellEditor: BeginEdit (%d,%d) %s\n" % (row, col, self.startValue))
         self._tc.SetValue(self.startValue)
         self._tc.SetFocus()
 
@@ -221,14 +221,14 @@ class DateCellEditor(gridlib.PyGridCellEditor):
         has changed.  If necessary, the control may be destroyed.
         """
         changed = False
-        val = self._tc.GetValue()
-        
+        val = self._tc.GetValue()      
+        newvalue = wxdate2date(val)
+
         if val != self.startValue:
             changed = True
-            grid.GetTable().SetValue(row, col, wxdate2date(val))
+            grid.GetTable().SetValue(row, col, newvalue)
 
-        self.log.write("DateCellEditor: EndEdit (%d,%d) return %s\n" %
-                        (row, col, changed))
+        self.log.write("DateCellEditor: EndEdit (%d,%d) %s\n" % (row, col, newvalue))
         return changed
 
     def Reset(self):
@@ -244,13 +244,11 @@ class DateCellEditor(gridlib.PyGridCellEditor):
         version only checks that the event has no modifiers.  F2 is special
         and will always start the editor.
         """
-        self.log.write("DateCellEditor: IsAcceptedKey: %d\n" % 
-                        (evt.GetKeyCode()))
+        self.log.write("DateCellEditor: IsAcceptedKey: %d\n" % (evt.GetKeyCode()))
 
         ## Oops, there's a bug here, we'll have to do it ourself..
         ##return self.base_IsAcceptedKey(evt)
-        return (not (evt.ControlDown() or evt.AltDown()) and
-                evt.GetKeyCode() != wx.WXK_SHIFT)
+        return (not (evt.ControlDown() or evt.AltDown()) and evt.GetKeyCode() != wx.WXK_SHIFT)
 
     def StartingKey(self, evt):
         """
@@ -415,7 +413,6 @@ class OppositeAccountEditor(gridlib.PyGridCellEditor):
         If you don't fill the cell (the rect) then be sure to override
         PaintBackground and do something meaningful there.
         """
-        self.log.write("OppositeAccountEditor:SetSize\n")
         self._tc.SetDimensions(rect.x, rect.y, rect.width+4, rect.height+4, wx.SIZE_ALLOW_MINUS_ONE)
 
     def Reset(self):

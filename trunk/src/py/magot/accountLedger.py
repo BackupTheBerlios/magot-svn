@@ -172,7 +172,7 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
         if focusEntry is None:
             msg += " with no focus.\n"
         else:
-            msg += " with focus on entry "+focusEntry.description+"\n"
+            msg += " with focus on entry '"+focusEntry.description+"'\n"
         self.log.write(msg)
         
         if sync:
@@ -181,16 +181,14 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
         if sortByCol is not None:
             self.Sort(updateView=False, byCol=sortByCol)
         
-        msg = wx.grid.GridTableMessage(
-            self, wx.grid.GRIDTABLE_REQUEST_VIEW_GET_VALUES)
+        msg = wx.grid.GridTableMessage(self, wx.grid.GRIDTABLE_REQUEST_VIEW_GET_VALUES)
         self.GetView().ProcessTableMessage(msg)
 
         # TODO: should really the model access the view ? is the model a controler ?
         #self.GetView().SetCursorOn(focusEntry)
 
     def Sort(self, byCol=0, descending=False, updateView=True):
-        self.log.write("Sort() called on ledger "+self.account.name+
-                       " on column "+str(byCol)+"\n")
+        self.log.write("Sort() called on ledger %s, column %d\n" % (self.account.name, byCol))
         
         if self.GetNumberRows() < 2:
             return
@@ -206,8 +204,7 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
             self.data.sort(key=keyColumn(byCol), reverse=descending)
 
         if updateView:
-            msg = wx.grid.GridTableMessage(
-                self, wx.grid.GRIDTABLE_REQUEST_VIEW_GET_VALUES)
+            msg = wx.grid.GridTableMessage(self, wx.grid.GRIDTABLE_REQUEST_VIEW_GET_VALUES)
             self.GetView().ProcessTableMessage(msg)
 
     def _syncModelAgainstAccount(self):
@@ -217,13 +214,12 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
         ln = len(self.data)
         if lo != ln:
             if ln > lo:
-                msg = wx.grid.GridTableMessage(self, 
-                    wx.grid.GRIDTABLE_NOTIFY_ROWS_APPENDED, ln-lo)
+                msg = wx.grid.GridTableMessage(self, wx.grid.GRIDTABLE_NOTIFY_ROWS_APPENDED, ln-lo)
             elif lo > ln:
-                msg = wx.grid.GridTableMessage(self, 
-                    wx.grid.GRIDTABLE_NOTIFY_ROWS_DELETED, 0, lo-ln)
+                msg = wx.grid.GridTableMessage(self, wx.grid.GRIDTABLE_NOTIFY_ROWS_DELETED, 0, lo-ln)
         else:
             msg = None
+
         if msg is not None:
             self.GetView().ProcessTableMessage(msg)
 
@@ -240,7 +236,7 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
         self.mainFrame = self.GetParent().GetParent().GetParent().GetParent()
         self.ctx = parent.ctx
         self.account = account
-        self.account.addCallback(self.RefreshView)
+        events.subscribe(self.account.changedEvent, self.RefreshView)
         self.log = log
         self.sortByCol = 0 # by entry date
 
@@ -404,10 +400,17 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
             col = self.sortByCol
         self.GetTable().RefreshModel(focusEntry=focusEntry, sync=sync, sortByCol=col)
 
-        colNb = self.GetNumberCols() - 3  # 3 lasts have special renderer
-        for oddrow in xrange(1, self.GetNumberRows(), 2):
-            for col in xrange(colNb):
-                self.SetCellBackgroundColour(oddrow, col, colourWhiteSmoke)
+        # 3 last columns have special renderers. So no need to set colours for them here.
+        self.setAlternateColours(self.GetNumberRows(), self.GetNumberCols() - 3)
+
+    def setAlternateColours(self, rowNb, colNb):
+        def setCellColour(firstCol, rowNb, colNb, colour):
+            setCellColour = self.SetCellBackgroundColour
+            for row in xrange(firstCol, rowNb, 2):
+                for col in xrange(colNb):
+                    setCellColour(row, col, colour)
+        setCellColour(0, rowNb, colNb, "White")
+        setCellColour(1, rowNb, colNb, colourWhiteSmoke)
 
     def CheckTransactionModification(self, askConfirmation=True):
         """ Return True if we can can pursue the flow. False else. 
@@ -417,10 +420,8 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
         if self.HasEntryBeenModified():
             toBeSaved = wx.ID_YES 
             if askConfirmation:
-                dlg = wx.MessageDialog(self, 
-                    'Do you want to save entry modifications?', 'Question',
-                    wx.YES_NO | wx.CANCEL | wx.ICON_QUESTION | wx.STAY_ON_TOP
-                )
+                dlg = wx.MessageDialog(self, 'Do you want to save entry modifications?', 
+                     'Question',wx.YES_NO | wx.CANCEL | wx.ICON_QUESTION | wx.STAY_ON_TOP)
                 toBeSaved = dlg.ShowModal()
                 dlg.Destroy()
 
@@ -458,5 +459,6 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
         self.ReleaseEntryForModification()
         
         # modifications OK, so replace in the model the proxy by the entry
-        self.GetTable().SetEntry(self.GetGridCursorRow(), original)
+        # todo not needed?
+        #self.GetTable().SetEntry(row, original) 
         return original
