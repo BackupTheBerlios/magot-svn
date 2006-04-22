@@ -1,11 +1,15 @@
 """ Domain model for basic accounting. Version2. """
 
-from peak.api import *
-from magot.refdata import *
 import datetime
 
+from peak.model import elements, features, datatypes
+from peak.events import sources
+from peak.binding import components
 
-class DerivedAndCached(model.Attribute):
+from magot.refdata import *
+
+
+class DerivedAndCached(features.Attribute):
     """ Value is computed only if it's not locally set. """
 
     def get(feature, element):
@@ -51,10 +55,10 @@ class Proxy(object):
         return self._obj
 
 
-class Entry(model.Element):
+class Entry(elements.Element):
 
-    class description(model.Attribute):
-        referencedType = model.String
+    class description(features.Attribute):
+        referencedType = datatypes.String
         defaultValue = ''
         def get(self, entry):
             if not entry.transaction.isSplit:
@@ -68,63 +72,63 @@ class Entry(model.Element):
             else:
                 self = value
 
-    class type(model.Attribute):
+    class type(features.Attribute):
         # todo type is a reserved key choose another one
         referencedType = MovementType
 
-        def _onLink(feature, element, item, posn=None):
-            element.account.balanceChanged.set(True)
+        def _onLink(self, entry, item, posn):
+            entry.account.balanceChanged = True
 
-    class amount(model.Attribute):
+    class amount(features.Attribute):
         referencedType = Money
 
-        def _onLink(feature, element, item, posn=None):
-            element.account.balanceChanged.set(True)
+        def _onLink(self, entry, item, posn):
+            entry.account.balanceChanged = True
 
-    class date(model.DerivedFeature):
+    class date(features.DerivedFeature):
         referencedType = Date
 
         def get(feature, element):
             return element.transaction.date
 
-    class account(model.Attribute):
-        #referencedType = Account
+    class account(features.Attribute):
+        referencedType = 'Account'
         referencedEnd = 'entries'
 
-    class transaction(model.Attribute):
-        #referencedType = Transaction
+    class transaction(features.Attribute):
+        referencedType = 'Transaction'
         referencedEnd = 'entries'
         # todo isChangeable = False ???
 
-    class isReconciled(model.Attribute):
-        referencedType = model.Boolean
+    class isReconciled(features.Attribute):
+        referencedType = datatypes.Boolean
         defaultValue = False
 
     class balance(DerivedAndCached):
-        """ Account balance at the current date of this entry. """
+        """ Account balance after the addition of this entry in the account. """
         referencedType = Money
-        
-        def compute(feature, element):
-            # entry balance is computed by calling account.balance
-            b = element.account.balance
-            return feature.get(element)
 
-    class number(model.DerivedFeature):
-        referencedType = model.Integer        
+        def compute(self, entry):
+            # Entry balance is set by calling account.balance if not already set.
+            entry.account.balance
+            return self.get(entry)
+
+    class number(features.DerivedFeature):
+        referencedType = datatypes.Integer        
         def get(self, entry):
             if hasattr(entry.transaction, 'number'):
                 return entry.transaction.number
             else:
                 return None
 
-    class siblings(model.DerivedFeature):
+    class siblings(features.DerivedFeature):
         """ List of other entries contained in the same transaction. """        
         def get(self, entry):
             entries = list(entry.transaction.entries)
             entries.remove(entry)
             return entries
 
-    class oppositeEntry(model.DerivedFeature):
+    class oppositeEntry(features.DerivedFeature):
         """ The first sibling entry contained in the same transaction. """        
         def get(self, entry):
             return entry.siblings[0]
@@ -147,12 +151,8 @@ class Entry(model.Element):
     def _update(self, account=None, type=None, amount=None, desc=None, isReconciled=None):
         """ Update entry  attributes. """
         if account is not None:
-            oldAccount = self.account
-            oldAccount.removeEntry(self)
+            self.account.removeEntry(self)
             account.addEntry(self)
-            # Notify that old and new account have their balances changed.
-            account.balanceChanged.set(True)
-            oldAccount.balanceChanged.set(True)
         if type is not None:
             self._changeType()
             self.oppositeEntry._changeType()
@@ -165,13 +165,18 @@ class Entry(model.Element):
   
     def getProxy(self):
         return Proxy(self)
-        
+
 
 class AccountAttribute(DerivedAndCached):
-    """ Derived account attribute from local entries plus sub-account attributes."""
-    
+    """ Derived attribute from owner account entries plus all sub-account entries.
+        Sub-classes must define getOriginalEntryField and setDerivedEntryField methods.
+        Default period is NONE i.e. this attribute is computed over all account entries.
+    """
+
     def compute(self, account):
-        totalValue = self.localValue(account)
+        # todo cache this computed local value?
+        totalValue = self.__computeLocalValue(account)
+
         for subAccount in account.subAccounts:
             totalValue += self.get(subAccount)
         return totalValue
@@ -179,33 +184,39 @@ class AccountAttribute(DerivedAndCached):
     def getPeriod(self):
         return None
 
-    def localValue(self, account):
+    def _onUnlink(self, account, item, posn):
+        """ Unset this attribute on all parent accounts so that they can be recomputed. """
+        parent = account.parent
+        while parent and isinstance(parent, Account):
+            self.unset(parent)
+            parent = parent.parent
+
+    def __computeLocalValue(self, account):
         entries = account.entries
         period = self.getPeriod()
-        if period is not None:
+        if period:
             entries = (e for e in entries if period.contains(e.date))
-        
+
         result = Money.Zero
         for entry in entries:
-            result += self.getSignedValue(self.getField(entry), entry.type)
-            entry.balance = self.getSignedValue(result, account.type)
-        
-        return self.getSignedValue(result, account.type)
+            if account.type is entry.type:
+                result += self.getOriginalEntryField(entry)
+            else:
+                result -= self.getOriginalEntryField(entry)
+            # Set derived field for this entry.
+            if self.setDerivedEntryField:
+                self.setDerivedEntryField(entry, result)
+        return result
 
-    def getSignedValue(self, value, movementType):
-        if movementType is MovementType.DEBIT:
-            return value
-        else:
-            return -value
 
-class RootAccount(model.Element):
+class RootAccount(elements.Element):
     """ Root Account without parent and entries. """
 
-    class name(model.Attribute):
-        referencedType = model.String
+    class name(features.Attribute):
+        referencedType = datatypes.String
 
-    class description(model.Attribute):
-        referencedType = model.String
+    class description(features.Attribute):
+        referencedType = datatypes.String
         defaultValue = ''
 
     class subAccounts(model.Collection):
@@ -220,9 +231,9 @@ class RootAccount(model.Element):
 
 class Account(RootAccount):
     
-    hierarchyChanged = events.Broadcaster()
+    hierarchyChanged = sources.Broadcaster()
     
-    class type(model.Attribute):
+    class type(features.Attribute):
         """ debit or credit. """
         referencedType = MovementType
 #        isChangeable = False
@@ -230,17 +241,17 @@ class Account(RootAccount):
         # how to initialize unchangeable feature ?
         # todo derived from parent if not set?
 
-    class commodity(model.Attribute):
+    class commodity(features.Attribute):
         referencedType = Currency
         defaultValue = Currency.EUR
         # todo derived from parent if not set?
 
-    class parent(model.Attribute):
+    class parent(features.Attribute):
         referencedType = 'RootAccount'
         referencedEnd = 'subAccounts'
         defaultValue = None
 
-    class entries(model.Sequence):
+    class entries(features.Sequence):
         """ Ordered by entry date. """
         referencedType = 'Entry'
         referencedEnd = 'account'
@@ -250,41 +261,42 @@ class Account(RootAccount):
             date = entry.date
             positions = [i for i,e in enumerate(account.entries) if e.date <= date]
             self._notifyLink(account, entry, len(positions))
-   
+            
+        def _onLink(self, account, entry, posn):
+            account.balanceChanged = True
+    
+        def _onUnlink(self, account, entry, posn):
+            account.balanceChanged = True
+
     class balance(AccountAttribute):
-        """ Total amount of all entries (local & sub-accounts). No period. """       
-        getField = Entry.amount.get
+        """ Sum of entry amounts (owned by current account & all sub-accounts). No period. """
+        getOriginalEntryField = Entry.amount.get
+        setDerivedEntryField = Entry.balance.set
 
-        def _onUnlink(self, account, item, posn):
-            parent = account.parent
-            while parent and isinstance(parent, Account):
-                # @todo just unset local parent balance?
-                self.unset(parent)
-                parent = parent.parent
-
-    class balanceMTD(balance):
-        """ Balance since start of the current Month. """
+    class balanceYTD(balance):
+        """ Year To Date balance. """
+        setDerivedEntryField = None
         def getPeriod(self):
-             # todo true formula
-            return DateRange(date(2006, 4, 3), date(2006, 4, 4))
+            # todo true formula
+            return DateRange(date(2006, 1, 1), date.today())
 
-    class balanceChanged(model.Attribute):
-        referencedType = events.Condition
+    class balanceChanged(features.Attribute):
+        referencedType = datatypes.Boolean
 
-    def balanceChangedCallback(self, source, event):
-        # Unset all balances for this account is sufficient to recompute them on demand.
-        self.unsetBalance()
-        for entry in self.entries:
-            entry.unsetBalance()
-
-        self.changedEvent.send(None)
+        def notify(self, account):
+            if self.get(account):
+                # Unset all entry/account balances is sufficient to recompute them on demand.
+                account.unsetBalance()
+                account.unsetBalanceYTD()
+                for entry in account.entries:
+                    entry.unsetBalance()
+                account.changedEvent.send(None)
 
     def __init__(self, parent, name=None, type=None, description=''):
         super(Account, self).__init__(name, description)
         assert parent is not None
         self.parent = parent
-        self.changedEvent = events.Broadcaster()
-        self.balanceChanged = events.Condition(False)
+        self.changedEvent = sources.Broadcaster()
         if type is None:
             self.type = self.parent.type
         else:
@@ -293,8 +305,7 @@ class Account(RootAccount):
     def __setstate__(self, dict):
         """ Restore state from pickleable content. """
         self.__dict__ = dict
-        self.changedEvent = events.Broadcaster()
-        self.balanceChanged = events.Condition(False)
+        self.changedEvent = sources.Broadcaster()
 
     def __getstate__(self):
         """ Purge state for pickleable content. """
@@ -302,7 +313,6 @@ class Account(RootAccount):
             del self.changedEvent
         except:
             pass
-        del self.balanceChanged
         return self.__dict__
 
     def __repr__(self):
@@ -327,16 +337,16 @@ class Account(RootAccount):
             return Transaction(date, 'initial balance', equity, self, amount)    
 
 
-class Transaction(model.Element):
+class Transaction(elements.Element):
 
-    class date(model.Attribute):
+    class date(features.Attribute):
         referencedType = Date
 
-    class number(model.Attribute):
-        referencedType = model.Integer
+    class number(features.Attribute):
+        referencedType = datatypes.Integer
 
-    class description(model.Attribute):
-        referencedType = model.String
+    class description(features.Attribute):
+        referencedType = datatypes.String
         defaultValue = ''
 
     class entries(model.Collection):
@@ -344,14 +354,14 @@ class Transaction(model.Element):
         referencedEnd = 'transaction'
         singularName = 'entry'
 
-    class isSplit(model.DerivedFeature):
-        referencedType = model.Boolean
+    class isSplit(features.DerivedFeature):
+        referencedType = datatypes.Boolean
         
         def get(self, transaction):
             return len(transaction.entries) > 2
 
-    class isBalanced(model.DerivedFeature):
-        referencedType = model.Boolean
+    class isBalanced(features.DerivedFeature):
+        referencedType = datatypes.Boolean
 
         def get(self, transaction):
             debit = credit = Money.Zero
@@ -387,11 +397,8 @@ class Transaction(model.Element):
         if newOppositeAccount:
             accounts.add(newOppositeAccount)
         
-        for acc in accounts:
-            source = acc.balanceChanged
-            source.set(False)
-            source.disable()
-            source.addCallback(acc.balanceChangedCallback)
+        for account in accounts:
+            account.balanceChanged = False
 
         # modifications on tx attributes
         self._update(date=entry.getModifiedAttr('date'),
@@ -406,9 +413,9 @@ class Transaction(model.Element):
         # modifications on the opposite entry attributes
         entry.oppositeEntry._update(account=newOppositeAccount)
 
-        for acc in accounts:
-            # recompute balance if date, amount, type or opposite account have changed.
-            acc.balanceChanged.enable()
+        for account in accounts:
+            # Recompute balance if date, amount, type or opposite account have changed.
+            Account.balanceChanged.notify(account)
 
         # todo send this event only once if any account balance has changed.
         Account.hierarchyChanged.send(None)
@@ -425,10 +432,8 @@ class Transaction(model.Element):
             assert self.date != date
             self.date = date
             for e in self.entries:
-                account = e.account
-                account.removeEntry(e)
-                account.addEntry(e)
-                account.balanceChanged.set(True)
+                e.account.removeEntry(e)
+                e.account.addEntry(e)
         if nb is not None:
             self.number = nb
         if desc is not None:
