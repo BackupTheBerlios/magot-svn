@@ -84,7 +84,7 @@ def makeDB(filename):
     
     land.makeInitialTransaction(capital, Money(30000000), Date(2005,2,1))
     machinery.makeInitialTransaction(capital, Money(20000000), Date(2005,3,1))
-    Transaction(date.today(), "First depreciation", capital, depreciation, Money(5000000))
+    Transaction(Date.today(), "First depreciation", capital, depreciation, Money(5000000))
     patents.makeInitialTransaction(capital, Money(1000000), Date(2005,5,1))
 
     computer.makeInitialTransaction(capital, Money(999), Date(2005,11,1))
