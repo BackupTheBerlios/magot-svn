@@ -4,7 +4,6 @@ import datetime
 
 from peak.model import elements, features, datatypes
 from peak.events import sources
-from peak.binding import components
 
 from magot.refdata import *
 
@@ -77,13 +76,13 @@ class Entry(elements.Element):
         referencedType = MovementType
 
         def _onLink(self, entry, item, posn):
-            entry.account.balanceChanged = True
+            Account.balance.setDirty(entry.account)
 
     class amount(features.Attribute):
         referencedType = Money
 
         def _onLink(self, entry, item, posn):
-            entry.account.balanceChanged = True
+            Account.balance.setDirty(entry.account)
 
     class date(features.DerivedFeature):
         referencedType = Date
@@ -228,7 +227,6 @@ class RootAccount(elements.Element):
         self.name = name
         self.description = description
 
-
 class Account(RootAccount):
     
     hierarchyChanged = sources.Broadcaster()
@@ -261,17 +259,31 @@ class Account(RootAccount):
             date = entry.date
             positions = [i for i,e in enumerate(account.entries) if e.date <= date]
             self._notifyLink(account, entry, len(positions))
-            
+
         def _onLink(self, account, entry, posn):
-            account.balanceChanged = True
-    
+            Account.balance.setDirty(account)
+
         def _onUnlink(self, account, entry, posn):
-            account.balanceChanged = True
+            Account.balance.setDirty(account)
 
     class balance(AccountAttribute):
         """ Sum of entry amounts (owned by current account & all sub-accounts). No period. """
         getOriginalEntryField = Entry.amount.get
         setDerivedEntryField = Entry.balance.set
+
+        __dirtyName = Entry.balance.attrName+'_dirty'
+        def setDirty(self, account, value=True):
+            account.__setattr__(self.__dirtyName, value)
+
+        def notify(self, account):
+            isDirty = account.__getattribute__(self.__dirtyName)
+            if isDirty:
+                # Unset all entry/account balances is sufficient to recompute them on demand.
+                account.unsetBalance()
+                account.unsetBalanceYTD()
+                for entry in account.entries:
+                    entry.unsetBalance()
+                account.changedEvent.send(None)
 
     class balanceYTD(balance):
         """ Year To Date balance. """
@@ -279,18 +291,6 @@ class Account(RootAccount):
         def getPeriod(self):
             # todo true formula
             return DateRange(date(2006, 1, 1), date.today())
-
-    class balanceChanged(features.Attribute):
-        referencedType = datatypes.Boolean
-
-        def notify(self, account):
-            if self.get(account):
-                # Unset all entry/account balances is sufficient to recompute them on demand.
-                account.unsetBalance()
-                account.unsetBalanceYTD()
-                for entry in account.entries:
-                    entry.unsetBalance()
-                account.changedEvent.send(None)
 
     def __init__(self, parent, name=None, type=None, description=''):
         super(Account, self).__init__(name, description)
@@ -320,8 +320,7 @@ class Account(RootAccount):
         name = 'NO_NAME'
         if hasattr(self, 'name'):
             name = self.name
-        return name.ljust(10) 
-    #+ self.description.rjust(25) + str(self.balance).rjust(8)
+        return name.ljust(10)  #+ self.description.rjust(25) + str(self.balance).rjust(8)
         
     def __str__(self):
         return self.name
@@ -371,7 +370,6 @@ class Transaction(elements.Element):
                     debit += entry.amount
                 else:
                     credit += entry.amount
-            
             return debit == credit
 
     def __init__(self, date, description, debit=None, credit=None, amount=None):
@@ -392,32 +390,33 @@ class Transaction(elements.Element):
         entry = modifiedEntries[0]
 
         accounts = set(e.account for e in self.entries)
-        
+
         newOppositeAccount = entry.getModifiedAttr('oppositeAccount')
         if newOppositeAccount:
             accounts.add(newOppositeAccount)
-        
-        for account in accounts:
-            account.balanceChanged = False
 
-        # modifications on tx attributes
+        for account in accounts:
+            # Re-init isDirty for account balance.
+            Account.balance.setDirty(account, False)
+
+        # Modifications on tx attributes.
         self._update(date=entry.getModifiedAttr('date'),
                      nb=entry.getModifiedAttr('number'),
                      desc=entry.getModifiedAttr('description'),
                      amount=entry.getModifiedAttr('amount'))
 
-        # modifications on entry attributes
+        # Modifications on entry attributes.
         entry._update(isReconciled=entry.getModifiedAttr('isReconciled'),
                       type=entry.getModifiedAttr('type'))
 
-        # modifications on the opposite entry attributes
+        # Modifications on the opposite entry attributes.
         entry.oppositeEntry._update(account=newOppositeAccount)
 
         for account in accounts:
-            # Recompute balance if date, amount, type or opposite account have changed.
-            Account.balanceChanged.notify(account)
+            # Notify balance observers that date, amount, type or opposite account may have changed.
+            Account.balance.notify(account)
 
-        # todo send this event only once if any account balance has changed.
+        # todo send this event only if any account balance has changed.
         Account.hierarchyChanged.send(None)
 
     def _addDebitEntry(self, account, amount):        
@@ -427,13 +426,12 @@ class Transaction(elements.Element):
         return Entry(MovementType.CREDIT, self, account, amount)
 
     def _update(self, date=None, nb=None, desc=None, amount=None):
-        """ Always use this method to post a transaction. """
+        """ Change transaction attributes. """
         if date is not None:
             assert self.date != date
             self.date = date
             for e in self.entries:
-                e.account.removeEntry(e)
-                e.account.addEntry(e)
+                e.account.replaceEntry(e, e)
         if nb is not None:
             self.number = nb
         if desc is not None:
