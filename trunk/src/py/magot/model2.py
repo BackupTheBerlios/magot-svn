@@ -373,14 +373,11 @@ class Transaction(elements.Element):
             return debit == credit
 
     def __init__(self, date, description, debit=None, credit=None, amount=None):
+        super(Transaction,self).__init__(date=date, description=description)
 
-        if debit is None or credit is None or amount is None:
-            super(Transaction,self).__init__(date=date, description=description)
-        else:
+        if debit and credit and amount:
             if not isinstance(amount, Money):
                 amount = Money(amount)
-
-            super(Transaction,self).__init__(date=date, description=description)
             self._addDebitEntry(debit, amount)
             self._addCreditEntry(credit, amount)
 
@@ -431,7 +428,9 @@ class Transaction(elements.Element):
             assert self.date != date
             self.date = date
             for e in self.entries:
-                e.account.replaceEntry(e, e)
+                account = e.account
+                account.removeEntry(e)
+                account.addEntry(e)  # Entry is replaced at the right place
         if nb is not None:
             self.number = nb
         if desc is not None:
