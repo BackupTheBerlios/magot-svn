@@ -163,7 +163,7 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
         entryIndex = self.data.index(entry)
         return entryIndex
 
-    def RefreshModel(self, sortByCol=None, focusEntry=None, sync=True):
+    def RefreshModel(self, sortByCol=None, sortOrder=1, focusEntry=None, sync=True):
         if focusEntry is None:
             # try to get the current entry as focus
             focusEntry = self.GetView().GetSelectedEntry()
@@ -179,8 +179,8 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
             self._syncModelAgainstAccount()
         
         if sortByCol is not None:
-            self.Sort(updateView=False, byCol=sortByCol)
-        
+            self.Sort(updateView=False, byCol=sortByCol, descending=sortOrder==-1)
+
         msg = wx.grid.GridTableMessage(self, wx.grid.GRIDTABLE_REQUEST_VIEW_GET_VALUES)
         self.GetView().ProcessTableMessage(msg)
 
@@ -189,12 +189,12 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
 
     def Sort(self, byCol=0, descending=False, updateView=True):
         self.log.write("Sort() called on ledger %s, column %d\n" % (self.account.name, byCol))
-        
+
         if self.GetNumberRows() < 2:
             return
-        
+
         if byCol == 0:
-            # account.entries is already sorted by date
+            # account.entries is already sorted by transaction date
             self.data = list(self.account.entries)
             if descending:
                 self.data.reverse()
@@ -239,6 +239,7 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
         events.subscribe(self.account.changedEvent, self.RefreshView)
         self.log = log
         self.sortByCol = 0 # by entry date
+        self.sortOrder = 1
 
         self.CreateGrid(25, 25, gridlib.Grid.SelectRows)
         
@@ -368,9 +369,11 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
 ##            pass
 
     def OnSort(self, evt):
-        self.sortByCol = evt.GetCol()
+        if self.sortByCol == evt.GetCol():
+            self.sortOrder = -self.sortOrder
+        else:
+            self.sortByCol = evt.GetCol()
         self.RefreshView(sync=False, sort=True)
-##        evt.Skip()
     
     def OnRangeSelect(self, evt):
         if evt.Selecting() and evt.GetBottomRow() !=  evt.GetTopRow():
@@ -398,7 +401,8 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
         col = None
         if sort:
             col = self.sortByCol
-        self.GetTable().RefreshModel(focusEntry=focusEntry, sync=sync, sortByCol=col)
+        self.GetTable().RefreshModel(focusEntry=focusEntry, sync=sync, 
+                                     sortByCol=col, sortOrder=self.sortOrder)
 
         # 3 last columns have special renderers. So no need to set colours for them here.
         self.setAlternateColours(self.GetNumberRows(), self.GetNumberCols() - 3)
