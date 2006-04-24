@@ -6,7 +6,10 @@ Magot TODO :
 - multi-view, typed entries, entry events
 =========================================
 
-    account.subAccounts should be a view filtered by analysis codes, not the true hierarchy
+	Bugs:
+	====
+    make entry visible and with focus when changing date
+	unselect entry when changing ledger : Grid.ClearSelection(self), MakeCellVisible
 	
 	Flow:
 	=====
@@ -21,7 +24,6 @@ Magot TODO :
 	
 	AccountAttribute:
 	================
-	fixe entry type change that does not change entry balance
 	account attributes are first class objects
 		time as parameter (==> the set of entries to operate on!)
 		YTDAttribute, MTDAttribute, TotalAttribute
@@ -54,6 +56,7 @@ Magot TODO :
 		==> 401K/{Motorola,Intel,AMD}, Options/{Intel,AMDD}
 		==> Fidelity/{Intel/401K,/Motorola/Options}
 	add account codes
+	account.subAccounts should be a view filtered by analysis codes, not the true hierarchy
 
 - introduce controler/presenter between view and model
 - propagate tx changes to ANY views interested in. 

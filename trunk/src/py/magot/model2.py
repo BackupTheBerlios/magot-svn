@@ -283,7 +283,6 @@ class Account(RootAccount):
                 account.unsetBalanceYTD()
                 for entry in account.entries:
                     entry.unsetBalance()
-                account.changedEvent.send(None)
 
     class balanceYTD(balance):
         """ Year To Date balance. """
@@ -403,15 +402,17 @@ class Transaction(elements.Element):
                      amount=entry.getModifiedAttr('amount'))
 
         # Modifications on entry attributes.
-        entry._update(isReconciled=entry.getModifiedAttr('isReconciled'),
+        entry._update(isReconciled=entry.getModifiedAttr('isReconciled'), 
                       type=entry.getModifiedAttr('type'))
 
         # Modifications on the opposite entry attributes.
         entry.oppositeEntry._update(account=newOppositeAccount)
 
         for account in accounts:
-            # Notify balance observers that date, amount, type or opposite account may have changed.
+            # Notify internal observers that balance may have changed.
             Account.balance.notify(account)
+            # Notify any views to refresh itself with the modified account.
+            account.changedEvent.send(None)
 
         # todo send this event only if any account balance has changed.
         Account.hierarchyChanged.send(None)

@@ -453,16 +453,11 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
         return self._entryProxy
 
     def PostTransaction(self):
-        """ Return the account Entry whose Transaction has been modified. """
+        """ Return the Entry whose Transaction has been modified. """
         modified = self.GetModifiedEntry()
         original = modified.getOriginalObject()
-
         original.transaction.post(modified)
-        
-        # get ready to register next entry modifications
+
+        # Get ready to register next entry modifications.
         self.ReleaseEntryForModification()
-        
-        # modifications OK, so replace in the model the proxy by the entry
-        # todo not needed?
-        #self.GetTable().SetEntry(row, original) 
         return original
