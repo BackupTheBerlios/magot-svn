@@ -185,7 +185,11 @@ class AccountLedgerModel(gridlib.PyGridTableBase):
         self.GetView().ProcessTableMessage(msg)
 
         # TODO: should really the model access the view ? is the model a controler ?
-        #self.GetView().SetCursorOn(focusEntry)
+        self.GetView().ReleaseEntryForModification()
+        if focusEntry:
+            self.GetView().SetCursorOn(focusEntry.getOriginalObject())
+        else:
+            self.GetView().SetCursorOn(None)
 
     def Sort(self, byCol=0, descending=False, updateView=True):
         self.log.write("Sort() called on ledger %s, column %d\n" % (self.account.name, byCol))
@@ -395,7 +399,6 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
         except ValueError:
             row = 0
         self.SetGridCursor(row, 0)
-        self.SelectRow(self.GetGridCursorRow())
 
     def RefreshView(self, source=None, event=None, focusEntry=None, sync=True, sort=True):
         col = None
@@ -443,7 +446,10 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
         return hasattr(self, '_entryProxy')
 
     def ReleaseEntryForModification(self):
-        del self._entryProxy
+        try:
+            del self._entryProxy
+        except:
+            pass
 
     def GetModifiedEntry(self):
         return self._entryProxy

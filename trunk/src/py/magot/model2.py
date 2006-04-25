@@ -165,6 +165,9 @@ class Entry(elements.Element):
     def getProxy(self):
         return Proxy(self)
 
+    def getOriginalObject(self):
+        return self
+
 
 class AccountAttribute(DerivedAndCached):
     """ Derived attribute from owner account entries plus all sub-account entries.
