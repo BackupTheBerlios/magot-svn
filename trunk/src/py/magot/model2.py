@@ -4,8 +4,22 @@ import datetime
 
 from peak.model import elements, features, datatypes
 from peak.events import sources
+from peak.binding import attributes
 
 from magot.refdata import *
+
+
+class MetaAttribute(object):
+    """ Attribute metadata that generates a new attribute whose name is <attrName>_<suffix>. """
+    def __init__(self, suffix):
+        self.suffix = suffix
+
+@attributes.declareAttribute.when(MetaAttribute)
+def _declareMetaAttribute(classobj, attrname, metadata):
+    class newMetaAttr(features.Attribute): pass
+    newMetaAttrName = attrname + metadata.suffix
+    newMetaAttr.attrName = newMetaAttr.__name__ = newMetaAttrName
+    newMetaAttr.activateInClass(classobj, newMetaAttrName)
 
 
 class DerivedAndCached(features.Attribute):
@@ -76,13 +90,13 @@ class Entry(elements.Element):
         referencedType = MovementType
 
         def _onLink(self, entry, item, posn):
-            Account.balance.setDirty(entry.account)
+            entry.account.balance_Dirty = True
 
     class amount(features.Attribute):
         referencedType = Money
 
         def _onLink(self, entry, item, posn):
-            Account.balance.setDirty(entry.account)
+            entry.account.balance_Dirty = True
 
     class date(features.DerivedFeature):
         referencedType = Date
@@ -230,6 +244,7 @@ class RootAccount(elements.Element):
         self.name = name
         self.description = description
 
+
 class Account(RootAccount):
     
     hierarchyChanged = sources.Broadcaster()
@@ -264,23 +279,20 @@ class Account(RootAccount):
             self._notifyLink(account, entry, len(positions))
 
         def _onLink(self, account, entry, posn):
-            Account.balance.setDirty(account)
+            account.balance_Dirty = True
 
         def _onUnlink(self, account, entry, posn):
-            Account.balance.setDirty(account)
-
+            account.balance_Dirty = True
+    
     class balance(AccountAttribute):
         """ Sum of entry amounts (owned by current account & all sub-accounts). No period. """
         getOriginalEntryField = Entry.amount.get
         setDerivedEntryField = Entry.balance.set
 
-        __dirtyName = Entry.balance.attrName+'_dirty'
-        def setDirty(self, account, value=True):
-            account.__setattr__(self.__dirtyName, value)
+        metadata = MetaAttribute('_Dirty')
 
         def notify(self, account):
-            isDirty = account.__getattribute__(self.__dirtyName)
-            if isDirty:
+            if account.balance_Dirty:
                 # Unset all entry/account balances is sufficient to recompute them on demand.
                 account.unsetBalance()
                 account.unsetBalanceYTD()
@@ -289,7 +301,8 @@ class Account(RootAccount):
 
     class balanceYTD(balance):
         """ Year To Date balance. """
-        setDerivedEntryField = None
+        setDerivedEntryField = metadata = None
+
         def getPeriod(self):
             # todo true formula
             return DateRange(date(2006, 1, 1), date.today())
@@ -395,8 +408,8 @@ class Transaction(elements.Element):
             accounts.add(newOppositeAccount)
 
         for account in accounts:
-            # Re-init isDirty for account balance.
-            Account.balance.setDirty(account, False)
+            # Re-init Dirty for the account balance.
+            account.balance_Dirty = False
 
         # Modifications on tx attributes.
         self._update(date=entry.getModifiedAttr('date'),
