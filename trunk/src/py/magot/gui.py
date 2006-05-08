@@ -80,8 +80,7 @@ class MainFrame(wx.Frame):
             account.description = win.desc()
             account.name = win.name()
             # TODO: call updateAccount on hierarchy and ledger
-            tree.SetItemText(item, account.name, 0)
-            tree.SetItemText(item, account.description, 1)
+            self.nb.hierarchy.RefreshAccount(item)
             if account in self.nb.mapAccountToPage:
                 page = self.nb.mapAccountToPage[account]
                 self.nb.SetPageText(page, account.name)

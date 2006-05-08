@@ -15,10 +15,7 @@ def _getdata(col, entry):
         return entry.description
     if col == 3:
         # TODO: split
-        if hasattr(entry, 'oppositeAccount'):
-            return entry.oppositeAccount
-        else:
-            return entry.oppositeEntry.account
+        return getattr(entry, 'oppositeAccount', entry.oppositeEntry.account)
     if col == 4:
         return entry.isReconciled
     if col == 5:

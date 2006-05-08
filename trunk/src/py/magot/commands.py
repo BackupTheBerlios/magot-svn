@@ -1,10 +1,11 @@
-from datetime import *
 from peak.api import *
+
 from magot.model2 import *
 from magot.refdata import *
 
 DB_FILENAME = PropertyName("magot.db.filename")
 DB_FILEPATH = PropertyName("magot.db.filepath")
+
 
 class Magot(commands.Bootstrap): 
 
@@ -160,15 +161,15 @@ Add a new Transaction.
         
         debitAcc = self.Accounts.get(debit)
         creditAcc = self.Accounts.get(credit)
-        tx = Transaction(date.today(), desc, debitAcc, creditAcc, amount)
+        tx = Transaction(Date.today(), desc, debitAcc, creditAcc, amount)
 
         storage.commit(self)
 
 def runMain():
-        root = config.makeRoot(iniFiles=(('peak','peak.ini'), ('magot','magot.ini')))
-        import wingdbstub
-        Magot(root).run()
+    root = config.makeRoot(iniFiles=(('peak','peak.ini'), ('magot','magot.ini')))
+    #import wingdbstub
+    Magot(root).run()
 
-        
-if __name__ == '__main__':	
-        runMain()
+
+if __name__ == '__main__':
+    runMain()

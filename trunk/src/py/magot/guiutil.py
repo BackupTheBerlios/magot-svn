@@ -17,7 +17,6 @@ def date2wxdate(date):
     return wx.DateTimeFromDMY(*dmy)
 
 def wxdate2date(date):
-    import datetime
     assert isinstance(date, wx.DateTime)
     if date.IsValid():
         ymd = map(int, date.FormatISODate().split('-'))

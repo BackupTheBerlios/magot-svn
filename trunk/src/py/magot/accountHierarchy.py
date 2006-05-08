@@ -159,8 +159,7 @@ class AccountTreeListCtrl(wx.gizmos.TreeListCtrl, TreeListCtrlAutoWidthMixin):
             item['icon-normal'] = self.GetItemImage(node, wx.TreeItemIcon_Normal)
             item['icon-selected'] = self.GetItemImage(node, wx.TreeItemIcon_Selected)
             item['icon-expanded'] = self.GetItemImage(node, wx.TreeItemIcon_Expanded)
-            item['icon-selectedexpanded'] = self.GetItemImage(node, 
-                wx.TreeItemIcon_SelectedExpanded)
+            item['icon-selectedexpanded'] = self.GetItemImage(node, wx.TreeItemIcon_SelectedExpanded)
 
             tmplist.append(item)
 
@@ -187,8 +186,7 @@ class AccountTreeListCtrl(wx.gizmos.TreeListCtrl, TreeListCtrlAutoWidthMixin):
             self.SetItemImage(node, item['icon-normal'], wx.TreeItemIcon_Normal)
             self.SetItemImage(node, item['icon-selected'], wx.TreeItemIcon_Selected)
             self.SetItemImage(node, item['icon-expanded'], wx.TreeItemIcon_Expanded)
-            self.SetItemImage(node, item['icon-selectedexpanded'], 
-                wx.TreeItemIcon_SelectedExpanded)
+            self.SetItemImage(node, item['icon-selectedexpanded'], wx.TreeItemIcon_SelectedExpanded)
 
             newitems.append(node)
             if item.has_key('children'):
@@ -196,6 +194,31 @@ class AccountTreeListCtrl(wx.gizmos.TreeListCtrl, TreeListCtrlAutoWidthMixin):
 
         self.SortChildren(parent)
         return newitems
+
+    def MoveAccount(self, movedAccount):
+        """ Move the account sub-tree under its parent node. """
+        source = self.FindItemId(movedAccount)
+        target = self.FindItemId(movedAccount.parent)
+
+        save = self.SaveItemsToList(source)
+        self.Delete(source) 
+
+        return self.InsertItemsFromList(save, target)
+
+    def FindItemId(self, refAccount):
+        class ItemIdFound(Exception): pass
+
+        def func(child, depth):
+            account = self.GetPyData(child)
+            if account is refAccount:
+                raise ItemIdFound(child)
+
+        try:
+            self.Traverse(func, self.GetRootItem(), True)
+        except ItemIdFound, e:
+            return e.args[0]
+        else:
+            raise "ItemId for account %s was not found in the hierarchy." (account.name,)
 
 
 class AccountHierarchy(wx.Panel):
@@ -290,9 +313,30 @@ class AccountHierarchy(wx.Panel):
             self.tree.UnselectAll()
             return
 
-        newItems = self.MoveAccount(source, target)
-        self.RefreshView()
-        self.tree.SelectItem(newItems[0])
+        # Change the domain model.
+        movedAccount = self.tree.GetPyData(source)
+        newParentAccount = self.tree.GetPyData(target)
+        movedAccount.parent = newParentAccount
+
+        # Notify any hierarchies to refresh themself.
+        Account.hierarchyChanged.send(movedAccount)
+
+        self.tree.SelectItem(self.tree.FindItemId(movedAccount))
+
+    def RefreshView(self, source=None, event=None):
+        """ Refresh the balance, description and structure of each account. """
+        if isinstance(event, Account):
+            self.tree.MoveAccount(event)
+
+        self.tree.Traverse(self.RefreshAccount, self.tree.GetRootItem(), False)
+        return True
+
+    def RefreshAccount(self, itemId, depth=None):
+        tree = self.tree
+        account = tree.GetPyData(itemId)
+        tree.SetItemText(itemId, account.name, 0)
+        tree.SetItemText(itemId, account.description, 1)
+        tree.SetItemText(itemId, str(account.balance), 2)
 
     def BuildHierarchy(self, focus=None):
         self.tree.DeleteAllItems()
@@ -301,46 +345,25 @@ class AccountHierarchy(wx.Panel):
         self.tree.SetItemImage(self.root, self.fldridx, wx.TreeItemIcon_Normal)
         self.tree.SetItemImage(self.root, self.fldropenidx, wx.TreeItemIcon_Expanded)
         
-        self.displayOneLevel(self.accRoot, self.root, focus)
+        self._displayOneLevel(self.accRoot, self.root, focus)
         self.tree.Expand(self.root)
 
-    def displayOneLevel(self, parent, node, focus=None):
+    def _displayOneLevel(self, parent, node, focus=None):
         for account in parent.subAccounts:
-            child = self.createAndAppendAccount(node, account)
+            child = self._createAndAppendAccount(node, account)
             if focus is None:
                 focus = account
             if account == focus:
                 self.tree.SelectItem(child)
-            self.displayOneLevel(account, child, focus)
+            self._displayOneLevel(account, child, focus)
         self.tree.SortChildren(node)
 
-    def createAndAppendAccount(self, parent, account):
+    def _createAndAppendAccount(self, parent, account):
         child = self.tree.AppendItem(parent, account.name, self.fldridx, self.fldropenidx)
         self.tree.SetPyData(child, account)
-        self.tree.SetItemText(child, account.description, 1)
-        self.tree.SetItemText(child, str(account.balance), 2)
+        self.RefreshAccount(child)
         return child
 
     def CheckTransactionModification(self):
         """ No modification to validate, so we can safely pursue the flow. """
-        return True
-
-    def MoveAccount(self, source, target):
-        movedAccount = self.tree.GetPyData(source)
-        newParentAccount = self.tree.GetPyData(target)
-        # save + delete the source
-        save = self.tree.SaveItemsToList(source)
-        # TODO: should be all sub-treeitems deleted? call DeleteChildren()?
-        self.tree.Delete(source)
-        newitems = self.tree.InsertItemsFromList(save, target)
-        movedAccount.parent = newParentAccount
-        return newitems
-
-    def RefreshView(self, source=None, event=None):
-        """ Refresh the balance of each account. """
-        def refreshAccount(child, depth):
-            account = self.tree.GetPyData(child)
-            self.tree.SetItemText(child, account.description, 1)
-            self.tree.SetItemText(child, str(account.balance), 2)
-        self.tree.Traverse(refreshAccount, self.tree.GetRootItem(), False)
         return True

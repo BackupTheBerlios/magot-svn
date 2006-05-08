@@ -6,11 +6,6 @@ Magot TODO :
 - multi-view, typed entries, entry events
 =========================================
 
-	Bugs:
-	====
-    make entry visible and with focus when changing date
-	unselect entry when changing ledger : Grid.ClearSelection(self), MakeCellVisible
-	
 	Flow:
 	=====
 	entry event : content has changed (amount, type, isReconciled)

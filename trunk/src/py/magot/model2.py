@@ -1,71 +1,10 @@
 """ Domain model for basic accounting. Version2. """
 
-import datetime
-
 from peak.model import elements, features, datatypes
 from peak.events import sources
-from peak.binding import attributes
 
 from magot.refdata import *
-
-
-class MetaAttribute(object):
-    """ Attribute metadata that generates a new attribute whose name is <attrName>_<suffix>. """
-    def __init__(self, suffix):
-        self.suffix = suffix
-
-@attributes.declareAttribute.when(MetaAttribute)
-def _declareMetaAttribute(classobj, attrname, metadata):
-    class newMetaAttr(features.Attribute): pass
-    newMetaAttrName = attrname + metadata.suffix
-    newMetaAttr.attrName = newMetaAttr.__name__ = newMetaAttrName
-    newMetaAttr.activateInClass(classobj, newMetaAttrName)
-
-
-class DerivedAndCached(features.Attribute):
-    """ Value is computed only if it's not locally set. """
-
-    def get(feature, element):
-        try:
-            return element.__dict__[feature.attrName]
-        except KeyError:
-            value = feature.compute(element)
-            feature.set(element, value)
-            return value
-
-    def compute(feature, element):
-        raise NotImplementedError
-
-
-class Proxy(object):
-    """The Proxy base class."""
-
-    def __init__(self, obj):
-        """The initializer."""
-        super(Proxy, self).__init__(obj)
-        # Original object.
-        self._obj = obj
-
-    def __getattr__(self, attr):
-        try:
-            # Is this attribute overridden in the proxy?
-            return self.__dict__[attr]
-        except KeyError:
-            # If not, then return the attribute value from the original object
-            return getattr(self._obj, attr)
-
-    def getModifiedAttr(self, attr):
-        modified = self.__dict__.get(attr, None)
-        try:
-            if modified != getattr(self._obj, attr):
-                return modified
-            else:
-                return None
-        except AttributeError:
-            return modified
-
-    def getOriginalObject(self):
-        return self._obj
+from magot.util import *
 
 
 class Entry(elements.Element):
@@ -90,13 +29,13 @@ class Entry(elements.Element):
         referencedType = MovementType
 
         def _onLink(self, entry, item, posn):
-            entry.account.balance_Dirty = True
+            entry.account.balance_dirty = True
 
     class amount(features.Attribute):
         referencedType = Money
 
         def _onLink(self, entry, item, posn):
-            entry.account.balance_Dirty = True
+            entry.account.balance_dirty = True
 
     class date(features.DerivedFeature):
         referencedType = Date
@@ -127,22 +66,20 @@ class Entry(elements.Element):
             return self.get(entry)
 
     class number(features.DerivedFeature):
-        referencedType = datatypes.Integer        
+        referencedType = datatypes.String
+
         def get(self, entry):
-            if hasattr(entry.transaction, 'number'):
-                return entry.transaction.number
-            else:
-                return None
+            return getattr(entry.transaction, 'number', None)
 
     class siblings(features.DerivedFeature):
-        """ List of other entries contained in the same transaction. """        
+        """ List of other entries contained in the same transaction. """
         def get(self, entry):
             entries = list(entry.transaction.entries)
             entries.remove(entry)
             return entries
 
     class oppositeEntry(features.DerivedFeature):
-        """ The first sibling entry contained in the same transaction. """        
+        """ The first sibling entry contained in the same transaction. """
         def get(self, entry):
             return entry.siblings[0]
 
@@ -201,9 +138,9 @@ class AccountAttribute(DerivedAndCached):
         return None
 
     def _onUnlink(self, account, item, posn):
-        """ Unset this attribute on all parent accounts so that they can be recomputed. """
+        """ Unset this account attribute on all parent accounts so that they can be recomputed. """
         parent = account.parent
-        while parent and isinstance(parent, Account):
+        while isinstance(parent, Account):
             self.unset(parent)
             parent = parent.parent
 
@@ -247,6 +184,7 @@ class RootAccount(elements.Element):
 
 class Account(RootAccount):
     
+    """ Event source to notify any views interested in account hierarchy changes. """
     hierarchyChanged = sources.Broadcaster()
     
     class type(features.Attribute):
@@ -263,9 +201,16 @@ class Account(RootAccount):
         # todo derived from parent if not set?
 
     class parent(features.Attribute):
+        """ Hierarchy of account. """
         referencedType = 'RootAccount'
         referencedEnd = 'subAccounts'
         defaultValue = None
+
+        def _onLink(self, account, newParent, posn):
+            Account.balance.unset(newParent)
+
+        def _onUnlink(self, account, oldParent, posn):
+            Account.balance.unset(oldParent)
 
     class entries(features.Sequence):
         """ Ordered by entry date. """
@@ -279,25 +224,26 @@ class Account(RootAccount):
             self._notifyLink(account, entry, len(positions))
 
         def _onLink(self, account, entry, posn):
-            account.balance_Dirty = True
+            account.balance_dirty = True
 
         def _onUnlink(self, account, entry, posn):
-            account.balance_Dirty = True
+            account.balance_dirty = True
     
     class balance(AccountAttribute):
         """ Sum of entry amounts (owned by current account & all sub-accounts). No period. """
         getOriginalEntryField = Entry.amount.get
         setDerivedEntryField = Entry.balance.set
 
-        metadata = MetaAttribute('_Dirty')
+        # Account balance becomes dirty as soon as entry fields change : date, type, amount, ... 
+        metadata = NewAttribute('_dirty')
 
         def notify(self, account):
-            if account.balance_Dirty:
-                # Unset all entry/account balances is sufficient to recompute them on demand.
-                account.unsetBalance()
-                account.unsetBalanceYTD()
+            """ Unset all entry/account balances is sufficient to recompute them on demand. """
+            if account.balance_dirty:
+                Account.balance.unset(account)
+                Account.balanceYTD.unset(account)
                 for entry in account.entries:
-                    entry.unsetBalance()
+                    Entry.balance.unset(entry)
 
     class balanceYTD(balance):
         """ Year To Date balance. """
@@ -305,7 +251,7 @@ class Account(RootAccount):
 
         def getPeriod(self):
             # todo true formula
-            return DateRange(date(2006, 1, 1), date.today())
+            return DateRange(date(2006, 1, 1), Date.today())
 
     def __init__(self, parent, name=None, type=None, description=''):
         super(Account, self).__init__(name, description)
@@ -344,7 +290,7 @@ class Account(RootAccount):
         return cmp(self.name, other.name)
 
     def makeInitialTransaction(self, equity, amount, date=None):        
-        date = date or datetime.date.today()
+        date = date or Date.today()
         if self.type is MovementType.DEBIT:
             return Transaction(date, 'initial balance', self, equity, amount)
         else:
@@ -379,7 +325,6 @@ class Transaction(elements.Element):
 
         def get(self, transaction):
             debit = credit = Money.Zero
-            # todo use list comprehension
             for entry in transaction.entries:
                 if entry.type is MovementType.DEBIT:
                     debit += entry.amount
@@ -387,7 +332,8 @@ class Transaction(elements.Element):
                     credit += entry.amount
             return debit == credit
 
-    def __init__(self, date, description, debit=None, credit=None, amount=None):
+    def __init__(self, date=Date.today(), description='', debit=None, 
+                 credit=None, amount=None):
         super(Transaction,self).__init__(date=date, description=description)
 
         if debit and credit and amount:
@@ -397,7 +343,7 @@ class Transaction(elements.Element):
             self._addCreditEntry(credit, amount)
 
     def post(self, *modifiedEntries):
-        """ Always use this method to post a transaction. """        
+        """ Always use this method to post a transaction. """
         # todo split
         entry = modifiedEntries[0]
 
@@ -407,9 +353,8 @@ class Transaction(elements.Element):
         if newOppositeAccount:
             accounts.add(newOppositeAccount)
 
-        for account in accounts:
-            # Re-init Dirty for the account balance.
-            account.balance_Dirty = False
+        for account in accounts:           
+            account.balance_dirty = False  # Re-init _dirty attribute for the account balance.
 
         # Modifications on tx attributes.
         self._update(date=entry.getModifiedAttr('date'),
@@ -427,17 +372,21 @@ class Transaction(elements.Element):
         for account in accounts:
             # Notify internal observers that balance may have changed.
             Account.balance.notify(account)
-            # Notify any views to refresh itself with the modified account.
+            # Notify any registered view to refresh itself with this modified account.
             account.changedEvent.send(None)
 
         # todo send this event only if any account balance has changed.
         Account.hierarchyChanged.send(None)
 
-    def _addDebitEntry(self, account, amount):        
-        return Entry(MovementType.DEBIT, self, account, amount)
+    def _addDebitEntry(self, account, amount):
+        entry = Entry(MovementType.DEBIT, self, account, amount)
+        Account.balance.notify(account)
+        return entry
 
     def _addCreditEntry(self, account, amount):
-        return Entry(MovementType.CREDIT, self, account, amount)
+        entry = Entry(MovementType.CREDIT, self, account, amount)
+        Account.balance.notify(account)
+        return entry
 
     def _update(self, date=None, nb=None, desc=None, amount=None):
         """ Change transaction attributes. """
@@ -447,7 +396,7 @@ class Transaction(elements.Element):
             for e in self.entries:
                 account = e.account
                 account.removeEntry(e)
-                account.addEntry(e)  # Entry is replaced at the right place
+                account.addEntry(e)    # Entry is replaced at the right place
         if nb is not None:
             self.number = nb
         if desc is not None:
@@ -456,4 +405,4 @@ class Transaction(elements.Element):
             if self.isSplit:
                 raise "Can't update transaction amount because it's split"
             for entry in self.entries:
-                entry._update(amount=amount)        
+                entry._update(amount=amount)

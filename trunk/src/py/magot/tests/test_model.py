@@ -3,24 +3,22 @@
 
 from unittest import TestCase, makeSuite, TestSuite
 import unittest
-import shelve
-from datetime import *
 
-from magot.model import *
+from magot.model2 import *
 from magot.refdata import *
 
 def makeAccounts(self):
     # create all accounts
-    self.root = Account(name='Accounts')
-    self.asset = EntryAccount(parent=self.root, name='Asset')
-    self.checking = EntryAccount(parent=self.asset, name='Checking', type=MovementType.DEBIT)
-    self.computer = EntryAccount(parent=self.asset, name='Computer', type=MovementType.DEBIT)
-    self.expense = EntryAccount(parent=self.root, name='Expense', type=MovementType.DEBIT)
-    self.warranty = EntryAccount(parent=self.expense, name='Warranty', type=MovementType.DEBIT)
-    self.cash = EntryAccount(parent=self.expense, name='Cash', type=MovementType.DEBIT)
-    self.income = EntryAccount(parent=self.root, name='Income', type=MovementType.CREDIT)
-    self.salary = EntryAccount(parent=self.income, name='Salary', type=MovementType.CREDIT)
-    self.equity = EntryAccount(parent=self.root, name='Equity', type=MovementType.CREDIT)
+    self.root = RootAccount(name='Accounts')
+    self.asset = Account(parent=self.root, name='Asset', type=MovementType.DEBIT)
+    self.checking = Account(parent=self.asset, name='Checking')
+    self.computer = Account(parent=self.asset, name='Computer')
+    self.expense = Account(parent=self.root, name='Expense', type=MovementType.DEBIT)
+    self.warranty = Account(parent=self.expense, name='Warranty')
+    self.cash = Account(parent=self.expense, name='Cash')
+    self.income = Account(parent=self.root, name='Income', type=MovementType.CREDIT)
+    self.salary = Account(parent=self.income, name='Salary')
+    self.equity = Account(parent=self.root, name='Equity', type=MovementType.CREDIT)
     # set all initial balances
     self.checking.makeInitialTransaction(self.equity, Money(1))
     assert self.checking.balance == Money(1)
@@ -50,7 +48,7 @@ class TestTransaction(TestCase):
 
     def test_account(self):
         # test parent relationship
-        assert self.root.parent is None
+        assert not hasattr(self.root, 'parent')
         assert self.checking.parent is self.computer.parent is self.asset
         assert self.checking.parent.parent is self.salary.parent.parent is self.root
         # test subAccounts relationship
@@ -82,7 +80,7 @@ class TestTransaction(TestCase):
     def test_2_ledged_transaction(self):
         # Get salary with check
         salary = Money(100.05)
-        tx = Transaction(date.today(), 'Get salary with check', self.checking, self.salary, salary)
+        tx = Transaction(Date.today(), 'Get salary with check', self.checking, self.salary, salary)
         assert tx.isBalanced
         debit = [e for e in tx.entries if e.type is MovementType.DEBIT][0]
         credit = [e for e in tx.entries if e.type is MovementType.CREDIT][0]
@@ -95,8 +93,10 @@ class TestTransaction(TestCase):
         # change entry account : get salary by cash instead of check
         self.checking.removeEntry(debit)
         self.cash.addEntry(debit)
-        assert self.cash.balance == Money(4) + salary
+        Account.balance.notify(self.checking)
+        Account.balance.notify(self.cash)
         assert self.checking.balance == Money(1)
+        assert self.cash.balance == Money(4) + salary
         assert debit in self.cash.entries
         assert debit not in self.checking.entries
 
@@ -106,11 +106,11 @@ class TestTransaction(TestCase):
         warrantyAmount = Money(100)
         cashAmount = Money(500)
         checkAmount = Money(599.99)
-        tx = Transaction(date.today(), 'Buy a computer and warranty')
-        computer = tx.addDebitEntry(self.computer, computerAmount)            
-        warranty = tx.addDebitEntry(self.warranty, warrantyAmount)
-        checking = tx.addCreditEntry(self.checking, checkAmount)
-        cash = tx.addCreditEntry(self.cash, cashAmount)
+        tx = Transaction(Date.today(), 'Buy a computer and warranty')
+        computer = tx._addDebitEntry(self.computer, computerAmount)            
+        warranty = tx._addDebitEntry(self.warranty, warrantyAmount)
+        checking = tx._addCreditEntry(self.checking, checkAmount)
+        cash = tx._addCreditEntry(self.cash, cashAmount)
         assert tx.isBalanced
         # test relationships
         assert computer in self.computer.entries
@@ -151,14 +151,14 @@ class TestTransaction(TestCase):
         m = Money(1000)
         debit = self.checking
         credit = self.salary
-        tx3 = Transaction(date(2003,1,3), 'tx3', debit, credit, m)
-        tx1 = Transaction(date(2003,1,1), 'tx1', debit, credit, m)
-        tx2 = Transaction(date(2003,1,2), 'tx2', debit, credit, m)
+        tx3 = Transaction(Date(2003,1,3), 'tx3', debit, credit, m)
+        tx1 = Transaction(Date(2003,1,1), 'tx1', debit, credit, m)
+        tx2 = Transaction(Date(2003,1,2), 'tx2', debit, credit, m)
         self.check_ordered_entries(debit)
         # change tx date and check order fo all account entries
-        tx2.update(date=date.today() + timedelta(1))
+        tx2._update(date=Date.today())
         self.check_ordered_entries(debit)
-        
+
     def test_change_entry(self):
         checking = self.checking
         cash = self.cash
@@ -167,36 +167,43 @@ class TestTransaction(TestCase):
         initialCashBalance = cash.balance
         initialSalaryBalance = salary.balance
         amount = Money(1000)
-        tx = Transaction(date(2003,1,3), "J'ai ï¿½tï¿½ payï¿½ !")
-        ed = tx.addDebitEntry(checking, amount)
-        ec = tx.addCreditEntry(salary, amount)
+        tx = Transaction(Date(2003,1,3), "J'ai déjà payé!")
+        ed = tx._addDebitEntry(checking, amount)
+        ec = tx._addCreditEntry(salary, amount)
         assert ed.transaction is ec.transaction is tx
         assert checking.balance == initialCheckingBalance + amount
         assert salary.balance == initialSalaryBalance + amount
         # change entry account : get salary by cash instead of checking
-        ed.update(account=cash)
+        ed._update(account=cash)
+        Account.balance.notify(checking)
+        Account.balance.notify(cash)
         assert checking.balance == initialCheckingBalance
         assert cash.balance == initialCashBalance + amount
         assert salary.balance == initialSalaryBalance + amount
         # change entry type
         assert ed.type is MovementType.DEBIT
-        ed.update(type=MovementType.CREDIT)
+        ed._update(type=MovementType.CREDIT)
         assert ed.type is MovementType.CREDIT
-        assert not tx.isBalanced
-        ec.update(type=MovementType.DEBIT)
+        assert ec.type is MovementType.DEBIT
         assert tx.isBalanced
+        Account.balance.notify(cash)
+        Account.balance.notify(salary)
         assert cash.balance == initialCashBalance - amount
         assert salary.balance == initialSalaryBalance - amount
         # change entry amount via entry
-        ed.update(amount=Money(2000))
+        ed._update(amount=Money(2000))
+        Account.balance.notify(cash)
         assert cash.balance == initialCashBalance - Money(2000)
         assert not tx.isBalanced
-        ec.update(amount=Money(2000))
+        ec._update(amount=Money(2000))
+        Account.balance.notify(salary)
         assert salary.balance == initialSalaryBalance - Money(2000)
         assert tx.isBalanced
         # can change all entry amounts via the tx since tx is not split
         assert not tx.isSplit
-        tx.update(amount=Money(1999))
+        tx._update(amount=Money(1999))
+        Account.balance.notify(salary)
+        Account.balance.notify(cash)
         assert tx.isBalanced
         assert cash.balance == initialCashBalance - Money(1999)
         assert salary.balance == initialSalaryBalance - Money(1999)

@@ -1,7 +1,6 @@
 import cPickle
 
 from peak.api import *
-from datetime import *
 
 from magot.model2 import *
 from magot.refdata import *

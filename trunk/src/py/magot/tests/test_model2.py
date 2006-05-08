@@ -3,8 +3,6 @@
 
 from unittest import TestCase, makeSuite, TestSuite
 import unittest
-from datetime import *
-import datetime
 
 from magot.model2 import *
 from magot.refdata import *
