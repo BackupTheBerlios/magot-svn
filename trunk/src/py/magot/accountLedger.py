@@ -4,7 +4,7 @@ import wx.grid as gridlib
 
 from magot.guiutil import *
 from magot.refdata import *
-from magot.model2 import Entry
+from magot.model import Entry
 
 def _getdata(col, entry):
     if col == 0:

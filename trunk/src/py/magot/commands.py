@@ -1,6 +1,6 @@
 from peak.api import *
 
-from magot.model2 import *
+from magot.model import *
 from magot.refdata import *
 
 DB_FILENAME = PropertyName("magot.db.filename")

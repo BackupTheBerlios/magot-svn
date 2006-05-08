@@ -2,7 +2,7 @@ import sys
 import wx
 import wx.gizmos
 
-from magot.model2 import Entry, Account
+from magot.model import Entry, Account
 from peak.api import events
 
 class TreeListCtrlAutoWidthMixin:

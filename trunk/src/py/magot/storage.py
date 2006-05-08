@@ -3,7 +3,7 @@ import cPickle
 from peak.api import *
 from peak.storage.files import EditableFile
 
-from magot.model2 import *
+from magot.model import *
 from magot.commands import DB_FILEPATH
 
 
