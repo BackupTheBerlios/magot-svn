@@ -4,7 +4,7 @@
 from unittest import TestCase, makeSuite, TestSuite
 import unittest
 
-from magot.model2 import *
+from magot.model import *
 from magot.refdata import *
 
 def makeAccounts(self):

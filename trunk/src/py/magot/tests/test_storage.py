@@ -2,7 +2,7 @@ import cPickle
 
 from peak.api import *
 
-from magot.model2 import *
+from magot.model import *
 from magot.refdata import *
 from magot.storage import *
 
