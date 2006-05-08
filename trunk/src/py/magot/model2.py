@@ -121,10 +121,10 @@ class Entry(elements.Element):
 
 
 class AccountAttribute(DerivedAndCached):
-    """ Derived attribute from owner account entries plus all sub-account entries.
-        Sub-classes must define getOriginalEntryField and setDerivedEntryField methods.
-        Default period is NONE i.e. this attribute is computed over all account entries.
-    """
+    """ Attribute derived from account entries plus all sub-account entries.
+
+        Sub-classes MUST define getOriginalEntryField and setDerivedEntryField methods.
+        Default period is NONE i.e. this attribute is computed over all account entries. """
 
     def compute(self, account):
         # todo cache this computed local value?
@@ -156,9 +156,11 @@ class AccountAttribute(DerivedAndCached):
                 result += self.getOriginalEntryField(entry)
             else:
                 result -= self.getOriginalEntryField(entry)
-            # Set derived field for this entry.
+
+            # Set derived field for the current entry.
             if self.setDerivedEntryField:
                 self.setDerivedEntryField(entry, result)
+
         return result
 
 
@@ -201,16 +203,10 @@ class Account(RootAccount):
         # todo derived from parent if not set?
 
     class parent(features.Attribute):
-        """ Hierarchy of account. """
+        """ The parent account in a hierarchy of accounts. """
         referencedType = 'RootAccount'
         referencedEnd = 'subAccounts'
         defaultValue = None
-
-        def _onLink(self, account, newParent, posn):
-            Account.balance.unset(newParent)
-
-        def _onUnlink(self, account, oldParent, posn):
-            Account.balance.unset(oldParent)
 
     class entries(features.Sequence):
         """ Ordered by entry date. """
@@ -234,16 +230,18 @@ class Account(RootAccount):
         getOriginalEntryField = Entry.amount.get
         setDerivedEntryField = Entry.balance.set
 
-        # Account balance becomes dirty as soon as entry fields change : date, type, amount, ... 
+        # Balance becomes dirty as soon as some fields change : subAccounts, entry date/type/amount.
         metadata = NewAttribute('_dirty')
 
-        def notify(self, account):
-            """ Unset all entry/account balances is sufficient to recompute them on demand. """
-            if account.balance_dirty:
+        def recompute(self, account, force=False, entryToo=True):
+            """ Unseting  all account balances is sufficient to recompute them on demand. """
+            if force or account.balance_dirty:
                 Account.balance.unset(account)
                 Account.balanceYTD.unset(account)
-                for entry in account.entries:
-                    Entry.balance.unset(entry)
+
+                if entryToo:
+                    for entry in account.entries:
+                        Entry.balance.unset(entry)
 
     class balanceYTD(balance):
         """ Year To Date balance. """
@@ -289,12 +287,31 @@ class Account(RootAccount):
     def __cmp__(self, other):
         return cmp(self.name, other.name)
 
-    def makeInitialTransaction(self, equity, amount, date=None):        
+    def makeInitialTransaction(self, equity, amount, date=None):
         date = date or Date.today()
         if self.type is MovementType.DEBIT:
             return Transaction(date, 'initial balance', self, equity, amount)
         else:
             return Transaction(date, 'initial balance', equity, self, amount)    
+
+    def update(self, parent=None, description=None, name=None):
+        """ Change account attributes. """
+        event = None
+        if description is not None:
+            self.description = description
+
+        if name is not None:
+            self.name = name
+
+        if parent is not None:
+            # Old and new parent have their balance changed. No need to change their entry balances.
+            Account.balance.recompute(self.parent, force=True, entryToo=False)
+            self.parent = parent
+            Account.balance.recompute(parent, force=True, entryToo=False)
+            event = self
+
+        # Notify any hierarchies to refresh themself.
+        Account.hierarchyChanged.send(event)
 
 
 class Transaction(elements.Element):
@@ -353,10 +370,10 @@ class Transaction(elements.Element):
         if newOppositeAccount:
             accounts.add(newOppositeAccount)
 
-        for account in accounts:           
+        for account in accounts:
             account.balance_dirty = False  # Re-init _dirty attribute for the account balance.
 
-        # Modifications on tx attributes.
+        # Modifications on transaction attributes.
         self._update(date=entry.getModifiedAttr('date'),
                      nb=entry.getModifiedAttr('number'),
                      desc=entry.getModifiedAttr('description'),
@@ -370,8 +387,8 @@ class Transaction(elements.Element):
         entry.oppositeEntry._update(account=newOppositeAccount)
 
         for account in accounts:
-            # Notify internal observers that balance may have changed.
-            Account.balance.notify(account)
+            # Balance may have changed ...
+            Account.balance.recompute(account)
             # Notify any registered view to refresh itself with this modified account.
             account.changedEvent.send(None)
 
@@ -380,12 +397,12 @@ class Transaction(elements.Element):
 
     def _addDebitEntry(self, account, amount):
         entry = Entry(MovementType.DEBIT, self, account, amount)
-        Account.balance.notify(account)
+        Account.balance.recompute(account)
         return entry
 
     def _addCreditEntry(self, account, amount):
         entry = Entry(MovementType.CREDIT, self, account, amount)
-        Account.balance.notify(account)
+        Account.balance.recompute(account)
         return entry
 
     def _update(self, date=None, nb=None, desc=None, amount=None):

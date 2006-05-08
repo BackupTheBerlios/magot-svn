@@ -60,7 +60,7 @@ class TestTransaction(TestCase):
         assert self.asset.balance == Money(3)
         # move an account under a different parent
         assert self.cash.parent is self.expense
-        self.cash.parent = self.asset
+        self.cash.update(parent=self.asset)
         assert self.cash.parent is self.asset
         assert self.asset.subAccounts == [self.checking, self.computer, self.cash]
         assert self.expense.subAccounts == [self.warranty]
@@ -93,8 +93,8 @@ class TestTransaction(TestCase):
         # change entry account : get salary by cash instead of check
         self.checking.removeEntry(debit)
         self.cash.addEntry(debit)
-        Account.balance.notify(self.checking)
-        Account.balance.notify(self.cash)
+        Account.balance.recompute(self.checking)
+        Account.balance.recompute(self.cash)
         assert self.checking.balance == Money(1)
         assert self.cash.balance == Money(4) + salary
         assert debit in self.cash.entries
@@ -175,8 +175,8 @@ class TestTransaction(TestCase):
         assert salary.balance == initialSalaryBalance + amount
         # change entry account : get salary by cash instead of checking
         ed._update(account=cash)
-        Account.balance.notify(checking)
-        Account.balance.notify(cash)
+        Account.balance.recompute(checking)
+        Account.balance.recompute(cash)
         assert checking.balance == initialCheckingBalance
         assert cash.balance == initialCashBalance + amount
         assert salary.balance == initialSalaryBalance + amount
@@ -186,24 +186,24 @@ class TestTransaction(TestCase):
         assert ed.type is MovementType.CREDIT
         assert ec.type is MovementType.DEBIT
         assert tx.isBalanced
-        Account.balance.notify(cash)
-        Account.balance.notify(salary)
+        Account.balance.recompute(cash)
+        Account.balance.recompute(salary)
         assert cash.balance == initialCashBalance - amount
         assert salary.balance == initialSalaryBalance - amount
         # change entry amount via entry
         ed._update(amount=Money(2000))
-        Account.balance.notify(cash)
+        Account.balance.recompute(cash)
         assert cash.balance == initialCashBalance - Money(2000)
         assert not tx.isBalanced
         ec._update(amount=Money(2000))
-        Account.balance.notify(salary)
+        Account.balance.recompute(salary)
         assert salary.balance == initialSalaryBalance - Money(2000)
         assert tx.isBalanced
         # can change all entry amounts via the tx since tx is not split
         assert not tx.isSplit
         tx._update(amount=Money(1999))
-        Account.balance.notify(salary)
-        Account.balance.notify(cash)
+        Account.balance.recompute(salary)
+        Account.balance.recompute(cash)
         assert tx.isBalanced
         assert cash.balance == initialCashBalance - Money(1999)
         assert salary.balance == initialSalaryBalance - Money(1999)

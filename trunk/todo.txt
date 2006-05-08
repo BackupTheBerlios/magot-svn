@@ -2,6 +2,10 @@ Magot TODO :
 
 0.2 : Improve the Accounting Model
 
+Fixes:
+	close current ledger
+	update ledger when account name changes
+
 =========================================
 - multi-view, typed entries, entry events
 =========================================

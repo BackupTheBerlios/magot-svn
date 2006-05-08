@@ -77,10 +77,8 @@ class MainFrame(wx.Frame):
                             style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
         win.CenterOnScreen()
         if win.ShowModal() == wx.ID_OK:
-            account.description = win.desc()
-            account.name = win.name()
-            # TODO: call updateAccount on hierarchy and ledger
-            self.nb.hierarchy.RefreshAccount(item)
+            account.update(description=win.desc(), name=win.name())
+
             if account in self.nb.mapAccountToPage:
                 page = self.nb.mapAccountToPage[account]
                 self.nb.SetPageText(page, account.name)

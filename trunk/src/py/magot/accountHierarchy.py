@@ -316,10 +316,7 @@ class AccountHierarchy(wx.Panel):
         # Change the domain model.
         movedAccount = self.tree.GetPyData(source)
         newParentAccount = self.tree.GetPyData(target)
-        movedAccount.parent = newParentAccount
-
-        # Notify any hierarchies to refresh themself.
-        Account.hierarchyChanged.send(movedAccount)
+        movedAccount.update(parent=newParentAccount)
 
         self.tree.SelectItem(self.tree.FindItemId(movedAccount))
 
