@@ -340,25 +340,39 @@ colourWhiteSmoke = wx.Colour(245, 245, 245)
 
 
 class MoneyRenderer(gridlib.PyGridCellRenderer):
-    
+
     def __init__(self):
         gridlib.PyGridCellRenderer.__init__(self)
-        
-    def Draw(self, grid, attr, dc, rect, row, col, isSelected):
-        colour = None
-        if isSelected:
-            colour = colourLemonChiffon
-        elif row % 2:
-            colour = colourWhiteSmoke
+        self.colourWhite = wx.NamedColour("WHITE")
+        self.colourBlack = wx.NamedColour("BLACK")
 
-        if colour:
-            dc.SetBrush(wx.Brush(colour, wx.SOLID)) 
-            dc.SetPen(wx.TRANSPARENT_PEN) 
-            dc.DrawRectangle(rect.x, rect.y, rect.width, rect.height) 
-        
+    def Draw(self, grid, attr, dc, rect, row, col, isSelected):
+        bg = None
+        if isSelected:
+            bg = colourLemonChiffon
+        elif row % 2:
+            bg = colourWhiteSmoke
+        else:
+            bg = self.colourWhite
+
         value = str(grid.GetTable().GetValue(row, col))
-        a,b = attr.GetAlignment()        
+        a,b = attr.GetAlignment()
+        dc.SetFont(attr.GetFont())
+        dc.SetTextBackground(bg)
+        dc.SetTextForeground(self.colourBlack)
+        dc.SetBrush(wx.Brush(bg, wx.SOLID))
+        dc.SetPen(wx.TRANSPARENT_PEN)
+        dc.DrawRectangleRect(rect)
         grid.DrawTextRectangle(dc, value, rect, a, b)
+
+        def GetBestSize(self, attr, dc, row, col):
+            value = str(grid.GetTable().GetValue(row, col))
+            dc.SetFont(attr.GetFont())
+            w, h = dc.GetTextExtent(value)
+            return wx.Size(w, h)
+        
+        def clone(self):
+            return MoneyRenderer()
 
 
 class OppositeAccountEditor(gridlib.PyGridCellEditor):

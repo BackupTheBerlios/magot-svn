@@ -1,6 +1,12 @@
 Magot History
 
 
+version 0.1.1 : 2006/05/14
+==========================
+
+- Multi-hierarchies & multi-ledgers updated in real-time
+
+
 version 0.1 final : 2005/12/05
 ==============================
 

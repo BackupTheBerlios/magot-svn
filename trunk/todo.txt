@@ -29,7 +29,7 @@ Fixes:
 	generic funtion valueAsOf(account, time=None, field, operator?)
 	account attributes can be combined with others attributes: 
 		OnHandAttribute in an inventory is (purchased - sold - lost).
-		==> BinaryFunctionOfTime : 	PlusNode, DifferenceNode, ConstantFunctionOfTime	
+		==> BinaryFunctionOfTime : 	PlusNode, DifferenceNode, ConstantFunctionOfTime
 	add 'third party' or 'partner' field on account column
 	add account types & transaction types
 		

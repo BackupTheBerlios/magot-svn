@@ -242,8 +242,6 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
         self.sortByCol = 0 # by entry date
         self.sortOrder = 1
 
-        self.CreateGrid(25, 25, gridlib.Grid.SelectRows)
-        
         table = AccountLedgerModel(self, account, log)
         # The second parameter means that the grid is to take ownership of the
         # table and will destroy it when done. Otherwise you would need to keep
@@ -252,7 +250,7 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
 
         #self.SetDefaultCellFont(wx.Font(8, wx.ROMAN, wx.NORMAL, wx.NORMAL))
         self.SetDefaultRowSize(20)
-        
+
         self.SetRowLabelSize(0)
         self.SetSelectionBackground(colourLemonChiffon)
         self.SetSelectionForeground("Black")
@@ -396,6 +394,7 @@ class AccountLedgerView(gridlib.Grid, GridCtrlAutoWidthMixin):
         except ValueError:
             row = 0
         self.SetGridCursor(row, 0)
+        self.MakeCellVisible(row, 0)
 
     def RefreshView(self, source=None, event=None, focusEntry=None, sync=True, sort=True):
         col = None
