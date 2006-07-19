@@ -13,7 +13,7 @@ Fixes:
 	Flow:
 	=====
 	entry event : content has changed (amount, type, isReconciled)
-	account event : content has changed (entry added/removed, date, nb, description
+	account event : content has changed (entry added/removed, date, nb, description)
 		--> account listener that unset account balance as well as for all its account ancestors
 		--> ledger and hierarchy listeners to refresh views
 	Transaction -> Account - Transaction can post all its entries to set of Accounts
@@ -23,15 +23,20 @@ Fixes:
 	
 	AccountAttribute:
 	================
-	account attributes are first class objects
-		time as parameter (==> the set of entries to operate on!)
-		YTDAttribute, MTDAttribute, TotalAttribute
+	Account attributes are first class objects, dependent on other attributes:
+		as a function of time (==> the set of entries to operate on!)
+		YTDAttribute, MTDAttribute, SumAttribute (received, sold, ordered)
+		On-hand in an inventory is (purchased - sold - lost).
 	generic funtion valueAsOf(account, time=None, field, operator?)
 	account attributes can be combined with others attributes: 
 		OnHandAttribute in an inventory is (purchased - sold - lost).
 		==> BinaryFunctionOfTime : 	PlusNode, DifferenceNode, ConstantFunctionOfTime
 	add 'third party' or 'partner' field on account column
 	add account types & transaction types
+	An attribute is time-dependent, i.e. reading an attribute always requires specifying a time.
+	Different subclasses of Attribute can compute the value differently.
+	Capture commonality by decomposing attributes and reusing pieces.
+	make a class hierarchy of attributes, so it is easy to make a new kind of attribute
 		
 	Posting:
 	========

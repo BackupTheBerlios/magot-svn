@@ -7,6 +7,30 @@ from magot.refdata import *
 from magot.util import *
 
 
+class SegmentItem(elements.Element):
+
+    class code(features.Attribute):
+        referencedType = datatypes.String
+
+    class desc(features.Attribute):
+        referencedType = datatypes.String
+
+    class segment(features.Attribute):
+        referencedType = 'Segment'
+        referencedEnd = 'items'
+
+
+class Segment(elements.Element):
+
+    class name(features.Attribute):
+        referencedType = datatypes.String
+
+    class items(features.Collection):
+        referencedType = SegmentItem
+        referencedEnd = 'segment'
+        singularName = 'item'
+
+
 class Entry(elements.Element):
 
     class description(features.Attribute):
@@ -174,7 +198,7 @@ class RootAccount(elements.Element):
         referencedType = datatypes.String
         defaultValue = ''
 
-    class subAccounts(model.Collection):
+    class subAccounts(features.Collection):
         referencedType = 'Account'
         referencedEnd = 'parent'
         singularName = 'subAccount'
@@ -182,6 +206,17 @@ class RootAccount(elements.Element):
     def __init__(self, name=None, description=None):
         self.name = name
         self.description = description
+
+    def traverseHierarchy(self, func, funcStartNode=True):
+        """ Apply func to each account in the hierarchy, beginning with self if requested. """
+        def traverseAux(account, depth, func):
+            for child in account.subAccounts:
+                func(child, depth)
+                traverseAux(child, depth + 1, func)
+
+        if funcStartNode:
+            func(self, 0)
+        traverseAux(self, 1, func)
 
 
 class Account(RootAccount):
@@ -225,6 +260,11 @@ class Account(RootAccount):
         def _onUnlink(self, account, entry, posn):
             account.balance_dirty = True
     
+    class segments(features.Collection):
+        """ Collection of SegmentItems. """
+        referencedType = 'SegmentItem'
+        singularName = 'segment'
+
     class balance(AccountAttribute):
         """ Sum of entry amounts (owned by current account & all sub-accounts). No period. """
         getOriginalEntryField = Entry.amount.get
@@ -234,7 +274,7 @@ class Account(RootAccount):
         metadata = NewAttribute('_dirty')
 
         def recompute(self, account, force=False, entryToo=True):
-            """ Unseting  all account balances is sufficient to recompute them on demand. """
+            """ Unseting all account balances is sufficient to recompute them on demand. """
             if force or account.balance_dirty:
                 Account.balance.unset(account)
                 Account.balanceYTD.unset(account)
@@ -249,12 +289,13 @@ class Account(RootAccount):
 
         def getPeriod(self):
             # todo true formula
-            return DateRange(date(2006, 1, 1), Date.today())
+            return DateRange(Date(2006, 1, 1), Date.today())
 
-    def __init__(self, parent, name=None, type=None, description=''):
+    def __init__(self, parent, name=None, type=None, description='', segments=[]):
         super(Account, self).__init__(name, description)
         assert parent is not None
         self.parent = parent
+        self.segments = segments
         self.changedEvent = sources.Broadcaster()
         if type is None:
             self.type = self.parent.type
@@ -279,7 +320,7 @@ class Account(RootAccount):
         name = 'NO_NAME'
         if hasattr(self, 'name'):
             name = self.name
-        return name.ljust(10)  #+ self.description.rjust(25) + str(self.balance).rjust(8)
+        return name.ljust(10) + str(self.balance).rjust(30) #+ self.description.rjust(25) + str(self.balance).rjust(8)
         
     def __str__(self):
         return self.name
@@ -326,7 +367,7 @@ class Transaction(elements.Element):
         referencedType = datatypes.String
         defaultValue = ''
 
-    class entries(model.Collection):
+    class entries(features.Collection):
         referencedType = 'Entry'
         referencedEnd = 'transaction'
         singularName = 'entry'
