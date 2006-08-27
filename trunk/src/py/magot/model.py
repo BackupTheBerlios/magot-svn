@@ -7,7 +7,7 @@ from magot.refdata import *
 from magot.util import *
 
 
-class SegmentItem(elements.Element):
+class DimensionMember(elements.Element):
 
     class code(features.Attribute):
         referencedType = datatypes.String
@@ -15,20 +15,20 @@ class SegmentItem(elements.Element):
     class desc(features.Attribute):
         referencedType = datatypes.String
 
-    class segment(features.Attribute):
-        referencedType = 'Segment'
-        referencedEnd = 'items'
+    class dimension(features.Attribute):
+        referencedType = 'Dimension'
+        referencedEnd = 'members'
 
 
-class Segment(elements.Element):
+class Dimension(elements.Element):
 
     class name(features.Attribute):
         referencedType = datatypes.String
 
-    class items(features.Collection):
-        referencedType = SegmentItem
-        referencedEnd = 'segment'
-        singularName = 'item'
+    class members(features.Collection):
+        referencedType = DimensionMember
+        referencedEnd = 'dimension'
+        singularName = 'member'
 
 
 class Entry(elements.Element):
@@ -260,10 +260,10 @@ class Account(RootAccount):
         def _onUnlink(self, account, entry, posn):
             account.balance_dirty = True
     
-    class segments(features.Collection):
-        """ Collection of SegmentItems. """
-        referencedType = 'SegmentItem'
-        singularName = 'segment'
+    class dimensions(features.Collection):
+        """ Collection of DimensionMembers. """
+        referencedType = 'DimensionMember'
+        singularName = 'dimension'
 
     class balance(AccountAttribute):
         """ Sum of entry amounts (owned by current account & all sub-accounts). No period. """
@@ -291,11 +291,11 @@ class Account(RootAccount):
             # todo true formula
             return DateRange(Date(2006, 1, 1), Date.today())
 
-    def __init__(self, parent, name=None, type=None, description='', segments=[]):
+    def __init__(self, parent, name=None, type=None, description='', dimensions=[]):
         super(Account, self).__init__(name, description)
         assert parent is not None
         self.parent = parent
-        self.segments = segments
+        self.dimensions = dimensions
         self.changedEvent = sources.Broadcaster()
         if type is None:
             self.type = self.parent.type
