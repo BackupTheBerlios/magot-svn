@@ -19,12 +19,12 @@ def _getdata(col, entry):
     if col == 4:
         return entry.isReconciled
     if col == 5:
-        if entry.type == MovementType.DEBIT:
+        if entry.isDebit:
             return entry.amount
         else:
             return Money.Zero
     if col == 6:
-        if entry.type == MovementType.CREDIT:
+        if not entry.isDebit:
             return entry.amount
         else:
             return Money.Zero
@@ -43,10 +43,10 @@ def _setdata(col, entry, value=None):
     elif col == 4:
         entry.isReconciled = value
     elif col == 5:
-        entry.type = MovementType.DEBIT
+        entry.isDebit = True
         entry.amount = Money(value)
     elif col == 6:
-        entry.type = MovementType.CREDIT
+        entry.isDebit = False
         entry.amount = Money(value)
 
 

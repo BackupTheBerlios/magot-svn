@@ -10,15 +10,15 @@ from magot.refdata import *
 def makeAccounts(self):
     # create all accounts
     self.root = RootAccount(name='Accounts')
-    self.asset = Account(parent=self.root, name='Asset', type=MovementType.DEBIT)
+    self.asset = Account(parent=self.root, name='Asset', type=TYPE_ASSET)
     self.checking = Account(parent=self.asset, name='Checking')
     self.computer = Account(parent=self.asset, name='Computer')
-    self.expense = Account(parent=self.root, name='Expense', type=MovementType.DEBIT)
+    self.expense = Account(parent=self.root, name='Expense', type=TYPE_EXPENSE)
     self.warranty = Account(parent=self.expense, name='Warranty')
     self.cash = Account(parent=self.expense, name='Cash')
-    self.income = Account(parent=self.root, name='Income', type=MovementType.CREDIT)
+    self.income = Account(parent=self.root, name='Income', type=TYPE_INCOME)
     self.salary = Account(parent=self.income, name='Salary')
-    self.equity = Account(parent=self.root, name='Equity', type=MovementType.CREDIT)
+    self.equity = Account(parent=self.root, name='Equity', type=TYPE_EQUITY)
     # set all initial balances
     self.checking.makeInitialTransaction(self.equity, Money(1))
     assert self.checking.balance == Money(1)
@@ -82,8 +82,8 @@ class TestTransaction(TestCase):
         salary = Money(100.05)
         tx = Transaction(Date.today(), 'Get salary with check', self.checking, self.salary, salary)
         assert tx.isBalanced
-        debit = [e for e in tx.entries if e.type is MovementType.DEBIT][0]
-        credit = [e for e in tx.entries if e.type is MovementType.CREDIT][0]
+        debit = [e for e in tx.entries if e.isDebit][0]
+        credit = [e for e in tx.entries if not e.isDebit][0]
         assert debit in self.checking.entries
         assert credit in self.salary.entries
         # test account balance
@@ -180,11 +180,11 @@ class TestTransaction(TestCase):
         assert checking.balance == initialCheckingBalance
         assert cash.balance == initialCashBalance + amount
         assert salary.balance == initialSalaryBalance + amount
-        # change entry type
-        assert ed.type is MovementType.DEBIT
-        ed._update(type=MovementType.CREDIT)
-        assert ed.type is MovementType.CREDIT
-        assert ec.type is MovementType.DEBIT
+        # change entry isDebit
+        assert ed.isDebit
+        ed._update(isDebit=False)
+        assert not ed.isDebit
+        assert ec.isDebit
         assert tx.isBalanced
         Account.balance.recompute(cash)
         Account.balance.recompute(salary)

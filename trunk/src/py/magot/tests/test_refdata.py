@@ -14,7 +14,7 @@ class TestMoney(TestCase):
         b = Money(100.256)
         assert a == b
         self.failUnless(a != 0)
-        assert a.amount == 100.256
+        assert a.amount == Decimal('100.256')
 
 
 if __name__ == '__main__':

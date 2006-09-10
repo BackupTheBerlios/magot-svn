@@ -1,15 +1,12 @@
 import cPickle
 
-from peak.api import *
-
 from magot.model import *
 from magot.refdata import *
 from magot.storage import *
 
-def makeDB(filename):
+from peak.api import *
 
-    CREDIT = MovementType.CREDIT
-    DEBIT = MovementType.DEBIT
+def makeDB(filename):
 
     # Root of all accounts
     root = RootAccount(name='root')
@@ -19,7 +16,7 @@ def makeDB(filename):
     # ##################
 
     # Asset accounts
-    assets = Account(root, 'Assets', DEBIT)
+    assets = Account(root, 'Assets', type=TYPE_ASSET)
 
     # Current assets
     currentAssets = Account(assets, 'Current Assets')
@@ -41,7 +38,7 @@ def makeDB(filename):
     patents = Account(longTermAssets, 'Patents')
     
     # Expense accounts
-    expense = Account(root, 'Expenses', DEBIT)
+    expense = Account(root, 'Expenses', type=TYPE_EXPENSE)
     warranty = Account(expense, 'Warranty')
     computer = Account(expense, 'Computer')
 
@@ -51,7 +48,7 @@ def makeDB(filename):
     # ##################
 
     # Debt accounts
-    liabilities = Account(root, "Liabilities and Owners' Equity", CREDIT)
+    liabilities = Account(root, "Liabilities and Owners' Equity", type=TYPE_LIABILITY)
 
     currentLiabilities = Account(liabilities, 'Short-Term liabilities')
     accPayable = Account(currentLiabilities, 'Accounts Payable')
@@ -66,7 +63,7 @@ def makeDB(filename):
     retainedEarnings = Account(equity, "Retained Earnings")
 
     # Income accounts
-    income = Account(root, 'Income', CREDIT)
+    income = Account(root, 'Income', type=TYPE_INCOME)
     salary = Account(income, 'Salaries')
 
 

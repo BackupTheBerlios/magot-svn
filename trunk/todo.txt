@@ -52,7 +52,7 @@ Fixes:
 		Define all analysis codes defining uniquely each account
 		Journal == charts of accounts == a (possibly filtered) view on all accounts
 	Examples:
-		/Asset/Real-Estate/@1, /Expense/Real-Estate/@1, /Liability/Real-Estate/@1/First-Mortgage 
+		/Asset/Real-Estate/@1, /Expense/Real-Estate/@1, /Liability/Real-Estate/@1
 			--> /@1/{Asset,Expense,Liability}
 		Motorola/401K, Motorola/Pension, Motorola/ESPP, 
 		Intel/401K, Intel/SERP, Intel/ESPP, Intel/Options 

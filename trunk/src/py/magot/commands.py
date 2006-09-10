@@ -101,7 +101,7 @@ Checks the accounting equation : Assets + Expenses = Equity + Liabilities + Inco
         
         debit = credit = Money.Zero
         for account in self.Accounts.root.subAccounts:
-            if account.type is MovementType.DEBIT:
+            if account.isDebit:
                 debit += account.balance
             else:
                 credit += account.balance

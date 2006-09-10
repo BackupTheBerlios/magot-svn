@@ -86,14 +86,23 @@ class Money(model.Struct):
 Money.Zero = Money()
 
 
-class MovementType(model.Enumeration):
+class AccountType(object):
 
-    CREDIT = model.enum()
-    DEBIT = model.enum()
+    def __init__(self, name, isDebit=True):
+        self.isDebit = isDebit
+        self.name = name
+
+    def __str__(self):
+        return self.name
+
+TYPE_ASSET = AccountType('Asset account type')
+TYPE_EXPENSE = AccountType('Expense account type')
+TYPE_INCOME = AccountType('Income account type', False)
+TYPE_LIABILITY = AccountType('Liability account type', False)
+TYPE_EQUITY = AccountType('Equity account type', False)
 
 
-def moneyformat(value, places=2, curr='', sep='.', dp=',', pos='', 
-                        neg='-', overall=10):
+def moneyformat(value, places=2, curr='', sep='.', dp=',', pos='', neg='-', overall=10):
     """ Convert Decimal ``value'' to a money-formatted string. 
     
     places:    required number of places after the decimal point 

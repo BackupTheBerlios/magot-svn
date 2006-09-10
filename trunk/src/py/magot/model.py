@@ -1,10 +1,12 @@
 """ Domain model for basic accounting. Version2. """
 
-from peak.model import elements, features, datatypes
-from peak.events import sources
-
 from magot.refdata import *
 from magot.util import *
+
+from peak.model import features
+from peak.model import datatypes
+from peak.model import elements
+from peak.events import sources
 
 
 class DimensionMember(elements.Element):
@@ -48,9 +50,9 @@ class Entry(elements.Element):
             else:
                 self = value
 
-    class type(features.Attribute):
-        # todo type is a reserved key choose another one
-        referencedType = MovementType
+    class isDebit(features.Attribute):
+        """ It's a debit or credit entry? """
+        referencedType = datatypes.Boolean
 
         def _onLink(self, entry, item, posn):
             entry.account.balance_dirty = True
@@ -107,29 +109,26 @@ class Entry(elements.Element):
         def get(self, entry):
             return entry.siblings[0]
 
-    def __init__(self, type, transaction, account, amount=0):
+    def __init__(self, isDebit, transaction, account, amount=0):
         super(Entry, self).__init__(transaction=transaction)
         account.addEntry(self)
         self.amount = amount
-        self.type = type
+        self.isDebit = isDebit
 
     def __str__(self):
-        return "%s\t%s\t%s\t%s" % (str(self.date), str(self.type), 
+        return "%s\t%s\t%s\t%s" % (str(self.date), str(self.isDebit), 
                                    str(self.amount), str(self.balance))
-    def _changeType(self):
-        if self.type == MovementType.CREDIT:
-            self.type = MovementType.DEBIT
-        else:
-            self.type = MovementType.CREDIT
+    def _changeIsDebit(self):
+        self.isDebit = not self.isDebit
         
-    def _update(self, account=None, type=None, amount=None, desc=None, isReconciled=None):
+    def _update(self, account=None, isDebit=None, amount=None, desc=None, isReconciled=None):
         """ Update entry  attributes. """
         if account is not None:
             self.account.removeEntry(self)
             account.addEntry(self)
-        if type is not None:
-            self._changeType()
-            self.oppositeEntry._changeType()
+        if isDebit is not None:
+            self._changeIsDebit()
+            self.oppositeEntry._changeIsDebit()
         if amount is not None:
             self.amount = amount
         if desc is not None:
@@ -176,7 +175,7 @@ class AccountAttribute(DerivedAndCached):
 
         result = Money.Zero
         for entry in entries:
-            if account.type is entry.type:
+            if account.isDebit is entry.isDebit:
                 result += self.getOriginalEntryField(entry)
             else:
                 result -= self.getOriginalEntryField(entry)
@@ -198,6 +197,9 @@ class RootAccount(elements.Element):
         referencedType = datatypes.String
         defaultValue = ''
 
+    class name(features.Attribute):
+        referencedType = datatypes.String
+
     class subAccounts(features.Collection):
         referencedType = 'Account'
         referencedEnd = 'parent'
@@ -218,20 +220,31 @@ class RootAccount(elements.Element):
             func(self, 0)
         traverseAux(self, 1, func)
 
+    def isRoot(self):
+        try:
+            getattr(self, 'parent')
+        except:
+            return True
+        else:
+            return False
+    
 
 class Account(RootAccount):
     
     """ Event source to notify any views interested in account hierarchy changes. """
     hierarchyChanged = sources.Broadcaster()
-    
-    class type(features.Attribute):
-        """ debit or credit. """
-        referencedType = MovementType
-#        isChangeable = False
-        # todo isChangeable = False ???
-        # how to initialize unchangeable feature ?
-        # todo derived from parent if not set?
 
+    class type(features.Attribute):
+        """ One of : Asset, Expense, Income, Liability, Equity. """
+        referencedType = AccountType
+        
+        def _onLink(self, account, accountType, posn):
+            account.isDebit = accountType.isDebit
+
+    class isDebit(features.Attribute):
+        """ It's a debit or credit account? """
+        referencedType = datatypes.Boolean
+    
     class commodity(features.Attribute):
         referencedType = Currency
         defaultValue = Currency.EUR
@@ -270,7 +283,7 @@ class Account(RootAccount):
         getOriginalEntryField = Entry.amount.get
         setDerivedEntryField = Entry.balance.set
 
-        # Balance becomes dirty as soon as some fields change : subAccounts, entry date/type/amount.
+        # Balance becomes dirty as soon as some fields change : subAccounts, entry date/amount/...
         metadata = NewAttribute('_dirty')
 
         def recompute(self, account, force=False, entryToo=True):
@@ -330,7 +343,7 @@ class Account(RootAccount):
 
     def makeInitialTransaction(self, equity, amount, date=None):
         date = date or Date.today()
-        if self.type is MovementType.DEBIT:
+        if self.isDebit:
             return Transaction(date, 'initial balance', self, equity, amount)
         else:
             return Transaction(date, 'initial balance', equity, self, amount)    
@@ -384,7 +397,7 @@ class Transaction(elements.Element):
         def get(self, transaction):
             debit = credit = Money.Zero
             for entry in transaction.entries:
-                if entry.type is MovementType.DEBIT:
+                if entry.isDebit:
                     debit += entry.amount
                 else:
                     credit += entry.amount
@@ -422,7 +435,7 @@ class Transaction(elements.Element):
 
         # Modifications on entry attributes.
         entry._update(isReconciled=entry.getModifiedAttr('isReconciled'), 
-                      type=entry.getModifiedAttr('type'))
+                      isDebit=entry.getModifiedAttr('isDebit'))
 
         # Modifications on the opposite entry attributes.
         entry.oppositeEntry._update(account=newOppositeAccount)
@@ -437,12 +450,12 @@ class Transaction(elements.Element):
         Account.hierarchyChanged.send(None)
 
     def _addDebitEntry(self, account, amount):
-        entry = Entry(MovementType.DEBIT, self, account, amount)
+        entry = Entry(True, self, account, amount)
         Account.balance.recompute(account)
         return entry
 
     def _addCreditEntry(self, account, amount):
-        entry = Entry(MovementType.CREDIT, self, account, amount)
+        entry = Entry(False, self, account, amount)
         Account.balance.recompute(account)
         return entry
 
