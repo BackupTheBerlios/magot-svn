@@ -14,7 +14,7 @@ def makeAccounts(self):
     # ===========================================================================
     # Define the "Apartment" Dimension in order to track all transactions dealing with apartments.
     # ===========================================================================
-    apartmentDim = Dimension(name="Apartment")
+    self.apartmentDim = apartmentDim = Dimension(name="Apartment")
     
     # Add 2 members for this dimension
     A100 = self.A100 = DimensionMember(code="A100", desc="Apartment at adress 100")
@@ -137,6 +137,49 @@ def makeAccounts(self):
     Transaction(Date(2006,12,31), '1 year gain capital 5%', apart200, gain200, 200000*0.05)
 
 
+class GroupAccountsUnderDimensionVisitor(object):
+    """ Visitor that groups all accounts having the same dimension under a new hierarchy while it is
+    visiting an original account hierarchy. 
+    /expense/typeA/account_A_WithDimension1 ==> /expense/dimension1/account_A_WithDimension1
+    /expense/typeB/account_B_WithDimension1 ==> /expense/dimension1/account_B_WithDimension1
+    """
+
+    def __init__(self, dimension, newroot):
+        self.dimension = dimension
+        self.root = newroot
+
+        self.asset = Account(parent=newroot.asset, name=dimension.code)
+        self.expense = Account(parent=newroot.expense, name=dimension.code)
+        self.income = Account(parent=newroot.income, name=dimension.code)
+        self.liability = Account(parent=newroot.liability, name=dimension.code)
+        self.equity = Account(parent=newroot.equity, name=dimension.code)
+        
+        self.type2account = {TYPE_ASSET:self.asset, TYPE_EXPENSE:self.expense,
+                             TYPE_INCOME:self.income, TYPE_LIABILITY:self.liability}
+
+    def __call__(self, account, depth):
+        """ This method makes self acts as a function. It is called while visiting a tree account. """
+
+        if self.dimension in account.dimensions:
+            self.addAccount(account)
+
+    def addAccount(self, child):
+        account = Account(self.type2account[child.type], name=child.name)
+        account.makeInitialTransaction(self.equity, child.balance)
+
+
+class MultiDimensionRootAccount(RootAccount):
+
+    def __init__(self, name=None, description=None):
+        super(MultiDimensionRootAccount, self).__init__(name, description)
+
+        self.asset = Account(parent=self, name='Asset', type=TYPE_ASSET)
+        self.expense = Account(parent=self, name='Expense', type=TYPE_EXPENSE)
+        self.income = Account(parent=self, name='Income', type=TYPE_INCOME)
+        self.liability = Account(parent=self, name='Liability', type=TYPE_LIABILITY)
+        self.equity = Account(parent=self, name='Equity', type=TYPE_EQUITY)
+
+
 class TestTransaction(TestCase):
     
     def setUp(self):
@@ -150,53 +193,19 @@ class TestTransaction(TestCase):
         root.traverseHierarchy(self.printAccount, False)
 
     def test_real_estate(self):
-        root = self.rootForApartment = RootAccount(name='root for A100')
+        rootForApartment = MultiDimensionRootAccount(name='root for Apartment')
 
-        asset = Account(parent=root, name='Asset', type=TYPE_ASSET)
-        expense = Account(parent=root, name='Expense', type=TYPE_EXPENSE)
-        income = Account(parent=root, name='Income', type=TYPE_INCOME)
-        liability = Account(parent=root, name='Liability', type=TYPE_LIABILITY)
-        equity = Account(parent=root, name='Equity', type=TYPE_EQUITY)
-
-        self.assetA = Account(parent=asset, name='A100')
-        self.expenseA = Account(parent=expense, name='A100')
-        self.incomeA = Account(parent=income, name='A100')
-        self.liabilityA = Account(parent=liability, name='A100')
-        self.equityA = Account(parent=equity, name='A100')
-        self.dimension = self.A100
-        self.root.traverseHierarchy(self.viewUnderDimension, False)
-        Transaction(Date.today(), 'year end', self.equityA, self.expenseA, Money(16550))
-        Transaction(Date.today(), 'year end', self.incomeA, self.equityA, Money(19200))
-
-        self.assetA = Account(parent=asset, name='A200')
-        self.expenseA = Account(parent=expense, name='A200')
-        self.incomeA = Account(parent=income, name='A200')
-        self.liabilityA = Account(parent=liability, name='A200')
-        self.equityA = Account(parent=equity, name='A200')
-        self.dimension = self.A200
-        self.root.traverseHierarchy(self.viewUnderDimension, False)
-        Transaction(Date.today(), 'year end', self.equityA, self.expenseA, Money(16550))
-        Transaction(Date.today(), 'year end', self.incomeA, self.equityA, Money(17200))
+        for member in self.apartmentDim.members:
+            # Group accounts under the current dimension
+            visitor = GroupAccountsUnderDimensionVisitor(member, rootForApartment)
+            self.root.traverseHierarchy(visitor, False)
+            # Make expense and income accounts zero at end year
+            Transaction(Date(2006,12,31), 'year end', visitor.equity, visitor.expense, visitor.expense.balance)
+            Transaction(Date(2006,12,31), 'year end', visitor.income, visitor.equity, visitor.income.balance)
 
         print '================ View under the Apartment dimension ================'
-        self.rootForApartment.traverseHierarchy(self.printAccount, False)
+        rootForApartment.traverseHierarchy(self.printAccount, False)
 
-    def viewUnderDimension(self, account, depth):
-        if self.dimension in account.dimensions:
-            self.addSubAccount(self.rootForApartment, account)
-
-    def addSubAccount(self, root, child):
-        if child.type == TYPE_ASSET:
-            account = Account(self.assetA, name=child.name)
-        if child.type == TYPE_EXPENSE:
-            account = Account(self.expenseA, name=child.name)
-        if child.type == TYPE_INCOME:
-            account = Account(self.incomeA, name=child.name)
-        if child.type == TYPE_LIABILITY:
-            account = Account(self.liabilityA, name=child.name)
-            
-        account.makeInitialTransaction(self.equityA, child.balance)
-            
 
 if __name__ == '__main__':
     unittest.main()

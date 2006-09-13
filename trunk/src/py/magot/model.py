@@ -3,11 +3,8 @@
 from magot.refdata import *
 from magot.util import *
 
-from peak.model import features
-from peak.model import datatypes
-from peak.model import elements
+from peak.model import features, datatypes, elements
 from peak.events import sources
-
 
 class DimensionMember(elements.Element):
 
@@ -188,7 +185,9 @@ class AccountAttribute(DerivedAndCached):
 
 
 class RootAccount(elements.Element):
-    """ Root Account without parent and entries. """
+    """ Root Account without parent nor entries. """
+
+    isRoot = True
 
     class name(features.Attribute):
         referencedType = datatypes.String
@@ -196,9 +195,6 @@ class RootAccount(elements.Element):
     class description(features.Attribute):
         referencedType = datatypes.String
         defaultValue = ''
-
-    class name(features.Attribute):
-        referencedType = datatypes.String
 
     class subAccounts(features.Collection):
         referencedType = 'Account'
@@ -211,6 +207,7 @@ class RootAccount(elements.Element):
 
     def traverseHierarchy(self, func, funcStartNode=True):
         """ Apply func to each account in the hierarchy, beginning with self if requested. """
+
         def traverseAux(account, depth, func):
             for child in account.subAccounts:
                 func(child, depth)
@@ -220,17 +217,11 @@ class RootAccount(elements.Element):
             func(self, 0)
         traverseAux(self, 1, func)
 
-    def isRoot(self):
-        try:
-            getattr(self, 'parent')
-        except:
-            return True
-        else:
-            return False
-    
 
 class Account(RootAccount):
     
+    isRoot = False
+
     """ Event source to notify any views interested in account hierarchy changes. """
     hierarchyChanged = sources.Broadcaster()
 
