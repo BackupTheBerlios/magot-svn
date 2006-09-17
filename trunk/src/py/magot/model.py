@@ -298,13 +298,13 @@ class Account(RootAccount):
     def __init__(self, parent, name=None, type=None, description='', dimensions=[]):
         super(Account, self).__init__(name, description)
         assert parent is not None
-        self.parent = parent
         self.dimensions = dimensions
         self.changedEvent = sources.Broadcaster()
         if type is None:
-            self.type = self.parent.type
+            self.type = parent.type
         else:
             self.type = type
+        parent.addSubAccount(self)
 
     def __setstate__(self, dict):
         """ Restore state from pickleable content. """

@@ -100,7 +100,7 @@ def makeAccounts(self):
     Transaction(Date(2005,1,3), 'buy an apartment', apart100, bank, 200000)
     Transaction(Date(2005,1,3), 'pay VAT', taxes100, bank, 14000)
     
-    Transaction(Date(2005,1,4), 'pay 1 year warranty', warranty100, bank, 50)
+    Transaction(Date(2005,1,4), 'pay 1 year warranty', warranty100, bank, 60)
     Transaction(Date(2005,1,4), 'pay 1 year property tax', taxes100, bank, 300)
     Transaction(Date(2005,1,4), 'profit 1 year imposition reduction', imposition, taxes100, 5000)
     # This tx is not related to the apartment
@@ -111,7 +111,7 @@ def makeAccounts(self):
     Transaction(Date(2005,1,5), 'pay syndic', syndic100, bank, 100*12)
     Transaction(Date(2005,1,5), 'rent the appartment', bank, rent100, 600*12)
     
-    Transaction(Date(2005,12,31), '1 year gain capital 6%', apart100, gain100, 200000*0.06)
+    Transaction(Date(2005,12,31), '1 year gain capital 6%', apart100, gain100, 200000*0.05)
 
 
     # ===========================================================================
@@ -134,7 +134,7 @@ def makeAccounts(self):
     Transaction(Date(2006,1,5), 'pay syndic', syndic200, bank, 100*12)
     Transaction(Date(2006,1,5), 'rent the appartment', bank, rent200, 600*12)
     
-    Transaction(Date(2006,12,31), '1 year gain capital 5%', apart200, gain200, 200000*0.05)
+    Transaction(Date(2006,12,31), '1 year gain capital 5%', apart200, gain200, 200000*0.06)
 
 
 class GroupAccountsUnderDimensionVisitor(object):
@@ -186,12 +186,19 @@ class TestTransaction(TestCase):
         makeAccounts(self)
         self.pp(self.root)
 
-    def printAccount(self, account, depth):
-        print '\t'*depth, account, '=', '\t', account.balance
-
     def pp(self, root):
         root.traverseHierarchy(self.printAccount, False)
 
+    def printAccount(self, account, depth):
+        print '\t'*depth + str(account).ljust(20) + (str(account.balance)).rjust(40-4*depth)
+
+    def sortSubAccounts(self, account, depth):
+        aux = [(subAccount.balance, subAccount) for subAccount in account.subAccounts]
+        aux.sort()
+        aux.reverse()
+        sortedSubAccounts = [subAccount for balance, subAccount in aux]
+        account.setSubAccounts(sortedSubAccounts)
+        
     def test_real_estate(self):
         rootForApartment = MultiDimensionRootAccount(name='root for Apartment')
 
@@ -202,6 +209,8 @@ class TestTransaction(TestCase):
             # Make expense and income accounts zero at end year
             Transaction(Date(2006,12,31), 'year end', visitor.equity, visitor.expense, visitor.expense.balance)
             Transaction(Date(2006,12,31), 'year end', visitor.income, visitor.equity, visitor.income.balance)
+
+        rootForApartment.traverseHierarchy(self.sortSubAccounts, False)
 
         print '================ View under the Apartment dimension ================'
         rootForApartment.traverseHierarchy(self.printAccount, False)
