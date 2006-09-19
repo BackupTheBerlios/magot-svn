@@ -58,6 +58,8 @@ def makeAccounts(self):
     taxes200 = self.taxes200 = Account(parent=taxes, name='Taxes 200', dimensions=[A200])
     
     imposition = self.imposition = Account(parent=self.expense, name='Imposition')
+    imposition100 = self.imposition100 = Account(parent=self.imposition, name='Imposition 100', dimensions=[A100])
+    imposition200 = self.imposition200 = Account(parent=self.imposition, name='Imposition 200', dimensions=[A200])
 
 
     # ===========================================================================
@@ -92,9 +94,10 @@ def makeAccounts(self):
 
 
     # ===========================================================================
-    # Make transactions as of 2005 to buy and rent an apartment
+    # Make transactions to buy and rent an apartment
     # ===========================================================================
 
+    # 2005
     Transaction(Date(2005,1,2), 'contract a loan', bank, loan100, 150000)
 
     Transaction(Date(2005,1,3), 'buy an apartment', apart100, bank, 200000)
@@ -102,7 +105,7 @@ def makeAccounts(self):
     
     Transaction(Date(2005,1,4), 'pay 1 year warranty', warranty100, bank, 60)
     Transaction(Date(2005,1,4), 'pay 1 year property tax', taxes100, bank, 300)
-    Transaction(Date(2005,1,4), 'profit 1 year imposition reduction', imposition, taxes100, 5000)
+    Transaction(Date(2005,1,4), 'profit 1 year imposition reduction', imposition100, taxes100, 5000)
     # This tx is not related to the apartment
     Transaction(Date(2005,1,4), 'pay 1 year imposition', imposition, bank, 10000)
     
@@ -111,8 +114,21 @@ def makeAccounts(self):
     Transaction(Date(2005,1,5), 'pay syndic', syndic100, bank, 100*12)
     Transaction(Date(2005,1,5), 'rent the appartment', bank, rent100, 600*12)
     
-    Transaction(Date(2005,12,31), '1 year gain capital 6%', apart100, gain100, 200000*0.05)
+    Transaction(Date(2005,12,31), '1 year gain capital 5%', apart100, gain100, 200000*0.05)
 
+    # 2006
+    Transaction(Date(2006,1,4), 'pay 1 year warranty', warranty100, bank, 60)
+    Transaction(Date(2006,1,4), 'pay 1 year property tax', taxes100, bank, 300)
+    Transaction(Date(2006,1,4), 'profit 1 year imposition reduction', imposition100, taxes100, 5000)
+    
+    Transaction(Date(2006,1,4), 'pay 1 year imposition', imposition, bank, 10000)
+    
+    Transaction(Date(2006,1,5), 'pay loan interests', interests100, bank, 500*12)
+    Transaction(Date(2006,1,5), 'pay loan principal', loan100, bank, 500*12)
+    Transaction(Date(2006,1,5), 'pay syndic', syndic100, bank, 100*12)
+    Transaction(Date(2006,1,5), 'rent the appartment', bank, rent100, 600*12)
+    
+    Transaction(Date(2006,12,31), '1 year gain capital 6%', apart100, gain100, 210000*0.06)
 
     # ===========================================================================
     # Make transactions as of 2006 to buy and rent another apartment
@@ -125,7 +141,7 @@ def makeAccounts(self):
 
     Transaction(Date(2006,1,4), 'pay 1 year warranty', warranty200, bank, 50)
     Transaction(Date(2006,1,4), 'pay 1 year property tax', taxes200, bank, 300)
-    Transaction(Date(2006,1,4), 'profit 1 year imposition reduction', imposition, taxes200, 5000)
+    Transaction(Date(2006,1,4), 'profit 1 year imposition reduction', imposition200, taxes200, 5000)
     # This tx is not related to the apartment
     Transaction(Date(2006,1,4), 'pay 1 year imposition', imposition, bank, 10000)
     
@@ -153,9 +169,13 @@ class GroupAccountsUnderDimensionVisitor(object):
         self.income = Account(parent=newroot.income, name=dimension.code)
         self.liability = Account(parent=newroot.liability, name=dimension.code)
         self.equity = Account(parent=newroot.equity, name=dimension.code)
+        self.profits = Account(parent=newroot.profits, name=dimension.code)
+        self.netAssets = Account(parent=newroot.netAssets, name=dimension.code)
         
         self.type2account = {TYPE_ASSET:self.asset, TYPE_EXPENSE:self.expense,
-                             TYPE_INCOME:self.income, TYPE_LIABILITY:self.liability}
+                             TYPE_INCOME:self.income, TYPE_LIABILITY:self.liability, 
+                             TYPE_EQUITY:self.equity, TYPE_PROFITS:self.profits, 
+                             TYPE_NET_ASSETS:self.netAssets}
 
     def __call__(self, account, depth):
         """ This method makes self acts as a function. It is called while visiting a tree account. """
@@ -165,7 +185,7 @@ class GroupAccountsUnderDimensionVisitor(object):
 
     def addAccount(self, child):
         account = Account(self.type2account[child.type], name=child.name)
-        account.makeInitialTransaction(self.equity, child.balance)
+        account.makeInitialTransaction(self.equity.parent, child.balance)
 
 
 class MultiDimensionRootAccount(RootAccount):
@@ -178,6 +198,8 @@ class MultiDimensionRootAccount(RootAccount):
         self.income = Account(parent=self, name='Income', type=TYPE_INCOME)
         self.liability = Account(parent=self, name='Liability', type=TYPE_LIABILITY)
         self.equity = Account(parent=self, name='Equity', type=TYPE_EQUITY)
+        self.profits = Account(parent=self, name='Profits & Loss', type=TYPE_EQUITY)
+        self.netAssets = Account(parent=self, name='Net Assets', type=TYPE_EQUITY)
 
 
 class TestTransaction(TestCase):
@@ -200,20 +222,26 @@ class TestTransaction(TestCase):
         account.setSubAccounts(sortedSubAccounts)
         
     def test_real_estate(self):
-        rootForApartment = MultiDimensionRootAccount(name='root for Apartment')
+        rootApart = MultiDimensionRootAccount(name='root for Apartment')
 
         for member in self.apartmentDim.members:
+        #for member in [self.A100]:
             # Group accounts under the current dimension
-            visitor = GroupAccountsUnderDimensionVisitor(member, rootForApartment)
+            visitor = GroupAccountsUnderDimensionVisitor(member, rootApart)
             self.root.traverseHierarchy(visitor, False)
             # Make expense and income accounts zero at end year
-            Transaction(Date(2006,12,31), 'year end', visitor.equity, visitor.expense, visitor.expense.balance)
-            Transaction(Date(2006,12,31), 'year end', visitor.income, visitor.equity, visitor.income.balance)
+            Transaction(Date(2005,12,31), 'year end', visitor.equity, visitor.expense, Money(21560))
+            Transaction(Date(2005,12,31), 'year end', visitor.income, visitor.equity, Money(17200))
+            
+            Transaction(Date(2006,12,31), 'Profit & Loss', visitor.equity.parent, visitor.profits,
+                        visitor.income.balance - visitor.expense.balance)
+            Transaction(Date(2006,12,31), 'Net Assets', visitor.equity.parent, visitor.netAssets,
+                        visitor.profits.balance + visitor.equity.balance)
 
-        rootForApartment.traverseHierarchy(self.sortSubAccounts, False)
+        rootApart.traverseHierarchy(self.sortSubAccounts, False)
 
         print '================ View under the Apartment dimension ================'
-        rootForApartment.traverseHierarchy(self.printAccount, False)
+        rootApart.traverseHierarchy(self.printAccount, False)
 
 
 if __name__ == '__main__':
