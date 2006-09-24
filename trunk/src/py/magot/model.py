@@ -6,6 +6,7 @@ from magot.util import *
 from peak.model import features, datatypes, elements
 from peak.events import sources
 
+
 class DimensionMember(elements.Element):
 
     class code(features.Attribute):

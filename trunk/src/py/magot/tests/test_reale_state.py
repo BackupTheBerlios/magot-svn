@@ -1,4 +1,4 @@
-"""Unit tests for multi-dimension analysis."""
+"""Unit tests for uni-dimension analysis."""
 
 from unittest import TestCase, makeSuite, TestSuite
 import unittest
@@ -222,20 +222,24 @@ class TestTransaction(TestCase):
         account.setSubAccounts(sortedSubAccounts)
         
     def test_real_estate(self):
+        # Create a root for the new account hierarchy grouping accounts under their dimension.
         rootApart = MultiDimensionRootAccount(name='root for Apartment')
-
-        for member in self.apartmentDim.members:
+        endYear = Date(2006,12,31)
+        
+        for dimension in self.apartmentDim.members:
             # Group accounts under the current dimension
-            visitor = GroupAccountsUnderDimensionVisitor(member, rootApart)
-            self.root.traverseHierarchy(visitor, False)
-            # Make expense and income accounts zero at end year
-            Transaction(Date(2005,12,31), 'year end', visitor.equity, visitor.expense, visitor.expense.balance)
-            Transaction(Date(2005,12,31), 'year end', visitor.income, visitor.equity, visitor.income.balance)
+            v = GroupAccountsUnderDimensionVisitor(dimension, rootApart)
+            self.root.traverseHierarchy(v, False)
+
+            # Make expense and income accounts zero at the end year.
+            #Transaction(endYear, 'year end', v.equity, v.expense, v.expense.balance)
+            #Transaction(endYear, 'year end', v.income, v.equity, v.income.balance)
             
-            Transaction(Date(2006,12,31), 'Profit & Loss', visitor.equity.parent, visitor.profits,
-                        visitor.income.balance - visitor.expense.balance)
-            Transaction(Date(2006,12,31), 'Net Assets', visitor.equity.parent, visitor.netAssets,
-                        visitor.profits.balance + visitor.equity.balance)
+            # Finally, compute Profit & Loss and Net Assets for the current dimension.
+            Transaction(endYear, 'Profit & Loss', 
+                        v.equity.parent, v.profits, v.income.balance - v.expense.balance)
+            Transaction(endYear, 'Net Assets', 
+                        v.equity.parent, v.netAssets, v.profits.balance + v.equity.balance)
 
         rootApart.traverseHierarchy(self.sortSubAccounts, False)
 
