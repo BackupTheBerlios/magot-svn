@@ -149,7 +149,7 @@ def makeAccounts(self):
     Transaction(Date(2006,1,5), 'pay loan principal', loan200, bank, 500*12)
     Transaction(Date(2006,1,5), 'pay syndic', syndic200, bank, 100*12)
     Transaction(Date(2006,1,5), 'rent the appartment', bank, rent200, 600*12)
-    
+
     Transaction(Date(2006,12,31), '1 year gain capital 5%', apart200, gain200, 200000*0.06)
 
 
@@ -225,13 +225,12 @@ class TestTransaction(TestCase):
         rootApart = MultiDimensionRootAccount(name='root for Apartment')
 
         for member in self.apartmentDim.members:
-        #for member in [self.A100]:
             # Group accounts under the current dimension
             visitor = GroupAccountsUnderDimensionVisitor(member, rootApart)
             self.root.traverseHierarchy(visitor, False)
             # Make expense and income accounts zero at end year
-            Transaction(Date(2005,12,31), 'year end', visitor.equity, visitor.expense, Money(21560))
-            Transaction(Date(2005,12,31), 'year end', visitor.income, visitor.equity, Money(17200))
+            Transaction(Date(2005,12,31), 'year end', visitor.equity, visitor.expense, visitor.expense.balance)
+            Transaction(Date(2005,12,31), 'year end', visitor.income, visitor.equity, visitor.income.balance)
             
             Transaction(Date(2006,12,31), 'Profit & Loss', visitor.equity.parent, visitor.profits,
                         visitor.income.balance - visitor.expense.balance)
