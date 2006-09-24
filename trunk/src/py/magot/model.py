@@ -19,6 +19,18 @@ class DimensionMember(elements.Element):
         referencedType = 'Dimension'
         referencedEnd = 'members'
 
+    class subLevels(features.Collection):
+        referencedType = 'DimensionMember'
+        singularName = 'subLevel'
+        
+    def isInPath(self, dimensionMembers):
+        if self in dimensionMembers:
+            return True
+        else:
+            for d2 in (d1.subLevels for d1 in dimensionMembers):
+                return self.isInPath(d2)
+            return False
+    
 
 class Dimension(elements.Element):
 
