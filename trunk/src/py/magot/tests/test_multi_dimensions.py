@@ -136,8 +136,7 @@ class GroupAccountsUnderDimensionVisitor(object):
     """
 
     def __init__(self, dimensions, newroot):
-        self.root = newroot
-        self.parent = self.root
+        self.parent = self.root = newroot
         self.dimensions = dimensions
         self.member2Acc = {}
         self.firstDimension = True
@@ -145,10 +144,9 @@ class GroupAccountsUnderDimensionVisitor(object):
         for dimension in dimensions:
             save = self.member2Acc.copy()
             self.member2Acc = {}
-            for member in dimension.members:
-                parent = self.findParent(member, save)
-                self.member2Acc[member] = Account(parent=parent, name=member.code, 
-                                                       dimensions=[member])
+            for m in dimension.members:
+                parent = self.findParent(m, save)
+                self.member2Acc[m] = Account(parent=parent, name=m.code, dimensions=[m])
             self.firstDimension = False
 
     def findParent(self, member, member2Acc):
@@ -159,7 +157,6 @@ class GroupAccountsUnderDimensionVisitor(object):
             if m.isInPath([member]):
                 return member2Acc[m]
         assert "Parent not found"
-        
                              
     def __call__(self, account, depth):
         """ This method makes self acts as a function. It is called while visiting a tree account. """
@@ -175,13 +172,26 @@ class GroupAccountsUnderDimensionVisitor(object):
     def createAccount(self, child, parent):
         account = Account(parent, name=child.name, dimensions=child.dimensions)
         account.makeInitialTransaction(self.root.equity, child.balance)
-        
+
+
+class KeepAccountsByDimensionVisitor(object):
+
+    def __init__(self, root, dimensions):
+        self.root = root
+        self.dimMembers = set(m for dim in dimensions for m in dim.members)
+        self.accounts = []
+
+    def __call__(self, account, depth):        
+        for dimMember in account.dimensions:
+            if dimMember.isInPath(self.dimMembers):
+                self.accounts.append(account)
+                
 
 class TestTransaction(TestCase):
     
     def setUp(self):
         makeAccounts(self)
-        self.pp(self.root)
+        self.pp(self.root)        
 
     def pp(self, root):
         def printAccount(account, depth):
@@ -195,13 +205,42 @@ class TestTransaction(TestCase):
         # Create a root for the new account hierarchy grouping accounts under their dimension.
         rootApart = MultiDimensionRootAccount(name='root for Apartment')
         endYear = Date(2006,12,31)
+        dimensions = [self.locationDim, self.roomNumberDim]
+
+        # Keep only accounts that have these dimensions
+        
+        v = KeepAccountsByDimensionVisitor(self.root, dimensions)
+        self.root.traverseHierarchy(v, False)
+        from itertools import groupby
+        from operator import attrgetter
+
+        for dimension in dimensions:
+            keyFunc = curry(Account.dimensions.getMember, dimension)
+
+            for k, group in groupby(v.accounts, keyFunc):
+                print k, list(group)
 
         # Group accounts under each apartment dimension
-        v = GroupAccountsUnderDimensionVisitor([self.locationDim, self.apartmentDim], rootApart)
+        v = GroupAccountsUnderDimensionVisitor(dimensions, rootApart)
         self.root.traverseHierarchy(v, False)
 
         self.pp(rootApart)
 
+class curry:
+    def __init__(self, fun, *args, **kwargs):
+        self.fun = fun
+        self.pending = args[:]
+        self.kwargs = kwargs.copy()
 
-if __name__ == '__main__':
+    def __call__(self, *args, **kwargs):
+        if kwargs and self.kwargs:
+            kw = self.kwargs.copy()
+            kw.update(kwargs)
+        else:
+            kw = kwargs or self.kwargs
+
+        return self.fun(*(self.pending + args), **kw)
+    
+
+if __name__ == '__main__':    
     unittest.main()
