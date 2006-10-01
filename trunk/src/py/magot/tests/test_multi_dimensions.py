@@ -1,5 +1,7 @@
 """Unit tests for multi-dimension analysis."""
 
+from itertools import groupby
+
 from unittest import TestCase, makeSuite, TestSuite
 import unittest
 
@@ -179,68 +181,66 @@ class KeepAccountsByDimensionVisitor(object):
     def __init__(self, root, dimensions):
         self.root = root
         self.dimMembers = set(m for dim in dimensions for m in dim.members)
-        self.accounts = []
+        self.accounts = set([])
 
     def __call__(self, account, depth):        
         for dimMember in account.dimensions:
             if dimMember.isInPath(self.dimMembers):
-                self.accounts.append(account)
+                self.accounts.add(account)
                 
 
 class TestTransaction(TestCase):
     
     def setUp(self):
         makeAccounts(self)
-        self.pp(self.root)        
+        self.pprint(self.root)
 
-    def pp(self, root):
+    def pprint(self, root):
         def printAccount(account, depth):
             print '\t'*depth + str(account).ljust(20) + (str(account.balance)).rjust(40-4*depth)
 
         root.traverseHierarchy(printAccount, False)
-        print "==============================================="
+        print "============================================================"
 
 
     def test_multi_dimension(self):
-        # Create a root for the new account hierarchy grouping accounts under their dimension.
-        rootApart = MultiDimensionRootAccount(name='root for Apartment')
-        endYear = Date(2006,12,31)
-        dimensions = [self.locationDim, self.roomNumberDim]
-
-        # Keep only accounts that have these dimensions
+        self.viewAccountsUnderDimensions([self.apartmentDim])
+        self.viewAccountsUnderDimensions([self.roomNumberDim, self.locationDim])
+        self.viewAccountsUnderDimensions([self.locationDim, self.roomNumberDim])
+        self.viewAccountsUnderDimensions([self.expenseDim, self.locationDim, self.roomNumberDim])
         
+    def viewAccountsUnderDimensions(self, dimensions):
+        # Create a root for the new account hierarchy grouping accounts under their dimension.
+        self.rootApart = MultiDimensionRootAccount(name='root for Apartment')
+        endYear = Date(2006,12,31)
+
+        # Only keep accounts that have the requested dimensions
         v = KeepAccountsByDimensionVisitor(self.root, dimensions)
         self.root.traverseHierarchy(v, False)
-        from itertools import groupby
-        from operator import attrgetter
 
-        for dimension in dimensions:
-            keyFunc = curry(Account.dimensions.getMember, dimension)
+        # Group accounts by dimension hierarchically
+        dimensions.reverse()
+        self.oneDimension(dimensions, v.accounts, self.rootApart.expense)
+                
+        self.pprint(self.rootApart)
+                
+    def createAccount(self, child, parent):
+        account = Account(parent, name=child.name, dimensions=child.dimensions)
+        account.makeInitialTransaction(self.rootApart.equity, child.balance)
 
-            for k, group in groupby(v.accounts, keyFunc):
-                print k, list(group)
+    def oneDimension(self, dimensions, accounts, parent):
+        if not dimensions:
+            for account in accounts:
+                self.createAccount(account, parent)
+            return
 
-        # Group accounts under each apartment dimension
-        v = GroupAccountsUnderDimensionVisitor(dimensions, rootApart)
-        self.root.traverseHierarchy(v, False)
+        dimension = dimensions.pop()
+        keyFunc = dimension.getMemberForAccount
 
-        self.pp(rootApart)
+        for dimMember, accountGroup in groupby(sorted(accounts, key=keyFunc), keyFunc):
+            newRoot = Account(parent, name=dimMember.code)
+            self.oneDimension(list(dimensions), list(accountGroup), newRoot)
+        
 
-class curry:
-    def __init__(self, fun, *args, **kwargs):
-        self.fun = fun
-        self.pending = args[:]
-        self.kwargs = kwargs.copy()
-
-    def __call__(self, *args, **kwargs):
-        if kwargs and self.kwargs:
-            kw = self.kwargs.copy()
-            kw.update(kwargs)
-        else:
-            kw = kwargs or self.kwargs
-
-        return self.fun(*(self.pending + args), **kw)
-    
-
-if __name__ == '__main__':    
+if __name__ == '__main__':
     unittest.main()

@@ -27,10 +27,32 @@ class DimensionMember(elements.Element):
         if self in dimensionMembers:
             return True
         else:
-            for d2 in (d1.subLevels for d1 in dimensionMembers):
-                return self.isInPath(d2)
-            return False
+             for member in self.subLevels:
+                 return member.isInPath(dimensionMembers)
+             return False
     
+    def getMemberForDimension(self, dimension):
+        """ Return the member having the given dimension from all descendant levels. """
+        if self.dimension == dimension:
+            return self
+
+        for subMember in self.subLevels:
+            member = subMember.getMemberForDimension(dimension)
+            if member is not None:
+                return member
+        return None
+
+    def __eq__(self, other):
+        return self.code == other.code
+        
+    def __hash__(self):
+        return hash(self.code)
+
+    def __repr__(self):
+        return self.__class__.__name__+'('+self.code+')'
+
+    __str__ = __repr__
+
 
 class Dimension(elements.Element):
 
@@ -41,6 +63,14 @@ class Dimension(elements.Element):
         referencedType = DimensionMember
         referencedEnd = 'dimension'
         singularName = 'member'
+
+    def __repr__(self):
+        return self.__class__.__name__+'('+self.name+')'
+
+    __str__ = __repr__
+    
+    def getMemberForAccount(self, account):
+        return account.getMemberForDimension(self)
 
 
 class Entry(elements.Element):
@@ -281,7 +311,16 @@ class Account(RootAccount):
         """ Collection of DimensionMembers. """
         referencedType = 'DimensionMember'
         singularName = 'dimension'
-
+        
+    def getMemberForDimension(self, dimension):
+        """ Return the dimension member for the given dimension if account has it or None else. """
+        # @todo create a dict {dimension:member} for this account?
+        for member in self.dimensions:
+            m = member.getMemberForDimension(dimension)
+            if m is not None:
+                return m
+        return None
+        
     class balance(AccountAttribute):
         """ Sum of entry amounts (owned by current account & all sub-accounts). No period. """
         getOriginalEntryField = Entry.amount.get
@@ -337,13 +376,19 @@ class Account(RootAccount):
         name = 'NO_NAME'
         if hasattr(self, 'name'):
             name = self.name
-        return name.ljust(10) + str(self.balance).rjust(30) #+ self.description.rjust(25) + str(self.balance).rjust(8)
+        return name.ljust(10) + str(self.balance).rjust(10)
         
     def __str__(self):
         return self.name
     
     def __cmp__(self, other):
         return cmp(self.name, other.name)
+
+    def __eq__(self, other):
+        return self.name == other.name
+        
+    def __hash__(self):
+        return hash(self.name)
 
     def makeInitialTransaction(self, equity, amount, date=None):
         date = date or Date.today()
