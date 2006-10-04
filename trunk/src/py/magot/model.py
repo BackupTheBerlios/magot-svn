@@ -17,29 +17,22 @@ class DimensionMember(elements.Element):
 
     class dimension(features.Attribute):
         referencedType = 'Dimension'
-        referencedEnd = 'members'
 
-    class subLevels(features.Collection):
+    class superLevels(features.Collection):
+        """ ex1: The dimension member 'CityA' has the super level 'regionA'.
+            ex2: The dimension member 'apartment100' has super levels '2-roomed' and 'CityA'. """
         referencedType = 'DimensionMember'
-        singularName = 'subLevel'
+        singularName = 'superLevel'
         
-    def isInPath(self, dimensionMembers):
-        if self in dimensionMembers:
-            return True
-        else:
-             for member in self.subLevels:
-                 return member.isInPath(dimensionMembers)
-             return False
-    
     def getMemberForDimension(self, dimension):
-        """ Return the member having the given dimension from all descendant levels. """
+        """ Return the member having the given dimension from itself or all super levels. """
         if self.dimension == dimension:
             return self
 
-        for subMember in self.subLevels:
-            member = subMember.getMemberForDimension(dimension)
-            if member is not None:
-                return member
+        for member in self.superLevels:
+            m = member.getMemberForDimension(dimension)
+            if m is not None:
+                return m
         return None
 
     def __eq__(self, other):
@@ -58,11 +51,6 @@ class Dimension(elements.Element):
 
     class name(features.Attribute):
         referencedType = datatypes.String
-
-    class members(features.Collection):
-        referencedType = DimensionMember
-        referencedEnd = 'dimension'
-        singularName = 'member'
 
     def __repr__(self):
         return self.__class__.__name__+'('+self.name+')'
