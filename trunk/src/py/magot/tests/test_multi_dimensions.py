@@ -17,49 +17,48 @@ def makeAccounts(self):
     # ===========================================================================
     # Define the "Location" Dimension for an apartment with 4 dimension members.
     # ===========================================================================
-    self.locationDim = locationDim = Dimension(name="Location")
+    self.locationDim = locationDim = Dimension(code="Location")
 
-    zoneA = DimensionMember(code="zoneA", desc="zoneA", dimension=locationDim)
-    zoneB = DimensionMember(code="zoneB", desc="zoneB", dimension=locationDim)
-    puteaux = DimensionMember(code="Puteaux", desc="Puteaux", dimension=locationDim)
-    issy = DimensionMember(code="Issy", desc="Issy", dimension=locationDim)
+    self.zoneA = zoneA = DimensionMember(code="zoneA", desc="zoneA", dimension=locationDim)
+    self.puteaux = puteaux = DimensionMember(code="Puteaux", desc="Puteaux", dimension=locationDim)
+    self.issy = issy = DimensionMember(code="Issy", desc="Issy", dimension=locationDim)
 
-    puteaux.addSuperLevel(zoneA)  # City 'Puteaux' is in region 'zoneA'
-    issy.addSuperLevel(zoneB)
+    puteaux.addSuperMember(zoneA)  # City 'Puteaux' is in region 'zoneA'
+    issy.addSuperMember(zoneA)
 
 
     # ===========================================================================
     # Define the "RoomNumber" Dimension for an apartment with 2 members.
     # ===========================================================================
-    self.roomNumberDim = roomNumberDim = Dimension(name="RoomNumber")
+    self.roomNumberDim = roomNumberDim = Dimension(code="RoomNumber")
 
-    R2 = DimensionMember(code="2-roomed", desc="2-roomed", dimension=roomNumberDim)
-    R3 = DimensionMember(code="3-roomed", desc="3-roomed", dimension=roomNumberDim)
+    self.R2 = R2 = DimensionMember(code="2-roomed", desc="2-roomed", dimension=roomNumberDim)
+    self.R3 = R3 = DimensionMember(code="3-roomed", desc="3-roomed", dimension=roomNumberDim)
 
 
     # ===========================================================================
     # Define the "Apartment" Dimension with 4 members.
     # ===========================================================================
-    self.apartmentDim = apartmentDim = Dimension(name="Apartment")
+    self.apartmentDim = apartmentDim = Dimension(code="Apartment")
 
-    A100 = DimensionMember(code="A100", desc="Apartment 100", dimension=apartmentDim)
-    A200 = DimensionMember(code="A200", desc="Apartment 200", dimension=apartmentDim)
-    A300 = DimensionMember(code="A300", desc="Apartment 300", dimension=apartmentDim)
-    A400 = DimensionMember(code="A400", desc="Apartment 400", dimension=apartmentDim)
+    self.A100 = A100 = DimensionMember(code="A100", desc="Apartment 100", dimension=apartmentDim)
+    self.A200 = A200 = DimensionMember(code="A200", desc="Apartment 200", dimension=apartmentDim)
+    self.A300 = A300 = DimensionMember(code="A300", desc="Apartment 300", dimension=apartmentDim)
+    self.A400 = A400 = DimensionMember(code="A400", desc="Apartment 400", dimension=apartmentDim)
 
-    A100.setSuperLevels([puteaux, R2])
-    A200.setSuperLevels([puteaux, R3])
-    A300.setSuperLevels([issy, R2])
-    A400.setSuperLevels([issy, R3])
+    A100.setSuperMembers([puteaux, R2])
+    A200.setSuperMembers([puteaux, R3])
+    A300.setSuperMembers([issy, R2])
+    A400.setSuperMembers([issy, R3])
 
 
     # ===========================================================================
     # Define the "Expense" Dimension with 2 members.
     # ===========================================================================
-    self.expenseDim = expenseDim = Dimension(name="Expense")
+    self.expenseDim = expenseDim = Dimension(code="Expense")
 
-    warrantyMember = DimensionMember(code="Warranty", desc="Warranty", dimension=expenseDim)
-    taxesMember = DimensionMember(code="Taxes", desc="Taxes", dimension=expenseDim)
+    self.warrantyMember = warrantyMember = DimensionMember(code="Warranty", desc="Warranty", dimension=expenseDim)
+    self.taxesMember = taxesMember = DimensionMember(code="Taxes", desc="Taxes", dimension=expenseDim)
 
 
     # ===========================================================================
@@ -75,16 +74,16 @@ def makeAccounts(self):
     self.expense = Account(parent=self.root, name='Expense', type=TYPE_EXPENSE)
 
     warranty = Account(parent=self.expense, name='Warranty')
-    warranty100 = self.warranty100 = Account(parent=warranty, name='Warranty 100', dimensions=[A100, warrantyMember])
-    warranty200 = self.warranty200 = Account(parent=warranty, name='Warranty 200', dimensions=[A200, warrantyMember])
-    warranty300 = self.warranty300 = Account(parent=warranty, name='Warranty 300', dimensions=[A300, warrantyMember])
-    warranty400 = self.warranty400 = Account(parent=warranty, name='Warranty 400', dimensions=[A400, warrantyMember])
+    warranty100 = self.warranty100 = Account(parent=warranty, name='Warranty 100', dimensionMembers=[A100, warrantyMember])
+    warranty200 = self.warranty200 = Account(parent=warranty, name='Warranty 200', dimensionMembers=[A200, warrantyMember])
+    warranty300 = self.warranty300 = Account(parent=warranty, name='Warranty 300', dimensionMembers=[A300, warrantyMember])
+    warranty400 = self.warranty400 = Account(parent=warranty, name='Warranty 400', dimensionMembers=[A400, warrantyMember])
     
     taxes = Account(parent=self.expense, name='Taxes')
-    taxes100 = self.taxes100 = Account(parent=taxes, name='Taxes 100', dimensions=[A100, taxesMember])
-    taxes200 = self.taxes200 = Account(parent=taxes, name='Taxes 200', dimensions=[A200, taxesMember])
-    taxes300 = self.taxes300 = Account(parent=taxes, name='Taxes 300', dimensions=[A300, taxesMember])
-    taxes400 = self.taxes400 = Account(parent=taxes, name='Taxes 400', dimensions=[A400, taxesMember])
+    taxes100 = self.taxes100 = Account(parent=taxes, name='Taxes 100', dimensionMembers=[A100, taxesMember])
+    taxes200 = self.taxes200 = Account(parent=taxes, name='Taxes 200', dimensionMembers=[A200, taxesMember])
+    taxes300 = self.taxes300 = Account(parent=taxes, name='Taxes 300', dimensionMembers=[A300, taxesMember])
+    taxes400 = self.taxes400 = Account(parent=taxes, name='Taxes 400', dimensionMembers=[A400, taxesMember])
 
 
     # ===========================================================================
@@ -138,16 +137,14 @@ class MultiDimensionRootAccount(RootAccount):
 
 class KeepAccountsByDimensionVisitor(object):
 
-    def __init__(self, dimensions):
-        self.dimensions = set(dimensions)
-        self.accounts = []
+    def __init__(self, dimensionsAndMembers):
+        self.dimensionsAndMembers = set(dimensionsAndMembers)
+        self.accounts = []  # Accounts that are kept.
 
     def __call__(self, account, depth):
-        for dimension in self.dimensions:
-            if account.getMemberForDimension(dimension) is not None:
-                self.accounts.append(account)
-                break
-                
+        if account.hasAllDimensionAndMember(self.dimensionsAndMembers):
+            self.accounts.append(account)
+
 
 class TestTransaction(TestCase):
     
@@ -164,32 +161,40 @@ class TestTransaction(TestCase):
 
 
     def test_multi_dimension(self):
+        # Group by dimension members
+        self.viewAccountsUnderDimensions([self.puteaux])
+        self.viewAccountsUnderDimensions([self.zoneA])
+        self.viewAccountsUnderDimensions([self.A100])
+        self.viewAccountsUnderDimensions([self.puteaux, self.warrantyMember])
+
+        # Group by dimensions
         self.viewAccountsUnderDimensions([self.locationDim])
         self.viewAccountsUnderDimensions([self.apartmentDim, self.expenseDim])
         self.viewAccountsUnderDimensions([self.roomNumberDim, self.locationDim])
         self.viewAccountsUnderDimensions([self.locationDim, self.roomNumberDim])
         self.viewAccountsUnderDimensions([self.expenseDim, self.locationDim, self.roomNumberDim])
-        
+
+        # Group by mix of dimensions and dimension members
+        self.viewAccountsUnderDimensions([self.apartmentDim, self.R2])
+        self.viewAccountsUnderDimensions([self.warrantyMember, self.apartmentDim])
+        self.viewAccountsUnderDimensions([self.zoneA, self.roomNumberDim])
+
     def viewAccountsUnderDimensions(self, dimensions):
-        # Create a root for the new account hierarchy grouping accounts under their dimension.
+        # Create a root for the new account hierarchy grouping accounts by some dimensions.
         self.rootApart = MultiDimensionRootAccount(name='root for Apartment')
-        endYear = Date(2006,12,31)
+        self.endYear = endYear = Date(2006,12,31)
 
         # Only keep accounts that have the requested dimensions
         v = KeepAccountsByDimensionVisitor(dimensions)
         self.root.traverseHierarchy(v, False)
 
-        # Group accounts by dimension hierarchically
+        # Group accounts by all dimensions hierarchically
         dimensions.reverse()
-        self.oneDimension(dimensions, v.accounts, self.rootApart.expense)
-                
-        self.pprint(self.rootApart)
-                
-    def createAccount(self, child, parent):
-        account = Account(parent, name=child.name, dimensions=child.dimensions)
-        account.makeInitialTransaction(self.rootApart.equity, child.balance)
+        self.groupByOneDimension(dimensions, v.accounts, self.rootApart.expense)
 
-    def oneDimension(self, dimensions, accounts, parent):
+        self.pprint(self.rootApart)
+
+    def groupByOneDimension(self, dimensions, accounts, parent):
         if not dimensions:
             for account in accounts:
                 self.createAccount(account, parent)
@@ -199,9 +204,13 @@ class TestTransaction(TestCase):
         keyFunc = dimension.getMemberForAccount
 
         for dimMember, accountGroup in groupby(sorted(accounts, key=keyFunc), keyFunc):
-            newRoot = Account(parent, name=dimMember.code)
-            self.oneDimension(list(dimensions), list(accountGroup), newRoot)
-        
+            newRoot = Account(parent, name=dimMember.code)           
+            self.groupByOneDimension(list(dimensions), list(accountGroup), newRoot)
+
+    def createAccount(self, child, parent):
+        account = Account(parent, name=child.name, dimensionMembers=child.dimensionMembers)
+        account.makeInitialTransaction(self.rootApart.equity, child.balance)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -14,13 +14,11 @@ def makeAccounts(self):
     # ===========================================================================
     # Define the "Apartment" Dimension in order to track all transactions dealing with apartments.
     # ===========================================================================
-    self.apartmentDim = apartmentDim = Dimension(name="Apartment")
+    self.apartmentDim = apartmentDim = Dimension(code="Apartment")
     
     # Add 2 members for this dimension
-    A100 = self.A100 = DimensionMember(code="A100", desc="Apartment at adress 100")
-    apartmentDim.addMember(A100)
-    A200 = self.A200 = DimensionMember(code="A200", desc="Apartment at adress 200")
-    apartmentDim.addMember(A200)
+    A100 = self.A100 = DimensionMember(code="A100", desc="Apartment at adress 100", dimension=apartmentDim)
+    A200 = self.A200 = DimensionMember(code="A200", desc="Apartment at adress 200", dimension=apartmentDim)
     
 
     # ===========================================================================
@@ -32,8 +30,8 @@ def makeAccounts(self):
     
     apart = Account(parent=self.asset, name='All apartments')
     # This account deals with the 'apartmentDim' Dimension
-    apart100 = self.apart100 = Account(parent=apart, name='Apartment 100', dimensions=[A100])
-    apart200 = self.apart200 = Account(parent=apart, name='Apartment 200', dimensions=[A200])
+    apart100 = self.apart100 = Account(parent=apart, name='Apartment 100', dimensionMembers=[A100])
+    apart200 = self.apart200 = Account(parent=apart, name='Apartment 200', dimensionMembers=[A200])
     
     
     # ===========================================================================
@@ -42,38 +40,38 @@ def makeAccounts(self):
     self.expense = Account(parent=self.root, name='Expense', type=TYPE_EXPENSE)
 
     warranty = Account(parent=self.expense, name='Warranty')
-    warranty100 = self.warranty100 = Account(parent=warranty, name='Warranty 100', dimensions=[A100])
-    warranty200 = self.warranty200 = Account(parent=warranty, name='Warranty 200', dimensions=[A200])
+    warranty100 = self.warranty100 = Account(parent=warranty, name='Warranty 100', dimensionMembers=[A100])
+    warranty200 = self.warranty200 = Account(parent=warranty, name='Warranty 200', dimensionMembers=[A200])
     
     interests = Account(parent=self.expense, name='Interests')
-    interests100 = self.interests100 = Account(parent=interests, name='Interests 100', dimensions=[A100])
-    interests200 = self.interests200 = Account(parent=interests, name='Interests 200', dimensions=[A200])
+    interests100 = self.interests100 = Account(parent=interests, name='Interests 100', dimensionMembers=[A100])
+    interests200 = self.interests200 = Account(parent=interests, name='Interests 200', dimensionMembers=[A200])
     
     syndic = Account(parent=self.expense, name='Syndic')
-    syndic100 = self.syndic100 = Account(parent=syndic, name='Syndic 100', dimensions=[A100])
-    syndic200 = self.syndic200 = Account(parent=syndic, name='Syndic 200', dimensions=[A200])
+    syndic100 = self.syndic100 = Account(parent=syndic, name='Syndic 100', dimensionMembers=[A100])
+    syndic200 = self.syndic200 = Account(parent=syndic, name='Syndic 200', dimensionMembers=[A200])
     
     taxes = Account(parent=self.expense, name='Taxes')
-    taxes100 = self.taxes100 = Account(parent=taxes, name='Taxes 100', dimensions=[A100])
-    taxes200 = self.taxes200 = Account(parent=taxes, name='Taxes 200', dimensions=[A200])
+    taxes100 = self.taxes100 = Account(parent=taxes, name='Taxes 100', dimensionMembers=[A100])
+    taxes200 = self.taxes200 = Account(parent=taxes, name='Taxes 200', dimensionMembers=[A200])
     
     imposition = self.imposition = Account(parent=self.expense, name='Imposition')
-    imposition100 = self.imposition100 = Account(parent=self.imposition, name='Imposition 100', dimensions=[A100])
-    imposition200 = self.imposition200 = Account(parent=self.imposition, name='Imposition 200', dimensions=[A200])
+    imposition100 = self.imposition100 = Account(parent=self.imposition, name='Imposition 100', dimensionMembers=[A100])
+    imposition200 = self.imposition200 = Account(parent=self.imposition, name='Imposition 200', dimensionMembers=[A200])
 
 
     # ===========================================================================
     # INCOMES
     # ===========================================================================
     self.income = Account(parent=self.root, name='Income', type=TYPE_INCOME)
-    
+
     rent = Account(parent=self.income, name='Rent')
-    rent100 = self.rent100 = Account(parent=rent, name='Rent 100', dimensions=[A100])
-    rent200 = self.rent200 = Account(parent=rent, name='Rent 200', dimensions=[A200])
+    rent100 = self.rent100 = Account(parent=rent, name='Rent 100', dimensionMembers=[A100])
+    rent200 = self.rent200 = Account(parent=rent, name='Rent 200', dimensionMembers=[A200])
     
     gain = Account(parent=self.income, name='Gain')
-    gain100 = self.gain100 = Account(parent=gain, name='Gain 100', dimensions=[A100])
-    gain200 = self.gain200 = Account(parent=gain, name='Gain 200', dimensions=[A200])
+    gain100 = self.gain100 = Account(parent=gain, name='Gain 100', dimensionMembers=[A100])
+    gain200 = self.gain200 = Account(parent=gain, name='Gain 200', dimensionMembers=[A200])
       
 
     # ===========================================================================
@@ -82,8 +80,8 @@ def makeAccounts(self):
     self.liability = Account(parent=self.root, name='Liability', type=TYPE_LIABILITY)
     
     loan = Account(parent=self.liability, name='Loan')
-    loan100 = self.loan100 = Account(parent=loan, name='Loan 100', dimensions=[A100])
-    loan200 = self.loan200 = Account(parent=loan, name='Loan 200', dimensions=[A200])
+    loan100 = self.loan100 = Account(parent=loan, name='Loan 100', dimensionMembers=[A100])
+    loan200 = self.loan200 = Account(parent=loan, name='Loan 200', dimensionMembers=[A200])
 
 
     # ===========================================================================
@@ -180,7 +178,7 @@ class GroupAccountsUnderDimensionVisitor(object):
     def __call__(self, account, depth):
         """ This method makes self acts as a function. It is called while visiting a tree account. """
 
-        if self.dimension in account.dimensions:
+        if self.dimension in account.dimensionMembers:
             self.addAccount(account)
 
     def addAccount(self, child):
@@ -226,7 +224,7 @@ class TestTransaction(TestCase):
         rootApart = MultiDimensionRootAccount(name='root for Apartment')
         endYear = Date(2006,12,31)
         
-        for dimension in self.apartmentDim.members:
+        for dimension in [self.A100, self.A200]:
             # Group accounts under the current dimension
             v = GroupAccountsUnderDimensionVisitor(dimension, rootApart)
             self.root.traverseHierarchy(v, False)

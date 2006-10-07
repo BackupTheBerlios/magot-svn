@@ -1,5 +1,7 @@
 """ Domain model for basic accounting. Version2. """
 
+from itertools import chain
+
 from magot.refdata import *
 from magot.util import *
 
@@ -7,10 +9,25 @@ from peak.model import features, datatypes, elements
 from peak.events import sources
 
 
-class DimensionMember(elements.Element):
+def flatten(listOfLists):
+    return list(chain(*listOfLists))
+
+
+class Dimension(elements.Element):
 
     class code(features.Attribute):
         referencedType = datatypes.String
+
+    def __repr__(self):
+        return self.__class__.__name__+'('+self.code+')'
+
+    __str__ = __repr__
+
+    def getMemberForAccount(self, account):
+        return account.getMemberForDimension(self)
+
+
+class DimensionMember(Dimension):
 
     class desc(features.Attribute):
         referencedType = datatypes.String
@@ -18,18 +35,24 @@ class DimensionMember(elements.Element):
     class dimension(features.Attribute):
         referencedType = 'Dimension'
 
-    class superLevels(features.Collection):
-        """ ex1: The dimension member 'CityA' has the super level 'regionA'.
-            ex2: The dimension member 'apartment100' has super levels '2-roomed' and 'CityA'. """
+    class superMembers(features.Collection):
+        """ ex1: The dimension member 'CityA' has the super member 'RegionA'.
+            ex2: The dimension member 'apartment100' has super members '2-roomed' and 'CityA'. """
         referencedType = 'DimensionMember'
-        singularName = 'superLevel'
-        
+        singularName = 'superMember'
+    
+    def getMemberForAccount(self, account):
+        if account.hasMember(self):
+            return self
+        else:
+            return None
+
     def getMemberForDimension(self, dimension):
-        """ Return the member having the given dimension from itself or all super levels. """
+        """ Return the member having the given dimension from itself or all super members. """
         if self.dimension == dimension:
             return self
 
-        for member in self.superLevels:
+        for member in self.superMembers:
             m = member.getMemberForDimension(dimension)
             if m is not None:
                 return m
@@ -45,20 +68,6 @@ class DimensionMember(elements.Element):
         return self.__class__.__name__+'('+self.code+')'
 
     __str__ = __repr__
-
-
-class Dimension(elements.Element):
-
-    class name(features.Attribute):
-        referencedType = datatypes.String
-
-    def __repr__(self):
-        return self.__class__.__name__+'('+self.name+')'
-
-    __str__ = __repr__
-    
-    def getMemberForAccount(self, account):
-        return account.getMemberForDimension(self)
 
 
 class Entry(elements.Element):
@@ -294,21 +303,41 @@ class Account(RootAccount):
 
         def _onUnlink(self, account, entry, posn):
             account.balance_dirty = True
-    
-    class dimensions(features.Collection):
-        """ Collection of DimensionMembers. """
+
+    class dimensionMembers(features.Collection):
+        """ Collection of DimensionMembers : used to group accounts by them. """
         referencedType = 'DimensionMember'
-        singularName = 'dimension'
-        
+        singularName = 'dimensionMember'
+
+        # Use an internal dictionary {Dimension:DimensionMember} dealing with all super members.
+        def _onLink(self, account, member, posn):
+            if not member.dimension in account._dimensionToMember:
+                account._dimensionToMember[member.dimension] = [member]
+                for m in member.superMembers:
+                    self._onLink(account, m, posn)
+            else:
+                account._dimensionToMember[member.dimension].append(member)
+                
+        def _onUnlink(self, account, member, posn):
+            if member.dimension in account._dimensionToMember:
+                del account._dimensionToMember[member.dimension]
+                for m in member.superMembers:
+                    self._onUnlink(account, m, posn)
+
     def getMemberForDimension(self, dimension):
         """ Return the dimension member for the given dimension if account has it or None else. """
-        # @todo create a dict {dimension:member} for this account?
-        for member in self.dimensions:
-            m = member.getMemberForDimension(dimension)
-            if m is not None:
-                return m
-        return None
-        
+        return self._dimensionToMember.get(dimension, None)[0]
+
+    def hasAllDimensionAndMember(self, dimensionsAndMembers):
+        if self._dimensionToMember:
+            temp = self._dimensionToMember.keys() + flatten(self._dimensionToMember.values())
+            return dimensionsAndMembers.issubset(temp)
+        else:
+            return False
+
+    def hasMember(self, member):
+        return member in flatten(self._dimensionToMember.values())
+
     class balance(AccountAttribute):
         """ Sum of entry amounts (owned by current account & all sub-accounts). No period. """
         getOriginalEntryField = Entry.amount.get
@@ -335,10 +364,11 @@ class Account(RootAccount):
             # todo true formula
             return DateRange(Date(2006, 1, 1), Date.today())
 
-    def __init__(self, parent, name=None, type=None, description='', dimensions=[]):
+    def __init__(self, parent, name=None, type=None, description='', dimensionMembers=[]):
         super(Account, self).__init__(name, description)
         assert parent is not None
-        self.dimensions = dimensions
+        self._dimensionToMember = {}
+        self.dimensionMembers = dimensionMembers
         self.changedEvent = sources.Broadcaster()
         if type is None:
             self.type = parent.type

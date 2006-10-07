@@ -2,6 +2,8 @@ Magot TODO :
 
 0.2 : Improve the Accounting Model
 
+- add P&L and Net Asset for multi-dimensions
+
 Fixes:
 	close current ledger
 	update ledger when account name changes
