@@ -394,7 +394,7 @@ class Account(RootAccount):
         name = 'NO_NAME'
         if hasattr(self, 'name'):
             name = self.name
-        return name.ljust(10) + str(self.balance).rjust(10)
+        return name.ljust(10) + str(self.balance).rjust(15)
         
     def __str__(self):
         return self.name

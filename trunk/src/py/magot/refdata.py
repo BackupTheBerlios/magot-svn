@@ -94,6 +94,8 @@ class AccountType(object):
 
     def __str__(self):
         return self.name
+    
+    __repr__ = __str__
 
 TYPE_ASSET = AccountType('Asset account type')
 TYPE_EXPENSE = AccountType('Expense account type')
