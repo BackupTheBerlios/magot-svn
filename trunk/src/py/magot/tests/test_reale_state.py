@@ -14,11 +14,11 @@ def makeAccounts(self):
     # ===========================================================================
     # Define the "Apartment" Dimension in order to track all transactions dealing with apartments.
     # ===========================================================================
-    self.apartmentDim = apartmentDim = Dimension(code="Apartment")
+    self.apartmentDim = apartmentDim = Dimension(name="Apartment")
     
     # Add 2 members for this dimension
-    A100 = self.A100 = DimensionMember(code="A100", desc="Apartment at adress 100", dimension=apartmentDim)
-    A200 = self.A200 = DimensionMember(code="A200", desc="Apartment at adress 200", dimension=apartmentDim)
+    A100 = self.A100 = DimensionMember(name="A100", desc="Apartment at adress 100", dimension=apartmentDim)
+    A200 = self.A200 = DimensionMember(name="A200", desc="Apartment at adress 200", dimension=apartmentDim)
     
 
     # ===========================================================================
@@ -162,13 +162,13 @@ class GroupAccountsUnderDimensionVisitor(object):
         self.dimension = dimension
         self.root = newroot
 
-        self.asset = Account(parent=newroot.asset, name=dimension.code)
-        self.expense = Account(parent=newroot.expense, name=dimension.code)
-        self.income = Account(parent=newroot.income, name=dimension.code)
-        self.liability = Account(parent=newroot.liability, name=dimension.code)
-        self.equity = Account(parent=newroot.equity, name=dimension.code)
-        self.profits = Account(parent=newroot.profits, name=dimension.code)
-        self.netAssets = Account(parent=newroot.netAssets, name=dimension.code)
+        self.asset = Account(parent=newroot.asset, name=dimension.name)
+        self.expense = Account(parent=newroot.expense, name=dimension.name)
+        self.income = Account(parent=newroot.income, name=dimension.name)
+        self.liability = Account(parent=newroot.liability, name=dimension.name)
+        self.equity = Account(parent=newroot.equity, name=dimension.name)
+        self.profits = Account(parent=newroot.profits, name=dimension.name)
+        self.netAssets = Account(parent=newroot.netAssets, name=dimension.name)
         
         self.type2account = {TYPE_ASSET:self.asset, TYPE_EXPENSE:self.expense,
                              TYPE_INCOME:self.income, TYPE_LIABILITY:self.liability, 

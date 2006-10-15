@@ -1,6 +1,11 @@
+from itertools import chain
+
 from peak.model import features
 from peak.binding import attributes
 
+
+def flatten(listOfLists):
+    return list(chain(*listOfLists))
 
 class NewAttribute(object):
     """ Attribute metadata that generates a new attribute whose name is '<attrName>suffix'. """

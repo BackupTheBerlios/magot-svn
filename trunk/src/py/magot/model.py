@@ -1,7 +1,5 @@
 """ Domain model for basic accounting. Version2. """
 
-from itertools import chain
-
 from magot.refdata import *
 from magot.util import *
 
@@ -9,17 +7,13 @@ from peak.model import features, datatypes, elements
 from peak.events import sources
 
 
-def flatten(listOfLists):
-    return list(chain(*listOfLists))
-
-
 class Dimension(elements.Element):
 
-    class code(features.Attribute):
+    class name(features.Attribute):
         referencedType = datatypes.String
 
     def __repr__(self):
-        return self.__class__.__name__+'('+self.code+')'
+        return self.__class__.__name__+'('+self.name+')'
 
     __str__ = __repr__
 
@@ -59,13 +53,13 @@ class DimensionMember(Dimension):
         return None
 
     def __eq__(self, other):
-        return self.code == other.code
+        return self.name == other.name
         
     def __hash__(self):
-        return hash(self.code)
+        return hash(self.name)
 
     def __repr__(self):
-        return self.__class__.__name__+'('+self.code+')'
+        return self.__class__.__name__+'('+self.name+')'
 
     __str__ = __repr__
 
@@ -332,6 +326,13 @@ class Account(RootAccount):
         if self._dimensionToMember:
             temp = self._dimensionToMember.keys() + flatten(self._dimensionToMember.values())
             return dimensionsAndMembers.issubset(temp)
+        else:
+            return False
+
+    def hasAnyDimensionAndMember(self, dimensionsAndMembers):
+        if self._dimensionToMember:
+            temp = self._dimensionToMember.keys() + flatten(self._dimensionToMember.values())
+            return len(dimensionsAndMembers.intersection(temp)) >= 1
         else:
             return False
 
