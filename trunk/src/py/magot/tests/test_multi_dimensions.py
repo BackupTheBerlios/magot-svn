@@ -47,8 +47,8 @@ def makeAccounts(self):
     self.A400 = A400 = DimensionMember(name="A400", desc="Apartment 400", dimension=apartmentDim)
 
     A100.setSuperMembers([puteaux, R2])
-    A200.setSuperMembers([puteaux, R3])
-    A300.setSuperMembers([issy, R2])
+    A200.setSuperMembers([puteaux, R2])
+    A300.setSuperMembers([puteaux, R3])
     A400.setSuperMembers([issy, R3])
 
 
@@ -151,7 +151,8 @@ class MultiDimensionRootAccount(RootAccount):
         self.netAssets = Account(parent=self, name='Net Assets', type=TYPE_EQUITY)
 
 
-class SingleDimensionRoot(object):
+class SingleDimensionRoots(object):
+    """ Container for all sub-roots (asset, expense, liability, ...) under a single dimension. """
     
     def __init__(self, multiDimensionRoot, name):
         r = self.root = multiDimensionRoot
@@ -195,24 +196,24 @@ class TestTransaction(TestCase):
 
     def test_multi_dimension(self):
         # Group by dimension members
-        #self.viewAccountsUnderDimensions([self.A100, self.A200])
-
-        #self.viewAccountsUnderDimensions([self.A100])
-        #self.viewAccountsUnderDimensions([self.puteaux])
-        #self.viewAccountsUnderDimensions([self.zoneA])
-        #self.viewAccountsUnderDimensions([self.puteaux, self.warrantyMember])
+        self.viewAccountsUnderDimensions([self.A100])
+        self.viewAccountsUnderDimensions([self.puteaux])
+        self.viewAccountsUnderDimensions([self.zoneA])
+        self.viewAccountsUnderDimensions([self.puteaux, self.warrantyMember])
 
         # Group by dimensions
-        #self.viewAccountsUnderDimensions([self.locationDim])
-        #self.viewAccountsUnderDimensions([self.apartmentDim, self.expenseDim])
+        self.viewAccountsUnderDimensions([self.locationDim])
+        self.viewAccountsUnderDimensions([self.apartmentDim])
+        self.viewAccountsUnderDimensions([self.locationDim, self.apartmentDim])
+        self.viewAccountsUnderDimensions([self.locationDim, self.roomNumberDim])
         self.viewAccountsUnderDimensions([self.roomNumberDim, self.locationDim])
-        #self.viewAccountsUnderDimensions([self.locationDim, self.roomNumberDim])
-        #self.viewAccountsUnderDimensions([self.expenseDim, self.locationDim, self.roomNumberDim])
+        self.viewAccountsUnderDimensions([self.locationDim, self.roomNumberDim, self.apartmentDim])
 
-        ## Group by mix of dimensions and dimension members
-        #self.viewAccountsUnderDimensions([self.apartmentDim, self.R2])
-        #self.viewAccountsUnderDimensions([self.warrantyMember, self.apartmentDim])
-        #self.viewAccountsUnderDimensions([self.zoneA, self.roomNumberDim])
+        # Group by a mix of dimensions and dimension members
+        self.viewAccountsUnderDimensions([self.apartmentDim, self.R2])
+        self.viewAccountsUnderDimensions([self.warrantyMember, self.apartmentDim])
+        self.viewAccountsUnderDimensions([self.zoneA, self.roomNumberDim])
+        self.viewAccountsUnderDimensions([self.zoneA, self.R2, self.apartmentDim])
 
     def viewAccountsUnderDimensions(self, dimensions):
         endYear = self.endYear = Date(2006,12,31)
@@ -238,19 +239,18 @@ class TestTransaction(TestCase):
                 self.createAccountLikeOriginal(account, root.subRoots[account.type])
 
             r = self.rootApart
-            Transaction(self.endYear, 'Profit & Loss', 
-                        r.equity, root.profits, root.income.balance - root.expense.balance)
-            Transaction(self.endYear, 'Net Assets', 
-                        r.equity, root.netAssets, root.profits.balance + root.equity.balance)
-
+            Transaction(self.endYear, 'Profit & Loss', r.equity, root.profits, 
+                        root.income.balance - root.expense.balance)
+            Transaction(self.endYear, 'Net Assets', r.equity, root.netAssets, 
+                        root.profits.balance + root.equity.balance)
             return
 
         dimension = dimensions.pop()
         keyFunc = dimension.getMemberForAccount
-        
+
         for dimMember, accountGroup in groupby(sorted(accounts, key=keyFunc), keyFunc):
-            newRoot = SingleDimensionRoot(root, dimMember.name)
-            self.groupAccountsByOneDimension(dimensions, accountGroup, newRoot)
+            roots = SingleDimensionRoots(root, dimMember.name)
+            self.groupAccountsByOneDimension(list(dimensions), accountGroup, roots)
 
 
     def createAccountLikeOriginal(self, original, parent):

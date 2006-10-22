@@ -2,10 +2,9 @@ Magot TODO :
 
 0.2 : Improve the Accounting Model
 
-- add multi-dimensions for income/asset/liability/equity accounts
+- add Apartment class as a dimension container
 - add A100 OR A200 instead of Location AND Warranty
-- use generator to retrieve accounts filtered by dimensions
-- add P&L and Net Asset for multi-dimensions
+- use generator instead of list to retrieve accounts filtered by dimensions
 
 Fixes:
 	close current ledger
