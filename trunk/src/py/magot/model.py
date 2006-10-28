@@ -7,10 +7,11 @@ from peak.model import features, datatypes, elements
 from peak.events import sources
 
 
-class Dimension(elements.Element):
 
-    class name(features.Attribute):
-        referencedType = datatypes.String
+class Dimension(elements.Element):
+    
+    def __init__(self, name):
+        self.name = name
 
     def __repr__(self):
         return self.__class__.__name__+'('+self.name+')'
@@ -21,20 +22,33 @@ class Dimension(elements.Element):
         return account.getMemberForDimension(self)
 
 
-class DimensionMember(Dimension):
+class MemberClass(elements.ElementClass):
+
+    def __new__(cls, name, bases, cdict):
+        member = super(MemberClass, cls).__new__(cls, name, bases, cdict)
+        member.dimension = Dimension(name)
+        return member
+
+
+class DimensionMember(elements.Element):
+
+    __metaclass__ = MemberClass
+
+    class name(features.Attribute):
+        referencedType = datatypes.String
 
     class desc(features.Attribute):
         referencedType = datatypes.String
 
     class dimension(features.Attribute):
-        referencedType = 'Dimension'
+        referencedType = Dimension
 
     class superMembers(features.Collection):
         """ ex1: The dimension member 'CityA' has the super member 'RegionA'.
             ex2: The dimension member 'apartment100' has super members '2-roomed' and 'CityA'. """
         referencedType = 'DimensionMember'
         singularName = 'superMember'
-    
+
     def getMemberForAccount(self, account):
         if account.hasMember(self):
             return self
@@ -62,6 +76,18 @@ class DimensionMember(Dimension):
         return self.__class__.__name__+'('+self.name+')'
 
     __str__ = __repr__
+
+
+class DimensionAttribute(features.Attribute):
+    """ Attribute that is used in a dimension member. """
+
+    def _onLink(attr, member, superMember, posn):
+        member.addSuperMember(superMember)
+
+    def _onUnlink(attr, member, superMember, posn):
+        member.removeSuperMember(superMember)
+
+
 
 
 class Entry(elements.Element):
@@ -322,6 +348,9 @@ class Account(RootAccount):
         """ Return the dimension member for the given dimension if account has it or None else. """
         return self._dimensionToMember.get(dimension, None)[0]
 
+    def hasMember(self, member):
+        return member in flatten(self._dimensionToMember.values())
+
     def hasAllDimensionAndMember(self, dimensionsAndMembers):
         if self._dimensionToMember:
             temp = self._dimensionToMember.keys() + flatten(self._dimensionToMember.values())
@@ -335,9 +364,6 @@ class Account(RootAccount):
             return len(dimensionsAndMembers.intersection(temp)) >= 1
         else:
             return False
-
-    def hasMember(self, member):
-        return member in flatten(self._dimensionToMember.values())
 
     class balance(AccountAttribute):
         """ Sum of entry amounts (owned by current account & all sub-accounts). No period. """
@@ -471,8 +497,7 @@ class Transaction(elements.Element):
                     credit += entry.amount
             return debit == credit
 
-    def __init__(self, date=Date.today(), description='', debit=None, 
-                 credit=None, amount=None):
+    def __init__(self, date=Date.today(), description='', debit=None, credit=None, amount=None):
         super(Transaction,self).__init__(date=date, description=description)
 
         if debit and credit and amount:
