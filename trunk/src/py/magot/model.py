@@ -1,4 +1,4 @@
-""" Domain model for basic accounting and multi-dimension analysis. """
+""" Domain model for basic accounting and multidimensional analysis. """
 
 from magot.refdata import *
 from magot.util import *
@@ -9,7 +9,11 @@ from peak.events import sources
 
 
 class Dimension(elements.Element):
-    
+    """ A Dimension for which an Account may have one of its members. 
+    Ex: dimension = Dimension(Location), member = Location(CityA), account = Account(Sales100)
+    ==> dimension.getMemberForAccount(account) == member if Sales100 is located in CityA.
+    """
+
     class name(features.Attribute):
         referencedType = datatypes.String
 
@@ -17,7 +21,6 @@ class Dimension(elements.Element):
         referencedType = datatypes.String
 
     def getMemberForAccount(self, account):
-        """ Must be redefined for sub-classes. """
         return account.getMemberForDimension(self)
 
     def __eq__(self, other):
@@ -36,7 +39,7 @@ class MemberClass(elements.ElementClass):
 
     def __new__(cls, name, bases, cdict):
         member = super(MemberClass, cls).__new__(cls, name, bases, cdict)
-        # A single dimension instance for all member instances having the same dimension.
+        # A single Dimension instance for all member instances having the same dimension.
         member.dimension = Dimension(name=name, desc=name)
         return member
 
@@ -49,12 +52,14 @@ class DimensionMember(Dimension):
         referencedType = Dimension
 
     class superMembers(features.Collection):
-        """ ex1: The dimension member 'CityA' has the super member 'RegionA'.
-            ex2: The dimension member 'apartment100' has super members '2-roomed' and 'CityA'. """
+        """ Define a 'container' or 'wrapping' relationship.
+        ex1: The dimension member 'CityA' has the super member 'RegionA'.
+        ex2: The dimension member 'apartment100' has super members '2-roomed' and 'CityA'. """
         referencedType = 'DimensionMember'
         singularName = 'superMember'
 
     def getMemberForAccount(self, account):
+        """ Redefined from Dimension class. """
         if account.hasMember(self):
             return self
         else:
@@ -256,7 +261,7 @@ class RootAccount(elements.Element):
         referencedEnd = 'parent'
         singularName = 'subAccount'
 
-    def __init__(self, name=None, description=None):
+    def __init__(self, name, description=None):
         self.name = name
         self.description = description
 
@@ -304,7 +309,7 @@ class Account(RootAccount):
 
     class entries(features.Sequence):
         """ Ordered by entry date. """
-        referencedType = 'Entry'
+        referencedType = Entry
         referencedEnd = 'account'
         singularName = 'entry'
 
@@ -320,8 +325,8 @@ class Account(RootAccount):
             account.balance_dirty = True
 
     class dimensionMembers(features.Collection):
-        """ Collection of DimensionMembers : used to group accounts by them. """
-        referencedType = 'DimensionMember'
+        """ Collection of DimensionMembers : used to group accounts by. """
+        referencedType = DimensionMember
         singularName = 'dimensionMember'
 
         # Use an internal dictionary {Dimension:DimensionMember} dealing with all super members.
@@ -340,7 +345,7 @@ class Account(RootAccount):
                     self._onUnlink(account, m, posn)
 
     def getMemberForDimension(self, dimension):
-        """ Return the dimension member for the given dimension if account has it or None else. """
+        """ Return the dimension member having the given dimension if account has it or None else. """
         return self._dimensionToMember.get(dimension, None)[0]
 
     def hasMember(self, member):

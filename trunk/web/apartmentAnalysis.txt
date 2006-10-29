@@ -1,0 +1,550 @@
+============================================================
+Original account hierarchy
+============================================================
+    Asset                                         377.188,00
+        Bank                                      177.188,00
+        All apartments                            200.000,00
+            Apartment 100                         200.000,00
+    Expense                                            12,00
+        Warranty                                        3,00
+            Warranty 100                                 ,50
+            Warranty 200                                 ,50
+            Warranty 300                                1,00
+            Warranty 400                                1,00
+        Taxes                                           9,00
+            Taxes 100                                   2,00
+            Taxes 200                                   2,00
+            Taxes 300                                   3,00
+            Taxes 400                                   2,00
+    Income                                          7.200,00
+        Rent                                        7.200,00
+            Rent 100                                7.200,00
+    Liability                                     150.000,00
+        Loan                                      150.000,00
+            Loan 100                              150.000,00
+    Equity                                        220.000,00
+        Equity 100                                 20.000,00
+============================================================
+Grouping by Apartment(A100)
+============================================================
+    Asset                                         200.000,00
+        A100                                      200.000,00
+            Apartment 100                         200.000,00
+    Expense                                             2,50
+        A100                                            2,50
+            Warranty 100                                 ,50
+            Taxes 100                                   2,00
+    Income                                          7.200,00
+        A100                                        7.200,00
+            Rent 100                                7.200,00
+    Liability                                     150.000,00
+        A100                                      150.000,00
+            Loan 100                              150.000,00
+    Equity                                          8.407,50
+        A100                                       20.000,00
+            Equity 100                             20.000,00
+    Profits & Loss                                  7.197,50
+        A100                                        7.197,50
+    Net Assets                                     27.197,50
+        A100                                       27.197,50
+============================================================
+Grouping by Location(Puteaux)
+============================================================
+    Asset                                         200.000,00
+        Puteaux                                   200.000,00
+            Apartment 100                         200.000,00
+    Expense                                             9,00
+        Puteaux                                         9,00
+            Warranty 100                                 ,50
+            Warranty 200                                 ,50
+            Warranty 300                                1,00
+            Taxes 100                                   2,00
+            Taxes 200                                   2,00
+            Taxes 300                                   3,00
+    Income                                          7.200,00
+        Puteaux                                     7.200,00
+            Rent 100                                7.200,00
+    Liability                                     150.000,00
+        Puteaux                                   150.000,00
+            Loan 100                              150.000,00
+    Equity                                          8.427,00
+        Puteaux                                    20.000,00
+            Equity 100                             20.000,00
+    Profits & Loss                                  7.191,00
+        Puteaux                                     7.191,00
+    Net Assets                                     27.191,00
+        Puteaux                                    27.191,00
+============================================================
+Grouping by Location(zoneA)
+============================================================
+    Asset                                         200.000,00
+        zoneA                                     200.000,00
+            Apartment 100                         200.000,00
+    Expense                                            12,00
+        zoneA                                          12,00
+            Warranty 100                                 ,50
+            Warranty 200                                 ,50
+            Warranty 300                                1,00
+            Warranty 400                                1,00
+            Taxes 100                                   2,00
+            Taxes 200                                   2,00
+            Taxes 300                                   3,00
+            Taxes 400                                   2,00
+    Income                                          7.200,00
+        zoneA                                       7.200,00
+            Rent 100                                7.200,00
+    Liability                                     150.000,00
+        zoneA                                     150.000,00
+            Loan 100                              150.000,00
+    Equity                                          8.436,00
+        zoneA                                      20.000,00
+            Equity 100                             20.000,00
+    Profits & Loss                                  7.188,00
+        zoneA                                       7.188,00
+    Net Assets                                     27.188,00
+        zoneA                                      27.188,00
+============================================================
+Grouping by Location(zoneA), RoomNumber(2-roomed), Expense(Warranty)
+============================================================
+    Expense                                             1,00
+        zoneA                                           1,00
+            2-roomed                                    1,00
+                Warranty                                1,00
+                    Warranty 100                         ,50
+                    Warranty 200                         ,50
+    Equity                                              3,00
+    Profits & Loss                                     -1,00
+        zoneA                                          -1,00
+            2-roomed                                   -1,00
+                Warranty                               -1,00
+    Net Assets                                         -1,00
+        zoneA                                          -1,00
+            2-roomed                                   -1,00
+                Warranty                               -1,00
+============================================================
+Grouping by Dimension(Location)
+============================================================
+    Asset                                         200.000,00
+        Puteaux                                   200.000,00
+            Apartment 100                         200.000,00
+    Expense                                            12,00
+        Issy                                            3,00
+            Warranty 400                                1,00
+            Taxes 400                                   2,00
+        Puteaux                                         9,00
+            Warranty 100                                 ,50
+            Warranty 200                                 ,50
+            Warranty 300                                1,00
+            Taxes 100                                   2,00
+            Taxes 200                                   2,00
+            Taxes 300                                   3,00
+    Income                                          7.200,00
+        Puteaux                                     7.200,00
+            Rent 100                                7.200,00
+    Liability                                     150.000,00
+        Puteaux                                   150.000,00
+            Loan 100                              150.000,00
+    Equity                                          8.436,00
+        Puteaux                                    20.000,00
+            Equity 100                             20.000,00
+    Profits & Loss                                  7.188,00
+        Issy                                           -3,00
+        Puteaux                                     7.191,00
+    Net Assets                                     27.188,00
+        Issy                                           -3,00
+        Puteaux                                    27.191,00
+============================================================
+Grouping by Dimension(Apartment)
+============================================================
+    Asset                                         200.000,00
+        A100                                      200.000,00
+            Apartment 100                         200.000,00
+    Expense                                            12,00
+        A100                                            2,50
+            Warranty 100                                 ,50
+            Taxes 100                                   2,00
+        A200                                            2,50
+            Warranty 200                                 ,50
+            Taxes 200                                   2,00
+        A300                                            4,00
+            Warranty 300                                1,00
+            Taxes 300                                   3,00
+        A400                                            3,00
+            Warranty 400                                1,00
+            Taxes 400                                   2,00
+    Income                                          7.200,00
+        A100                                        7.200,00
+            Rent 100                                7.200,00
+    Liability                                     150.000,00
+        A100                                      150.000,00
+            Loan 100                              150.000,00
+    Equity                                          8.436,00
+        A100                                       20.000,00
+            Equity 100                             20.000,00
+    Profits & Loss                                  7.188,00
+        A100                                        7.197,50
+        A200                                           -2,50
+        A300                                           -4,00
+        A400                                           -3,00
+    Net Assets                                     27.188,00
+        A100                                       27.197,50
+        A200                                           -2,50
+        A300                                           -4,00
+        A400                                           -3,00
+============================================================
+Grouping by Dimension(Location), Dimension(Apartment)
+============================================================
+    Asset                                         200.000,00
+        Puteaux                                   200.000,00
+            A100                                  200.000,00
+                Apartment 100                     200.000,00
+    Expense                                            12,00
+        Issy                                            3,00
+            A400                                        3,00
+                Warranty 400                            1,00
+                Taxes 400                               2,00
+        Puteaux                                         9,00
+            A100                                        2,50
+                Warranty 100                             ,50
+                Taxes 100                               2,00
+            A200                                        2,50
+                Warranty 200                             ,50
+                Taxes 200                               2,00
+            A300                                        4,00
+                Warranty 300                            1,00
+                Taxes 300                               3,00
+    Income                                          7.200,00
+        Puteaux                                     7.200,00
+            A100                                    7.200,00
+                Rent 100                            7.200,00
+    Liability                                     150.000,00
+        Puteaux                                   150.000,00
+            A100                                  150.000,00
+                Loan 100                          150.000,00
+    Equity                                          8.436,00
+        Puteaux                                    20.000,00
+            A100                                   20.000,00
+                Equity 100                         20.000,00
+    Profits & Loss                                  7.188,00
+        Issy                                           -3,00
+            A400                                       -3,00
+        Puteaux                                     7.191,00
+            A100                                    7.197,50
+            A200                                       -2,50
+            A300                                       -4,00
+    Net Assets                                     27.188,00
+        Issy                                           -3,00
+            A400                                       -3,00
+        Puteaux                                    27.191,00
+            A100                                   27.197,50
+            A200                                       -2,50
+            A300                                       -4,00
+============================================================
+Grouping by Dimension(Location), Dimension(RoomNumber)
+============================================================
+    Asset                                         200.000,00
+        Puteaux                                   200.000,00
+            2-roomed                              200.000,00
+                Apartment 100                     200.000,00
+    Expense                                            12,00
+        Issy                                            3,00
+            3-roomed                                    3,00
+                Warranty 400                            1,00
+                Taxes 400                               2,00
+        Puteaux                                         9,00
+            3-roomed                                    4,00
+                Warranty 300                            1,00
+                Taxes 300                               3,00
+            2-roomed                                    5,00
+                Warranty 100                             ,50
+                Warranty 200                             ,50
+                Taxes 100                               2,00
+                Taxes 200                               2,00
+    Income                                          7.200,00
+        Puteaux                                     7.200,00
+            2-roomed                                7.200,00
+                Rent 100                            7.200,00
+    Liability                                     150.000,00
+        Puteaux                                   150.000,00
+            2-roomed                              150.000,00
+                Loan 100                          150.000,00
+    Equity                                          8.436,00
+        Puteaux                                    20.000,00
+            2-roomed                               20.000,00
+                Equity 100                         20.000,00
+    Profits & Loss                                  7.188,00
+        Issy                                           -3,00
+            3-roomed                                   -3,00
+        Puteaux                                     7.191,00
+            3-roomed                                   -4,00
+            2-roomed                                7.195,00
+    Net Assets                                     27.188,00
+        Issy                                           -3,00
+            3-roomed                                   -3,00
+        Puteaux                                    27.191,00
+            3-roomed                                   -4,00
+            2-roomed                               27.195,00
+============================================================
+Grouping by Dimension(RoomNumber), Dimension(Location)
+============================================================
+    Asset                                         200.000,00
+        2-roomed                                  200.000,00
+            Puteaux                               200.000,00
+                Apartment 100                     200.000,00
+    Expense                                            12,00
+        3-roomed                                        7,00
+            Issy                                        3,00
+                Warranty 400                            1,00
+                Taxes 400                               2,00
+            Puteaux                                     4,00
+                Warranty 300                            1,00
+                Taxes 300                               3,00
+        2-roomed                                        5,00
+            Puteaux                                     5,00
+                Warranty 100                             ,50
+                Warranty 200                             ,50
+                Taxes 100                               2,00
+                Taxes 200                               2,00
+    Income                                          7.200,00
+        2-roomed                                    7.200,00
+            Puteaux                                 7.200,00
+                Rent 100                            7.200,00
+    Liability                                     150.000,00
+        2-roomed                                  150.000,00
+            Puteaux                               150.000,00
+                Loan 100                          150.000,00
+    Equity                                          8.436,00
+        2-roomed                                   20.000,00
+            Puteaux                                20.000,00
+                Equity 100                         20.000,00
+    Profits & Loss                                  7.188,00
+        3-roomed                                       -7,00
+            Issy                                       -3,00
+            Puteaux                                    -4,00
+        2-roomed                                    7.195,00
+            Puteaux                                 7.195,00
+    Net Assets                                     27.188,00
+        3-roomed                                       -7,00
+            Issy                                       -3,00
+            Puteaux                                    -4,00
+        2-roomed                                   27.195,00
+            Puteaux                                27.195,00
+============================================================
+Grouping by Dimension(Location), Dimension(RoomNumber), Dimension(Apartment)
+============================================================
+    Asset                                         200.000,00
+        Puteaux                                   200.000,00
+            2-roomed                              200.000,00
+                A100                              200.000,00
+                    Apartment 100                 200.000,00
+    Expense                                            12,00
+        Issy                                            3,00
+            3-roomed                                    3,00
+                A400                                    3,00
+                    Warranty 400                        1,00
+                    Taxes 400                           2,00
+        Puteaux                                         9,00
+            3-roomed                                    4,00
+                A300                                    4,00
+                    Warranty 300                        1,00
+                    Taxes 300                           3,00
+            2-roomed                                    5,00
+                A100                                    2,50
+                    Warranty 100                         ,50
+                    Taxes 100                           2,00
+                A200                                    2,50
+                    Warranty 200                         ,50
+                    Taxes 200                           2,00
+    Income                                          7.200,00
+        Puteaux                                     7.200,00
+            2-roomed                                7.200,00
+                A100                                7.200,00
+                    Rent 100                        7.200,00
+    Liability                                     150.000,00
+        Puteaux                                   150.000,00
+            2-roomed                              150.000,00
+                A100                              150.000,00
+                    Loan 100                      150.000,00
+    Equity                                          8.436,00
+        Puteaux                                    20.000,00
+            2-roomed                               20.000,00
+                A100                               20.000,00
+                    Equity 100                     20.000,00
+    Profits & Loss                                  7.188,00
+        Issy                                           -3,00
+            3-roomed                                   -3,00
+                A400                                   -3,00
+        Puteaux                                     7.191,00
+            3-roomed                                   -4,00
+                A300                                   -4,00
+            2-roomed                                7.195,00
+                A100                                7.197,50
+                A200                                   -2,50
+    Net Assets                                     27.188,00
+        Issy                                           -3,00
+            3-roomed                                   -3,00
+                A400                                   -3,00
+        Puteaux                                    27.191,00
+            3-roomed                                   -4,00
+                A300                                   -4,00
+            2-roomed                               27.195,00
+                A100                               27.197,50
+                A200                                   -2,50
+============================================================
+Grouping by RoomNumber(2-roomed), Dimension(Apartment)
+============================================================
+    Asset                                         200.000,00
+        2-roomed                                  200.000,00
+            A100                                  200.000,00
+                Apartment 100                     200.000,00
+    Expense                                             5,00
+        2-roomed                                        5,00
+            A100                                        2,50
+                Warranty 100                             ,50
+                Taxes 100                               2,00
+            A200                                        2,50
+                Warranty 200                             ,50
+                Taxes 200                               2,00
+    Income                                          7.200,00
+        2-roomed                                    7.200,00
+            A100                                    7.200,00
+                Rent 100                            7.200,00
+    Liability                                     150.000,00
+        2-roomed                                  150.000,00
+            A100                                  150.000,00
+                Loan 100                          150.000,00
+    Equity                                          8.415,00
+        2-roomed                                   20.000,00
+            A100                                   20.000,00
+                Equity 100                         20.000,00
+    Profits & Loss                                  7.195,00
+        2-roomed                                    7.195,00
+            A100                                    7.197,50
+            A200                                       -2,50
+    Net Assets                                     27.195,00
+        2-roomed                                   27.195,00
+            A100                                   27.197,50
+            A200                                       -2,50
+============================================================
+Grouping by Location(Puteaux), RoomNumber(2-roomed), Dimension(Apartment)
+============================================================
+    Asset                                         200.000,00
+        Puteaux                                   200.000,00
+            2-roomed                              200.000,00
+                A100                              200.000,00
+                    Apartment 100                 200.000,00
+    Expense                                             5,00
+        Puteaux                                         5,00
+            2-roomed                                    5,00
+                A100                                    2,50
+                    Warranty 100                         ,50
+                    Taxes 100                           2,00
+                A200                                    2,50
+                    Warranty 200                         ,50
+                    Taxes 200                           2,00
+    Income                                          7.200,00
+        Puteaux                                     7.200,00
+            2-roomed                                7.200,00
+                A100                                7.200,00
+                    Rent 100                        7.200,00
+    Liability                                     150.000,00
+        Puteaux                                   150.000,00
+            2-roomed                              150.000,00
+                A100                              150.000,00
+                    Loan 100                      150.000,00
+    Equity                                          8.415,00
+        Puteaux                                    20.000,00
+            2-roomed                               20.000,00
+                A100                               20.000,00
+                    Equity 100                     20.000,00
+    Profits & Loss                                  7.195,00
+        Puteaux                                     7.195,00
+            2-roomed                                7.195,00
+                A100                                7.197,50
+                A200                                   -2,50
+    Net Assets                                     27.195,00
+        Puteaux                                    27.195,00
+            2-roomed                               27.195,00
+                A100                               27.197,50
+                A200                                   -2,50
+============================================================
+Grouping by Expense(Warranty), Dimension(Apartment)
+============================================================
+    Expense                                             3,00
+        Warranty                                        3,00
+            A100                                         ,50
+                Warranty 100                             ,50
+            A200                                         ,50
+                Warranty 200                             ,50
+            A300                                        1,00
+                Warranty 300                            1,00
+            A400                                        1,00
+                Warranty 400                            1,00
+    Equity                                              9,00
+    Profits & Loss                                     -3,00
+        Warranty                                       -3,00
+            A100                                        -,50
+            A200                                        -,50
+            A300                                       -1,00
+            A400                                       -1,00
+    Net Assets                                         -3,00
+        Warranty                                       -3,00
+            A100                                        -,50
+            A200                                        -,50
+            A300                                       -1,00
+            A400                                       -1,00
+============================================================
+Grouping by Location(zoneA), Dimension(RoomNumber), Dimension(Apartment)
+============================================================
+    Asset                                         200.000,00
+        zoneA                                     200.000,00
+            2-roomed                              200.000,00
+                A100                              200.000,00
+                    Apartment 100                 200.000,00
+    Expense                                            12,00
+        zoneA                                          12,00
+            3-roomed                                    7,00
+                A300                                    4,00
+                    Warranty 300                        1,00
+                    Taxes 300                           3,00
+                A400                                    3,00
+                    Warranty 400                        1,00
+                    Taxes 400                           2,00
+            2-roomed                                    5,00
+                A100                                    2,50
+                    Warranty 100                         ,50
+                    Taxes 100                           2,00
+                A200                                    2,50
+                    Warranty 200                         ,50
+                    Taxes 200                           2,00
+    Income                                          7.200,00
+        zoneA                                       7.200,00
+            2-roomed                                7.200,00
+                A100                                7.200,00
+                    Rent 100                        7.200,00
+    Liability                                     150.000,00
+        zoneA                                     150.000,00
+            2-roomed                              150.000,00
+                A100                              150.000,00
+                    Loan 100                      150.000,00
+    Equity                                          8.436,00
+        zoneA                                      20.000,00
+            2-roomed                               20.000,00
+                A100                               20.000,00
+                    Equity 100                     20.000,00
+    Profits & Loss                                  7.188,00
+        zoneA                                       7.188,00
+            3-roomed                                   -7,00
+                A300                                   -4,00
+                A400                                   -3,00
+            2-roomed                                7.195,00
+                A100                                7.197,50
+                A200                                   -2,50
+    Net Assets                                     27.188,00
+        zoneA                                      27.188,00
+            3-roomed                                   -7,00
+                A300                                   -4,00
+                A400                                   -3,00
+            2-roomed                               27.195,00
+                A100                               27.197,50
+                A200                                   -2,50

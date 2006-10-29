@@ -2,10 +2,12 @@ Magot TODO :
 
 0.2 : Improve the Accounting Model
 
+- make UI for dimensions
 - add Axe & slice (see MDX SELECT ... WHERE)
+- add A100 OR A200 instead of Location AND Warranty. Ex: Puteaux --> 2R/3R
 - use generator instead of list to retrieve accounts filtered by dimensions
-- multi-hierarchy per dimension i.e. different aggregation
-- add A100 OR A200 instead of Location AND Warranty
+- display ZoneA --> Issy when grouping by location dimension
+- multi-hierarchy per dimension i.e. different classification
 
 Fixes:
 	close current ledger

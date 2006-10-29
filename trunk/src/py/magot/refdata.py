@@ -105,6 +105,7 @@ TYPE_EQUITY = AccountType('Equity account type', False)
 TYPE_PROFITS = AccountType('Profits & Loss account type', False)
 TYPE_NET_ASSETS = AccountType('Net Assets account type', False)
 
+
 def moneyformat(value, places=2, curr='', sep='.', dp=',', pos='', neg='-', overall=10):
     """ Convert Decimal ``value'' to a money-formatted string. 
     

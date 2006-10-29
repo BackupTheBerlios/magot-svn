@@ -67,3 +67,13 @@ class Proxy(object):
 
     def getOriginalObject(self):
         return self._obj
+
+
+def pprintHierarchy(root):
+    def printAccount(account, depth):
+        if account.balance.amount != 0:
+            print '\t'*depth + str(account).ljust(20) + (str(account.balance)).rjust(40-4*depth)
+
+    root.traverseHierarchy(printAccount, False)
+    print "============================================================"
+

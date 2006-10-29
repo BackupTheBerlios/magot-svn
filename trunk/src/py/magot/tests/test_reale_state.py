@@ -4,7 +4,8 @@ from unittest import TestCase, makeSuite, TestSuite
 import unittest
 
 from magot.refdata import *
-from magot.model import RootAccount, Account, Transaction, Dimension, DimensionMember
+from magot.model import *
+from magot.dimension import *
 
 
 def makeAccounts(self):
@@ -12,14 +13,12 @@ def makeAccounts(self):
     self.root = RootAccount(name='Accounts')
     
     # ===========================================================================
-    # Define the "Apartment" Dimension in order to track all transactions dealing with apartments.
-    # ===========================================================================
-    self.apartmentDim = apartmentDim = Dimension(name="Apartment")
-    
-    # Add 2 members for this dimension
-    A100 = self.A100 = DimensionMember(name="A100", desc="Apartment at adress 100", dimension=apartmentDim)
-    A200 = self.A200 = DimensionMember(name="A200", desc="Apartment at adress 200", dimension=apartmentDim)
-    
+    # Define the "Apartment" Dimension & Members in order to track transactions dealing with apartments.
+    # ===========================================================================   
+    class Apartment(DimensionMember): pass
+    A100 = self.A100 = Apartment(name="A100", desc="Apartment at adress 100")
+    A200 = self.A200 = Apartment(name="A200", desc="Apartment at adress 200")
+
 
     # ===========================================================================
     # ASSETS
@@ -169,7 +168,7 @@ class GroupAccountsUnderDimensionVisitor(object):
         self.equity = Account(parent=newroot.equity, name=dimension.name)
         self.profits = Account(parent=newroot.profits, name=dimension.name)
         self.netAssets = Account(parent=newroot.netAssets, name=dimension.name)
-        
+
         self.type2account = {TYPE_ASSET:self.asset, TYPE_EXPENSE:self.expense,
                              TYPE_INCOME:self.income, TYPE_LIABILITY:self.liability, 
                              TYPE_EQUITY:self.equity, TYPE_PROFITS:self.profits, 
@@ -186,10 +185,10 @@ class GroupAccountsUnderDimensionVisitor(object):
         account.makeInitialTransaction(self.equity.parent, child.balance)
 
 
-class MultiDimensionRootAccount(RootAccount):
+class StandardRootAccount(RootAccount):
 
     def __init__(self, name=None, description=None):
-        super(MultiDimensionRootAccount, self).__init__(name, description)
+        super(StandardRootAccount, self).__init__(name, description)
 
         self.asset = Account(parent=self, name='Asset', type=TYPE_ASSET)
         self.expense = Account(parent=self, name='Expense', type=TYPE_EXPENSE)
@@ -221,7 +220,7 @@ class TestTransaction(TestCase):
         
     def test_real_estate(self):
         # Create a root for the new account hierarchy grouping accounts under their dimension.
-        rootApart = MultiDimensionRootAccount(name='root for Apartment')
+        rootApart = StandardRootAccount(name='root for Apartment')
         endYear = Date(2006,12,31)
         
         for dimension in [self.A100, self.A200]:
