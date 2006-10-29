@@ -6,18 +6,19 @@ from unittest import TestCase, makeSuite, TestSuite
 import unittest
 
 from magot.refdata import *
-from magot.model import RootAccount, Account, Transaction, Dimension, DimensionMember, DimensionAttribute
+from magot.model import *
 
 from peak.model import features, datatypes, elements
 
 
+# 1- Define application dimensions
 
 class RoomNumber(DimensionMember): pass
 class Location(DimensionMember): pass
 class Expense(DimensionMember): pass
 
 class Apartment(DimensionMember):
-    
+    # Automatic settings of Super members.
     class location(DimensionAttribute):
         referencedType = Location
     
@@ -32,6 +33,10 @@ def makeAccounts(self):
     self.root = RootAccount(name='Accounts')
 
     # ===========================================================================
+    # 2- Define dimension members for each dimension
+    # ===========================================================================
+    
+    # ===========================================================================
     # Define the "RoomNumber" dimension members.
     # ===========================================================================
     self.R2 = R2 = RoomNumber(name="2-roomed", desc="2-roomed")
@@ -43,15 +48,14 @@ def makeAccounts(self):
     self.zoneA = zoneA = Location(name="zoneA", desc="zoneA")
     self.puteaux = puteaux = Location(name="Puteaux", desc="Puteaux")
     self.issy = issy = Location(name="Issy", desc="Issy")
-
-    # Manual settings of Super members.
+    # Manual (vs automatic) settings of Super members (see Apartment class).
     puteaux.addSuperMember(zoneA)  # City 'puteaux' is in region 'zoneA'
     issy.addSuperMember(zoneA)
 
     # ===========================================================================
     # Define the "Apartment" dimension members.
     # ===========================================================================
-    # Super members are added due to the DimensionAttribute declaration in Apartment.
+    # Super members are automatically added due to DimensionAttribute in Apartment class.
     self.A100 = A100 = Apartment(name="A100", desc="Apartment 100", location=puteaux, roomNb=R2)
     self.A200 = A200 = Apartment(name="A200", desc="Apartment 200", location=puteaux, roomNb=R2)
     self.A300 = A300 = Apartment(name="A300", desc="Apartment 300", location=puteaux, roomNb=R3)
@@ -64,6 +68,9 @@ def makeAccounts(self):
     self.taxesMember = taxesMember = Expense(name="Taxes", desc="Taxes")
 
 
+    # ===========================================================================
+    # 3- Define accounts and give them some dimension members.
+    # ===========================================================================
 
     # ===========================================================================
     # ASSETS
@@ -116,8 +123,9 @@ def makeAccounts(self):
     equity100 = self.equity100 = Account(parent=self.equity, name='Equity 100', dimensionMembers=[A100])
     bank.makeInitialTransaction(self.equity100, Money(20000), Date(2005,1,1))
 
+
     # ===========================================================================
-    # Make some transactions
+    # 4- Post some transactions.
     # ===========================================================================
 
     Transaction(Date(2005,1,2), 'contract a loan', bank, loan100, 150000)
@@ -151,7 +159,7 @@ class MultiDimensionRootAccount(RootAccount):
 
 
 class SingleDimensionRoots(object):
-    """ Container for all sub-roots (asset, expense, liability, ...) under a single dimension. """
+    """ Container for principal roots (asset, expense, liability, ...) under a single dimension. """
     
     def __init__(self, multiDimensionRoot, name):
         r = self.root = multiDimensionRoot
@@ -192,15 +200,14 @@ class TestTransaction(TestCase):
         root.traverseHierarchy(printAccount, False)
         print "============================================================"
 
-
     def test_multi_dimension(self):
         # Group by dimension members
         self.viewAccountsUnderDimensions([self.A100])
         self.viewAccountsUnderDimensions([self.puteaux])
         self.viewAccountsUnderDimensions([self.zoneA])
-        self.viewAccountsUnderDimensions([self.puteaux, self.warrantyMember])
+        self.viewAccountsUnderDimensions([self.zoneA, self.R2, self.warrantyMember])
 
-        ## Group by dimensions
+        # Group by dimensions only
         self.viewAccountsUnderDimensions([Location.dimension])
         self.viewAccountsUnderDimensions([Apartment.dimension])
         self.viewAccountsUnderDimensions([Location.dimension, Apartment.dimension])
@@ -208,11 +215,11 @@ class TestTransaction(TestCase):
         self.viewAccountsUnderDimensions([RoomNumber.dimension, Location.dimension])
         self.viewAccountsUnderDimensions([Location.dimension, RoomNumber.dimension, Apartment.dimension])
 
-        ## Group by a mix of dimensions and dimension members
-        #self.viewAccountsUnderDimensions([self.apartmentDim, self.R2])
-        #self.viewAccountsUnderDimensions([self.warrantyMember, self.apartmentDim])
-        #self.viewAccountsUnderDimensions([self.zoneA, self.roomNumberDim])
-        #self.viewAccountsUnderDimensions([self.zoneA, self.R2, self.apartmentDim])
+        # Group by a mix of dimensions and dimension members
+        self.viewAccountsUnderDimensions([Apartment.dimension, self.R2])
+        self.viewAccountsUnderDimensions([self.warrantyMember, Apartment.dimension])
+        self.viewAccountsUnderDimensions([self.zoneA, RoomNumber.dimension])
+        self.viewAccountsUnderDimensions([self.puteaux, self.R2, Apartment.dimension])
 
     def viewAccountsUnderDimensions(self, dimensions):
         endYear = self.endYear = Date(2006,12,31)
@@ -223,6 +230,9 @@ class TestTransaction(TestCase):
         # Only keep accounts that have the requested dimensions only
         visitor = KeepAccountsByDimensionVisitor(dimensions)
         self.root.traverseHierarchy(visitor, False)
+
+        print 'Reporting under',  ', '.join(map(str, dimensions))
+        print "============================================================"
 
         # Group accounts by all dimensions hierarchically
         dimensions.reverse()

@@ -1,4 +1,4 @@
-""" Domain model for basic accounting. Version2. """
+""" Domain model for basic accounting and multi-dimension analysis. """
 
 from magot.refdata import *
 from magot.util import *
@@ -10,35 +10,40 @@ from peak.events import sources
 
 class Dimension(elements.Element):
     
-    def __init__(self, name):
-        self.name = name
+    class name(features.Attribute):
+        referencedType = datatypes.String
+
+    class desc(features.Attribute):
+        referencedType = datatypes.String
+
+    def getMemberForAccount(self, account):
+        """ Must be redefined for sub-classes. """
+        return account.getMemberForDimension(self)
+
+    def __eq__(self, other):
+        return self.name == other.name
+        
+    def __hash__(self):
+        return hash(self.name)
 
     def __repr__(self):
         return self.__class__.__name__+'('+self.name+')'
 
     __str__ = __repr__
 
-    def getMemberForAccount(self, account):
-        return account.getMemberForDimension(self)
-
 
 class MemberClass(elements.ElementClass):
 
     def __new__(cls, name, bases, cdict):
         member = super(MemberClass, cls).__new__(cls, name, bases, cdict)
-        member.dimension = Dimension(name)
+        # A single dimension instance for all member instances having the same dimension.
+        member.dimension = Dimension(name=name, desc=name)
         return member
 
 
-class DimensionMember(elements.Element):
+class DimensionMember(Dimension):
 
     __metaclass__ = MemberClass
-
-    class name(features.Attribute):
-        referencedType = datatypes.String
-
-    class desc(features.Attribute):
-        referencedType = datatypes.String
 
     class dimension(features.Attribute):
         referencedType = Dimension
@@ -66,17 +71,6 @@ class DimensionMember(elements.Element):
                 return m
         return None
 
-    def __eq__(self, other):
-        return self.name == other.name
-        
-    def __hash__(self):
-        return hash(self.name)
-
-    def __repr__(self):
-        return self.__class__.__name__+'('+self.name+')'
-
-    __str__ = __repr__
-
 
 class DimensionAttribute(features.Attribute):
     """ Attribute that is used in a dimension member. """
@@ -86,6 +80,7 @@ class DimensionAttribute(features.Attribute):
 
     def _onUnlink(attr, member, superMember, posn):
         member.removeSuperMember(superMember)
+
 
 
 

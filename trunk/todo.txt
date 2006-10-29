@@ -2,9 +2,10 @@ Magot TODO :
 
 0.2 : Improve the Accounting Model
 
-- add Apartment class as a dimension container
-- add A100 OR A200 instead of Location AND Warranty
+- add Axe & slice (see MDX SELECT ... WHERE)
 - use generator instead of list to retrieve accounts filtered by dimensions
+- multi-hierarchy per dimension i.e. different aggregation
+- add A100 OR A200 instead of Location AND Warranty
 
 Fixes:
 	close current ledger
