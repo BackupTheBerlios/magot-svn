@@ -37,7 +37,7 @@ Available commands:
     Accounts = binding.Make(
         'magot.storage.AccountDM', offerAs=[storage.DMFor(Account)]
     )
-    
+
 
 class newDatabaseCmd(commands.AbstractCommand):
 
@@ -55,8 +55,12 @@ create a new database.
         if len(self.argv)<1:
             raise commands.InvocationError("Missing command")
             
-        from magot.tests import test_storage
-        test_storage.makeDB(self.db_filepath)
+        if len(self.argv) == 1:
+            from magot.tests import test_storage
+            test_storage.makeDB(self.db_filepath)
+        else:
+            from magot.tests import test_reale_state
+            test_reale_state.makeDB(self.db_filepath)
 
 
 class displayAccountsCmd(commands.AbstractCommand):

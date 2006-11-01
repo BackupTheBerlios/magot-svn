@@ -6,10 +6,10 @@ from magot.refdata import *
 from magot.model import *
 from magot.dimension import *
 
-from peak.model import features, datatypes, elements
 
-
-# 1- Define domain dimensions
+# ===========================================================================
+# 1- Define domain dimensions.
+# ===========================================================================
 
 class RoomNumber(DimensionMember): pass
 class Location(DimensionMember): pass
@@ -24,15 +24,11 @@ class Apartment(DimensionMember):
         referencedType = RoomNumber
 
 
-def makeAccounts(self):
+# ===========================================================================
+# 2- Define dimension members for each dimension.
+# ===========================================================================
+def makeDimensionMembers(self):
 
-    # create all accounts under the root account
-    self.root = RootAccount(name='Accounts')
-
-    # ===========================================================================
-    # 2- Define dimension members for each dimension
-    # ===========================================================================
-    
     # ===========================================================================
     # Define the "RoomNumber" dimension members.
     # ===========================================================================
@@ -53,21 +49,30 @@ def makeAccounts(self):
     # Define the "Apartment" dimension members.
     # ===========================================================================
     # Super members are automatically added due to DimensionAttribute in Apartment class.
-    self.A100 = A100 = Apartment(name="A100", desc="Apartment 100", location=puteaux, roomNb=R2)
-    self.A200 = A200 = Apartment(name="A200", desc="Apartment 200", location=puteaux, roomNb=R2)
-    self.A300 = A300 = Apartment(name="A300", desc="Apartment 300", location=puteaux, roomNb=R3)
-    self.A400 = A400 = Apartment(name="A400", desc="Apartment 400", location=issy, roomNb=R3)
+    self.A100 = Apartment(name="A100", desc="Apartment 100", location=puteaux, roomNb=R2)
+    self.A200 = Apartment(name="A200", desc="Apartment 200", location=puteaux, roomNb=R2)
+    self.A300 = Apartment(name="A300", desc="Apartment 300", location=puteaux, roomNb=R3)
+    self.A400 = Apartment(name="A400", desc="Apartment 400", location=issy, roomNb=R3)
 
     # ===========================================================================
     # Define the "Expense" dimension members.
     # ===========================================================================
-    self.warrantyMember = warrantyMember = Expense(name="Warranty", desc="Warranty")
-    self.taxesMember = taxesMember = Expense(name="Taxes", desc="Taxes")
+    self.warrantyMember = Expense(name="Warranty", desc="Warranty")
+    self.taxesMember = Expense(name="Taxes", desc="Taxes")
+    self.impositionMember = Expense(name="Imposition", desc="Imposition")
+    self.syndicMember = Expense(name="Syndic", desc="Syndic")
+    self.interestsMember = Expense(name="Interests", desc="Interests")
 
 
-    # ===========================================================================
-    # 3- Define accounts and give them some dimension members.
-    # ===========================================================================
+# ===========================================================================
+# 3- Define accounts and give them some dimension members.
+# ===========================================================================
+def makeAccounts(self):
+
+    makeDimensionMembers(self)
+
+    # Create all accounts under the root account.
+    self.root = RootAccount(name='Accounts')
 
     # ===========================================================================
     # ASSETS
@@ -76,7 +81,7 @@ def makeAccounts(self):
 
     bank = Account(parent=self.asset, name='Bank')
     apart = Account(parent=self.asset, name='All apartments')
-    apart100 = self.apart100 = Account(parent=apart, name='Apartment 100', dimensionMembers=[A100])
+    apart100 = self.apart100 = Account(parent=apart, name='Apartment 100', dimensionMembers=[self.A100])
 
     # ===========================================================================
     # EXPENSES
@@ -84,16 +89,16 @@ def makeAccounts(self):
     self.expense = Account(parent=self.root, name='Expense', type=TYPE_EXPENSE)
 
     warranty = Account(parent=self.expense, name='Warranty')
-    warranty100 = Account(parent=warranty, name='Warranty 100', dimensionMembers=[A100, warrantyMember])
-    warranty200 = Account(parent=warranty, name='Warranty 200', dimensionMembers=[A200, warrantyMember])
-    warranty300 = Account(parent=warranty, name='Warranty 300', dimensionMembers=[A300, warrantyMember])
-    warranty400 = Account(parent=warranty, name='Warranty 400', dimensionMembers=[A400, warrantyMember])
+    warranty100 = Account(parent=warranty, name='Warranty 100', dimensionMembers=[self.A100, self.warrantyMember])
+    warranty200 = Account(parent=warranty, name='Warranty 200', dimensionMembers=[self.A200, self.warrantyMember])
+    warranty300 = Account(parent=warranty, name='Warranty 300', dimensionMembers=[self.A300, self.warrantyMember])
+    warranty400 = Account(parent=warranty, name='Warranty 400', dimensionMembers=[self.A400, self.warrantyMember])
     
     taxes = Account(parent=self.expense, name='Taxes')
-    taxes100 = Account(parent=taxes, name='Taxes 100', dimensionMembers=[A100, taxesMember])
-    taxes200 = Account(parent=taxes, name='Taxes 200', dimensionMembers=[A200, taxesMember])
-    taxes300 = Account(parent=taxes, name='Taxes 300', dimensionMembers=[A300, taxesMember])
-    taxes400 = Account(parent=taxes, name='Taxes 400', dimensionMembers=[A400, taxesMember])
+    taxes100 = Account(parent=taxes, name='Taxes 100', dimensionMembers=[self.A100, self.taxesMember])
+    taxes200 = Account(parent=taxes, name='Taxes 200', dimensionMembers=[self.A200, self.taxesMember])
+    taxes300 = Account(parent=taxes, name='Taxes 300', dimensionMembers=[self.A300, self.taxesMember])
+    taxes400 = Account(parent=taxes, name='Taxes 400', dimensionMembers=[self.A400, self.taxesMember])
 
     # ===========================================================================
     # INCOMES
@@ -101,7 +106,7 @@ def makeAccounts(self):
     self.income = Account(parent=self.root, name='Income', type=TYPE_INCOME)
 
     rent = Account(parent=self.income, name='Rent')
-    rent100 = self.rent100 = Account(parent=rent, name='Rent 100', dimensionMembers=[A100])
+    rent100 = self.rent100 = Account(parent=rent, name='Rent 100', dimensionMembers=[self.A100])
 
     # ===========================================================================
     # LIABILITIES
@@ -109,7 +114,7 @@ def makeAccounts(self):
     self.liability = Account(parent=self.root, name='Liability', type=TYPE_LIABILITY)
 
     loan = Account(parent=self.liability, name='Loan')
-    loan100 = self.loan100 = Account(parent=loan, name='Loan 100', dimensionMembers=[A100])
+    loan100 = self.loan100 = Account(parent=loan, name='Loan 100', dimensionMembers=[self.A100])
     
     # ===========================================================================
     # EQUITY
@@ -117,7 +122,7 @@ def makeAccounts(self):
     self.equity = Account(parent=self.root, name='Equity', type=TYPE_EQUITY)
     bank.makeInitialTransaction(self.equity, Money(200000), Date(2005,1,1))
 
-    equity100 = self.equity100 = Account(parent=self.equity, name='Equity 100', dimensionMembers=[A100])
+    equity100 = self.equity100 = Account(parent=self.equity, name='Equity 100', dimensionMembers=[self.A100])
     bank.makeInitialTransaction(self.equity100, Money(20000), Date(2005,1,1))
 
 

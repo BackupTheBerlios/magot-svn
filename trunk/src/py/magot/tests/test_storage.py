@@ -6,7 +6,8 @@ from magot.storage import *
 
 from peak.api import *
 
-def makeDB(filename):
+
+def makeAccounts():
 
     # Root of all accounts
     root = RootAccount(name='root')
@@ -87,12 +88,16 @@ def makeDB(filename):
     warranty.makeInitialTransaction(capital, Money(253), Date(2005,1,1))
     salary.makeInitialTransaction(capital, Money(2133), Date(2005,1,1))
 
-    cPickle.dump(root, open(filename,'w'))
-
 
 def readDB():
     root = cPickle.load(open(filename))
     assert root.name == 'root'
+
+
+def makeDB(filename):
+    makeAccounts()
+    cPickle.dump(root, open(filename,'w'))
+
 
 if __name__ == '__main__':   
     #makeDB()
