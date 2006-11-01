@@ -14,78 +14,88 @@ def makeAccounts(self):
     makeDimensionMembers(self)
     A100 = self.A100
     A400 = self.A400
+    warMember = self.warrantyMember
+    taxMember = self.taxesMember
+    impMember = self.impositionMember
+    synMember = self.syndicMember 
+    intMember = self.interestsMember 
     
     # create all accounts under the root account
-    self.root = RootAccount(name='Accounts')
+    r = self.root = RootAccount(name='Accounts')
+    r.addDimension(self.R2.dimension)
+    r.addDimension(self.zoneA.dimension)
+    r.addDimension(self.A100.dimension)
+    r.addDimension(self.warrantyMember.dimension)
+
 
     # ===========================================================================
     # ASSETS
     # ===========================================================================
-    self.asset = Account(parent=self.root, name='Asset', type=TYPE_ASSET)
+    asset = Account(parent=self.root, name='Asset', type=TYPE_ASSET)
     
-    bank = self.bank = Account(parent=self.asset, name='Bank')
+    bank = Account(parent=asset, name='Bank')
     
-    apart = Account(parent=self.asset, name='All apartments')
+    apart = Account(parent=asset, name='All apartments')
     # This account deals with the 'apartmentDim' Dimension
-    apart100 = self.apart100 = Account(parent=apart, name='Apartment 100', dimensionMembers=[A100])
-    apart400 = self.apart400 = Account(parent=apart, name='Apartment 400', dimensionMembers=[A400])
+    apart100 = Account(parent=apart, name='Apartment 100', dimensionMembers=[A100])
+    apart400 = Account(parent=apart, name='Apartment 400', dimensionMembers=[A400])
 
     
     # ===========================================================================
     # EXPENSES
     # ===========================================================================
-    self.expense = Account(parent=self.root, name='Expense', type=TYPE_EXPENSE)
+    expense = Account(parent=self.root, name='Expense', type=TYPE_EXPENSE)
 
-    warranty = Account(parent=self.expense, name='Warranty')
-    warranty100 = self.warranty100 = Account(parent=warranty, name='Warranty 100', dimensionMembers=[A100])
-    warranty400 = self.warranty400 = Account(parent=warranty, name='Warranty 400', dimensionMembers=[A400])
-    
-    interests = Account(parent=self.expense, name='Interests')
-    interests100 = self.interests100 = Account(parent=interests, name='Interests 100', dimensionMembers=[A100])
-    interests400 = self.interests400 = Account(parent=interests, name='Interests 400', dimensionMembers=[A400])
-    
-    syndic = Account(parent=self.expense, name='Syndic')
-    syndic100 = self.syndic100 = Account(parent=syndic, name='Syndic 100', dimensionMembers=[A100])
-    syndic400 = self.syndic400 = Account(parent=syndic, name='Syndic 400', dimensionMembers=[A400])
-    
-    taxes = Account(parent=self.expense, name='Taxes')
-    taxes100 = self.taxes100 = Account(parent=taxes, name='Taxes 100', dimensionMembers=[A100])
-    taxes400 = self.taxes400 = Account(parent=taxes, name='Taxes 400', dimensionMembers=[A400])
-    
-    imposition = self.imposition = Account(parent=self.expense, name='Imposition')
-    imposition100 = self.imposition100 = Account(parent=self.imposition, name='Imposition 100', dimensionMembers=[A100])
-    imposition400 = self.imposition400 = Account(parent=self.imposition, name='Imposition 400', dimensionMembers=[A400])
+    warranty = Account(parent=expense, name='Warranty')
+    warranty100 = Account(parent=warranty, name='Warranty 100', dimensionMembers=[A100, warMember])
+    warranty400 = Account(parent=warranty, name='Warranty 400', dimensionMembers=[A400, warMember])
+
+    interests = Account(parent=expense, name='Interests')
+    interests100 = Account(parent=interests, name='Interests 100', dimensionMembers=[A100, intMember])
+    interests400 = Account(parent=interests, name='Interests 400', dimensionMembers=[A400, intMember])
+
+    syndic = Account(parent=expense, name='Syndic')
+    syndic100 = Account(parent=syndic, name='Syndic 100', dimensionMembers=[A100, synMember])
+    syndic400 = Account(parent=syndic, name='Syndic 400', dimensionMembers=[A400, synMember])
+
+    taxes = Account(parent=expense, name='Taxes')
+    taxes100 = Account(parent=taxes, name='Taxes 100', dimensionMembers=[A100, taxMember])
+    taxes400 = Account(parent=taxes, name='Taxes 400', dimensionMembers=[A400, taxMember])
+
+    imposition = imposition = Account(parent=expense, name='Imposition')
+    imposition100 = Account(parent=imposition, name='Imposition 100', dimensionMembers=[A100, impMember])
+    imposition400 = Account(parent=imposition, name='Imposition 400', dimensionMembers=[A400, impMember])
 
 
     # ===========================================================================
     # INCOMES
     # ===========================================================================
-    self.income = Account(parent=self.root, name='Income', type=TYPE_INCOME)
+    income = Account(parent=self.root, name='Income', type=TYPE_INCOME)
 
-    rent = Account(parent=self.income, name='Rent')
-    rent100 = self.rent100 = Account(parent=rent, name='Rent 100', dimensionMembers=[A100])
-    rent400 = self.rent400 = Account(parent=rent, name='Rent 400', dimensionMembers=[A400])
+    rent = Account(parent=income, name='Rent')
+    rent100 = Account(parent=rent, name='Rent 100', dimensionMembers=[A100])
+    rent400 = Account(parent=rent, name='Rent 400', dimensionMembers=[A400])
     
-    gain = Account(parent=self.income, name='Gain')
-    gain100 = self.gain100 = Account(parent=gain, name='Gain 100', dimensionMembers=[A100])
-    gain400 = self.gain400 = Account(parent=gain, name='Gain 400', dimensionMembers=[A400])
-      
+    gain = Account(parent=income, name='Gain')
+    gain100 = Account(parent=gain, name='Gain 100', dimensionMembers=[A100])
+    gain400 = Account(parent=gain, name='Gain 400', dimensionMembers=[A400])
+
 
     # ===========================================================================
     # LIABILITIES
     # ===========================================================================
-    self.liability = Account(parent=self.root, name='Liability', type=TYPE_LIABILITY)
+    liability = Account(parent=self.root, name='Liability', type=TYPE_LIABILITY)
     
-    loan = Account(parent=self.liability, name='Loan')
-    loan100 = self.loan100 = Account(parent=loan, name='Loan 100', dimensionMembers=[A100])
-    loan400 = self.loan400 = Account(parent=loan, name='Loan 400', dimensionMembers=[A400])
+    loan = Account(parent=liability, name='Loan')
+    loan100 = Account(parent=loan, name='Loan 100', dimensionMembers=[A100])
+    loan400 = Account(parent=loan, name='Loan 400', dimensionMembers=[A400])
 
 
     # ===========================================================================
     # EQUITY
     # ===========================================================================
-    equity = self.equity = Account(parent=self.root, name='Equity', type=TYPE_EQUITY)
-    self.bank.makeInitialTransaction(self.equity, Money(400000), Date(2005,1,1))
+    equity = Account(parent=self.root, name='Equity', type=TYPE_EQUITY)
+    bank.makeInitialTransaction(equity, Money(400000), Date(2005,1,1))
 
 
     # ===========================================================================
@@ -139,7 +149,7 @@ def makeAccounts(self):
     Transaction(Date(2006,1,4), 'profit 1 year imposition reduction', imposition400, taxes400, 5000)
     # This tx is not related to the apartment
     Transaction(Date(2006,1,4), 'pay 1 year imposition', imposition, bank, 10000)
-    
+
     Transaction(Date(2006,1,5), 'pay loan interests', interests400, bank, 500*12)
     Transaction(Date(2006,1,5), 'pay loan principal', loan400, bank, 500*12)
     Transaction(Date(2006,1,5), 'pay syndic', syndic400, bank, 100*12)
@@ -171,5 +181,4 @@ def makeDB(filename):
 
 
 if __name__ == '__main__':
-    makeDB('tt')
     main()

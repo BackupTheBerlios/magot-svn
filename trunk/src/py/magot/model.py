@@ -20,6 +20,15 @@ class Dimension(elements.Element):
     class desc(features.Attribute):
         referencedType = datatypes.String
 
+    class subMembers(features.Collection):
+        """ Defines all dimension members that are at a sub level in one hierachy of this Dimension.
+        A hierarchy contains a tree of dimension members at different levels.
+        Ex: if hierarchy levels = Country --> State --> City
+        LocationDimension.subMembers = (Country1:(City1, State1:(City2)), Country2:(State2:(City3)))
+        """
+        referencedType = 'DimensionMember'
+        singularName = 'subMember'
+
     def getMemberForAccount(self, account):
         return account.getMemberForDimension(self)
 
@@ -38,10 +47,10 @@ class Dimension(elements.Element):
 class MemberClass(elements.ElementClass):
 
     def __new__(cls, name, bases, cdict):
-        member = super(MemberClass, cls).__new__(cls, name, bases, cdict)
-        # A single Dimension instance for all member instances having the same dimension.
-        member.dimension = Dimension(name=name, desc=name)
-        return member
+        newClass = super(MemberClass, cls).__new__(cls, name, bases, cdict)
+        # Class attribute : a single Dimension instance for all member instances with same dimension.
+        newClass.dimension = Dimension(name=name, desc=name)
+        return newClass
 
 
 class DimensionMember(Dimension):
@@ -57,6 +66,15 @@ class DimensionMember(Dimension):
         ex2: The dimension member 'apartment100' has super members '2-roomed' and 'CityA'. """
         referencedType = 'DimensionMember'
         singularName = 'superMember'
+
+    def __init__(self, superMember=None, **kwargs):
+        super(DimensionMember, self).__init__(**kwargs)
+        if superMember:
+            superMember.addSubMember(self)
+            self.addSuperMember(superMember)
+        else:
+            # self.dimension is NOT super member of self!
+            self.dimension.addSubMember(self)
 
     def getMemberForAccount(self, account):
         """ Redefined from Dimension class. """
@@ -260,6 +278,10 @@ class RootAccount(elements.Element):
         referencedType = 'Account'
         referencedEnd = 'parent'
         singularName = 'subAccount'
+
+    class dimensions(features.Collection):
+        referencedType = 'Dimension'
+        singularName = 'dimension'
 
     def __init__(self, name, description=None):
         self.name = name

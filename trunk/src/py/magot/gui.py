@@ -5,7 +5,7 @@ from wx.lib.splitter import MultiSplitterWindow
 from magot.storage import *
 from magot.accountHierarchy import *
 from magot.accountLedger import *
-
+from magot.dimension import HierarchyViewer
 
 class MainFrame(wx.Frame):
 
@@ -25,8 +25,13 @@ class MainFrame(wx.Frame):
         self.bindMenuItemToHandler(menuFile, "E&xit\tAlt-X", 
             "Exit application", self.OnExit)
 
+        menuReport = wx.Menu()
+        self.bindMenuItemToHandler(menuReport, "View under &dimensions\tAlt-D", 
+            "View account hierarchy under selected dimensions", self.OnViewHierarchyUnderDimensions)
+
         menuBar = wx.MenuBar()
         menuBar.Append(menuFile, "&File")
+        menuBar.Append(menuReport, "&Report")
         self.SetMenuBar(menuBar)
         
         # begin one long transaction between each save
@@ -96,6 +101,23 @@ class MainFrame(wx.Frame):
                 self.nb = self.getOtherNotebook()
                 self.nb.OpenAccount(oppositeEntry.account, oppositeEntry)
 
+    def OnViewHierarchyUnderDimensions(self, evt):
+        if self.isActionRefused():
+            return
+
+        win = DimensionalViewer(self, self.accRoot, -1, size=wx.Size(500, 150), 
+                                style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
+        # TODO
+        #win.CenterOnScreen()
+        #if win.ShowModal() == wx.ID_OK:
+        dimensions = self.accRoot.dimensions
+        win.endDate = None
+        win.dimensions = [dimensions[2]]
+
+        frame = DimensionalReportFrame(self, self.accRoot, win.dimensions)
+        frame.Show()
+        
+
     def isCurrentSelectionAnAccountLedger(self):
         return not self.nb.GetCurrentPage() is self.nb.hierarchy
 
@@ -112,6 +134,17 @@ class MainFrame(wx.Frame):
     def bindMenuItemToHandler(self, menu, title, help, handler):
         item = menu.Append(-1, title, help)
         self.Bind(wx.EVT_MENU, handler, item)
+
+
+class DimensionalReportFrame(wx.Frame):
+
+    def __init__(self, parent, root, dimensions, title="to be defined", id=-1):
+        wx.Frame.__init__(self, parent, id, title, pos=(150, 150), size=(1000, 500))
+
+        viewer = HierarchyViewer(root)
+        viewer.viewAccountsUnderDimensions(dimensions)
+        self.hierarchy = AccountHierarchy(self, viewer.root)
+        self.hierarchy.Layout()
 
 
 class MultiSplitterPanel(wx.Panel):
@@ -171,7 +204,17 @@ class AccountEditor(wx.Dialog):
         
         sizer.Add(box, 0, wx.ALIGN_CENTER_HORIZONTAL|wx.ALL, 5)
         self.SetSizer(sizer)
-        self.SetAutoLayout(True)
+        self.SetAutoLayout(True)        
+
+
+class DimensionalViewer(wx.Dialog):
+    """ 
+    This class provides access to all the properties of an account.
+    """
+    
+    def __init__(self, parent, dimensions, ID, pos=wx.DefaultPosition, size=wx.DefaultSize, 
+                 style=wx.DEFAULT_DIALOG_STYLE):
+        pass # TODO
 
 
 class AccountNotebook(wx.Notebook):

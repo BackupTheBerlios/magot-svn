@@ -39,11 +39,8 @@ def makeDimensionMembers(self):
     # Define the "Location" dimension members.
     # ===========================================================================
     self.zoneA = zoneA = Location(name="zoneA", desc="zoneA")
-    self.puteaux = puteaux = Location(name="Puteaux", desc="Puteaux")
-    self.issy = issy = Location(name="Issy", desc="Issy")
-    # Manual (vs automatic) settings of Super members (see Apartment class).
-    puteaux.addSuperMember(zoneA)  # City 'puteaux' is in region 'zoneA'
-    issy.addSuperMember(zoneA)
+    self.puteaux = puteaux = Location(name="Puteaux", desc="Puteaux", superMember=zoneA)
+    self.issy = issy = Location(name="Issy", desc="Issy", superMember=zoneA)
 
     # ===========================================================================
     # Define the "Apartment" dimension members.

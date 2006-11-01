@@ -59,8 +59,8 @@ create a new database.
             from magot.tests import test_storage
             test_storage.makeDB(self.db_filepath)
         else:
-            from magot.tests import test_reale_state
-            test_reale_state.makeDB(self.db_filepath)
+            from magot.tests import test_real_estate
+            test_real_estate.makeDB(self.db_filepath)
 
 
 class displayAccountsCmd(commands.AbstractCommand):
@@ -171,7 +171,7 @@ Add a new Transaction.
 
 def runMain():
     root = config.makeRoot(iniFiles=(('peak','peak.ini'), ('magot','magot.ini')))
-    #import wingdbstub
+    import wingdbstub
     Magot(root).run()
 
 

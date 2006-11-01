@@ -97,6 +97,14 @@ class AccountType(object):
     
     __repr__ = __str__
 
+    def __eq__(self, other):
+        return self.name == other.name
+        
+    def __hash__(self):
+        return hash(self.name)
+
+
+
 TYPE_ASSET = AccountType('Asset account type')
 TYPE_EXPENSE = AccountType('Expense account type')
 TYPE_INCOME = AccountType('Income account type', False)
