@@ -171,7 +171,7 @@ Add a new Transaction.
 
 def runMain():
     root = config.makeRoot(iniFiles=(('peak','peak.ini'), ('magot','magot.ini')))
-    import wingdbstub
+    #import wingdbstub
     Magot(root).run()
 
 

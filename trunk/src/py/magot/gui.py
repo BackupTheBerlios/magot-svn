@@ -105,18 +105,14 @@ class MainFrame(wx.Frame):
         if self.isActionRefused():
             return
 
-        win = DimensionalViewer(self, self.accRoot, -1, size=wx.Size(500, 150), 
+        win = DimensionalViewer(self, self.accRoot, -1, size=wx.Size(500, 300), 
                                 style=wx.DEFAULT_DIALOG_STYLE|wx.RESIZE_BORDER)
-        # TODO
-        #win.CenterOnScreen()
-        #if win.ShowModal() == wx.ID_OK:
-        dimensions = self.accRoot.dimensions
-        win.endDate = None
-        win.dimensions = [dimensions[2]]
-
-        frame = DimensionalReportFrame(self, self.accRoot, win.dimensions)
-        frame.Show()
-        
+        win.CenterOnScreen()
+        if win.ShowModal() == wx.ID_OK:
+            dimensions = win.getSelectedDimensions()
+            frame = DimensionalReportFrame(self, self.accRoot, dimensions,
+                                           'Grouping by '+ ', '.join(map(str, dimensions)))
+            frame.Show()
 
     def isCurrentSelectionAnAccountLedger(self):
         return not self.nb.GetCurrentPage() is self.nb.hierarchy
@@ -160,7 +156,7 @@ class MultiSplitterPanel(wx.Panel):
 
         self.nb1 = parent.nb = parent.nb1 = AccountNotebook(self.splitter, accRoot, parent.ctx)
         self.splitter.AppendWindow(self.nb1, 340)
-        
+
         self.nb2 = parent.nb2 = AccountNotebook(self.splitter, accRoot, parent.ctx)
         self.splitter.AppendWindow(self.nb2, 340)
 
@@ -208,13 +204,76 @@ class AccountEditor(wx.Dialog):
 
 
 class DimensionalViewer(wx.Dialog):
-    """ 
-    This class provides access to all the properties of an account.
-    """
-    
-    def __init__(self, parent, dimensions, ID, pos=wx.DefaultPosition, size=wx.DefaultSize, 
+    """ This class provides selection of dimensions under which to view the account hierarchy. """
+
+    class DimensionAndMemberLine(object):
+
+        def __init__(self, window, lineContainer, dimensions):
+            self.selected = None
+            choice = self.dimensionChoice = wx.Choice(window, -1, (50, 50), choices=[""])
+            for d in dimensions:
+                choice.Append(str(d), d)
+
+            window.Bind(wx.EVT_CHOICE, self.OnDimensionChoice, choice)
+            lineContainer.Add(choice, 1, wx.GROW|wx.ALIGN_CENTER_VERTICAL|wx.RIGHT|wx.TOP, 5)
+
+            choice = self.memberChoice = wx.Choice(window, -1, (50, 50))
+            window.Bind(wx.EVT_CHOICE, self.OnMemberChoice, choice)
+            lineContainer.Add(choice, 1, wx.GROW|wx.ALIGN_CENTER_VERTICAL|wx.RIGHT|wx.TOP, 5)
+
+        def OnDimensionChoice(self, event):
+            dimension = event.GetClientData()
+            if dimension is None:
+                self.memberChoice.Clear()
+            elif dimension is not self.selected:
+                self.memberChoice.Clear()
+                self.memberChoice.Append("ALL", dimension)
+                for m in self.__getAllMembers(dimension, []):
+                    self.memberChoice.Append(str(m), m)
+            self.selected = dimension
+
+        def OnMemberChoice(self, event):
+            self.selected = event.GetClientData()
+
+        def __getAllMembers(self, dimension, result):
+            result += dimension.subMembers
+            for m in dimension.subMembers:
+                self.__getAllMembers(m, result)
+            return result
+
+
+    def __init__(self, parent, rootAccount, ID, pos=wx.DefaultPosition, size=wx.DefaultSize, 
                  style=wx.DEFAULT_DIALOG_STYLE):
-        pass # TODO
+        wx.Dialog.__init__(self, parent, ID, "Dimension selection", pos, size, style)
+
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        comment = wx.StaticText(self, -1, "Select dimensions/members to group accounts by:", (15,10))
+        sizer.Add(comment, 0, wx.GROW|wx.ALIGN_CENTER_VERTICAL|wx.RIGHT|wx.TOP, 5)
+        self.lines = []
+
+        # Create a horizontal container (a line) for each dimension and its members.
+        for _ in rootAccount.dimensions:
+            hContainer = wx.BoxSizer(wx.HORIZONTAL)
+            sizer.Add(hContainer, 0, wx.GROW|wx.ALIGN_CENTER_VERTICAL|wx.RIGHT|wx.TOP, 5)
+            self.lines.append(self.DimensionAndMemberLine(self, hContainer, rootAccount.dimensions))
+
+        line = wx.StaticLine(self, -1, size=(20,-1), style=wx.LI_HORIZONTAL)
+        sizer.Add(line, 0, wx.GROW|wx.ALIGN_CENTER_VERTICAL|wx.RIGHT|wx.TOP, 5)
+
+        box = wx.BoxSizer(wx.HORIZONTAL)
+        btn = wx.Button(self, wx.ID_OK, " OK ")
+        btn.SetDefault()
+        box.Add(btn, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
+        btn = wx.Button(self, wx.ID_CANCEL, " Cancel ")
+        box.Add(btn, 0, wx.ALIGN_CENTRE|wx.ALL, 5)
+
+        sizer.Add(box, 0, wx.ALIGN_CENTER_HORIZONTAL|wx.ALL, 5)
+        self.SetSizer(sizer)
+        self.SetAutoLayout(True)
+
+    def getSelectedDimensions(self):
+        return [line.selected for line in self.lines 
+                if hasattr(line, 'selected') and line.selected is not None]
 
 
 class AccountNotebook(wx.Notebook):
