@@ -1,6 +1,16 @@
 Magot History
 
 
+version 0.2.0 : 2006/11/05
+==========================
+
+- Accounts can now be annoted with Dimension in order to view accounts grouped by some selected 
+members under a new account hierarchy. Ex:
+	Initial hierarchy : /Asset/RealEstate/A100, /Expense/RealEstate/A100, /Liability/RealEstate/A100
+	New hierarchy : grouped by the apartment A100 --> /A100/{Asset,Expense,Liability}
+- Added Profits & Losses and Net Assets accounts that compute automatically nested balances.
+
+
 version 0.1.1 : 2006/05/14
 ==========================
 

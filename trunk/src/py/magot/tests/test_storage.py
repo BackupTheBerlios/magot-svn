@@ -88,6 +88,7 @@ def makeAccounts():
     warranty.makeInitialTransaction(capital, Money(253), Date(2005,1,1))
     salary.makeInitialTransaction(capital, Money(2133), Date(2005,1,1))
 
+    return root
 
 def readDB():
     root = cPickle.load(open(filename))
@@ -95,7 +96,7 @@ def readDB():
 
 
 def makeDB(filename):
-    makeAccounts()
+    root = makeAccounts()
     cPickle.dump(root, open(filename,'w'))
 
 

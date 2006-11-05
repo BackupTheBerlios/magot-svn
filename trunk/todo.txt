@@ -1,7 +1,10 @@
 Magot TODO :
 
-0.2 : Improve the Accounting Model
+0.2.1 : Improve the dimensional Model
 
+Improvements:
+- define a retail use case
+- make Analysis codes
 - add Axe & slice in GUI (see MDX SELECT ... WHERE)
 - add A100 OR A200 instead of Location AND Warranty. Ex: Puteaux --> 2R/3R
 - use generator instead of list to retrieve accounts filtered by dimensions
@@ -12,7 +15,7 @@ Fixes:
 	update ledger when account name changes
 
 =========================================
-- multi-view, typed entries, entry events
+- typed entries, entry events
 =========================================
 
 	Flow:
@@ -48,25 +51,17 @@ Fixes:
 		entries know what account they have to be posted to: asked them the post them to their account	
 		account as an entry template for prototype programming?
 		Define all attributes of a Business Transaction. Then dispatch each one on Entry fields
-	
-	MultiView by filtering analysis codes:
-	=====================================
+
+     Analysis codes:
+	 ==============
 		all entries of an account match the account analysis codes + their specific values	
 		but account structure can be different between accounts
 		VendorAccount sorts its entries two ways : by received date and by due date
 		Define all analysis codes defining uniquely each account
 		Journal == charts of accounts == a (possibly filtered) view on all accounts
-	Examples:
-		/Asset/Real-Estate/@1, /Expense/Real-Estate/@1, /Liability/Real-Estate/@1
-			--> /@1/{Asset,Expense,Liability}
-		Motorola/401K, Motorola/Pension, Motorola/ESPP, 
-		Intel/401K, Intel/SERP, Intel/ESPP, Intel/Options 
-		AMD/401K, AMD/ProfitSharing, AMD/ESPP, AMD/Options
-		==> 401K/{Motorola,Intel,AMD}, Options/{Intel,AMDD}
-		==> Fidelity/{Intel/401K,/Motorola/Options}
-	add account codes
-	account.subAccounts should be a view filtered by analysis codes, not the true hierarchy
 
+- account.subAccounts should be a view filtered by analysis codes, not the true hierarchy
+- add account codes
 - introduce controler/presenter between view and model
 - propagate tx changes to ANY views interested in. 
 the program should in essence be fully functional even without a View/Controller attached.

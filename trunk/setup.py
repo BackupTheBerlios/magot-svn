@@ -8,7 +8,7 @@ from setuptools import setup, find_packages
 
 setup(
     name = "Magot",
-    version = "0.1.1",
+    version = "0.2.0",
     
     description = "A cross-platform personal finance manager.",
     author = "Jean-Philippe Dutreve",
@@ -43,5 +43,5 @@ setup(
     A check-book like register GUI allows you to enter transactions and track bank accounts, incomes and expenses. \
     It's based on formal accounting principles, PEAK and WxPython.""",
     
-    keywords = "accounting, finance, Python, WxPython, PEAK, component, framework, agile",
+    keywords = "accounting, finance, Python, WxPython, PEAK, component, framework, agile, OLAP",
 )
