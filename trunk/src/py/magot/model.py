@@ -432,10 +432,6 @@ class Account(RootAccount):
 
     def __getstate__(self):
         """ Purge state for pickleable content. """
-        try:
-            del self.changedEvent
-        except:
-            pass
         return self.__dict__
 
     def __repr__(self):
