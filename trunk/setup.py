@@ -32,7 +32,7 @@ setup(
     packages = find_packages('src/py', exclude=['*.sandbox']),
     package_data = {'magot': ['*.ini']},
 
-    install_requires = ['PEAK>=0.5a4'],
+    install_requires = ['PEAK>=0.5a4dev'],
 
 	entry_points = {
         "console_scripts":["magot = magot.commands:runMain"]
