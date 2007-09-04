@@ -1,4 +1,4 @@
-Magot TODO :
+MMagot TODO :
 
 0.2.1 : Improve the dimensional Model
 
