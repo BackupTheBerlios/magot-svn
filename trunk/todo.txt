@@ -52,8 +52,8 @@ Fixes:
 		account as an entry template for prototype programming?
 		Define all attributes of a Business Transaction. Then dispatch each one on Entry fields
 
-     Analysis codes:
-	 ==============
+	Analysis codes:
+	==============
 		all entries of an account match the account analysis codes + their specific values	
 		but account structure can be different between accounts
 		VendorAccount sorts its entries two ways : by received date and by due date
