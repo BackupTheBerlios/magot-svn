@@ -1,4 +1,4 @@
-MMagot TODO :
+Magot TODO :
 
 0.2.1 : Improve the dimensional Model
 
@@ -34,7 +34,6 @@ Fixes:
 	Account attributes are first class objects, dependent on other attributes:
 		as a function of time (==> the set of entries to operate on!)
 		YTDAttribute, MTDAttribute, SumAttribute (received, sold, ordered)
-		On-hand in an inventory is (purchased - sold - lost).
 	generic funtion valueAsOf(account, time=None, field, operator?)
 	account attributes can be combined with others attributes: 
 		OnHandAttribute in an inventory is (purchased - sold - lost).
