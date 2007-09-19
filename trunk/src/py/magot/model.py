@@ -396,7 +396,7 @@ class Account(RootAccount):
         metadata = NewAttribute('_dirty')
 
         def recompute(self, account, force=False, entryToo=True):
-            """ Unseting all account balances is sufficient to recompute them on demand. """
+            """ Unsetting all account balances is sufficient to recompute them on demand. """
             if force or account.balance_dirty:
                 Account.balance.unset(account)
                 Account.balanceYTD.unset(account)

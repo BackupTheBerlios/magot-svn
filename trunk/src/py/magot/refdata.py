@@ -42,8 +42,7 @@ class Money(model.Struct):
         defaultValue = Currency.EUR
     
     def __init__(self, amount=0, currency=Currency.EUR):
-        super(Money, self).__init__(
-            amount=Decimal(str(amount)), currency=currency)
+        super(Money, self).__init__(amount=Decimal(str(amount)), currency=currency)
     
     def __add__(self, other):
         assert isinstance(other, Money)
